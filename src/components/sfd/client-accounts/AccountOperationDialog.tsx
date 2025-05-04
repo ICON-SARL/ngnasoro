@@ -5,146 +5,166 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Textarea } from '@/components/ui/textarea';
+import { ArrowDown, ArrowUp } from 'lucide-react';
 import { useClientSavingsAccount } from '@/hooks/useClientSavingsAccount';
-import { Loader } from '@/components/ui/loader';
 
 interface AccountOperationDialogProps {
   isOpen: boolean;
   onClose: () => void;
   clientId: string;
-  clientName?: string;
+  clientName: string;
   onOperationComplete?: () => void;
 }
 
-const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({ 
+export default function AccountOperationDialog({
   isOpen,
   onClose,
   clientId,
-  clientName = 'Client',
-  onOperationComplete
-}) => {
+  clientName,
+  onOperationComplete,
+}: AccountOperationDialogProps) {
   const [amount, setAmount] = useState<number>(0);
   const [description, setDescription] = useState<string>('');
-  const [operationType, setOperationType] = useState<'deposit' | 'withdrawal'>('deposit');
-  
-  const { processDeposit, processWithdrawal, isTransactionLoading, balance } = useClientSavingsAccount(clientId);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [activeTab, setActiveTab] = useState<string>('deposit');
+
+  const { processDeposit, processWithdrawal, account } = useClientSavingsAccount(clientId);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    let success = false;
-
+    setIsSubmitting(true);
+    
     try {
-      if (operationType === 'deposit') {
+      let success;
+      
+      if (activeTab === 'deposit') {
         success = await processDeposit(amount, description);
       } else {
         success = await processWithdrawal(amount, description);
       }
-
+      
       if (success) {
-        setAmount(0);
-        setDescription('');
+        handleClose();
         if (onOperationComplete) {
           onOperationComplete();
         }
-        onClose();
       }
-    } catch (error) {
-      console.error('Operation error:', error);
-      // Error is handled by the hook
+    } finally {
+      setIsSubmitting(false);
     }
   };
-
-  // Validation function
-  const isValidAmount = () => {
-    if (operationType === 'deposit') {
-      return amount > 0; // Any positive amount is valid for deposit
-    } else {
-      return amount > 0 && amount <= balance; // For withdrawal, must be positive and not exceed balance
-    }
+  
+  const handleClose = () => {
+    setAmount(0);
+    setDescription('');
+    onClose();
   };
+  
+  const isDisabled = isSubmitting || amount <= 0 || (activeTab === 'withdrawal' && account?.balance ? account.balance < amount : false);
 
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+    <Dialog open={isOpen} onOpenChange={(open) => !open && handleClose()}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Opération sur le compte</DialogTitle>
+          <DialogTitle>Opération de compte pour {clientName}</DialogTitle>
         </DialogHeader>
-        <Tabs defaultValue="deposit" onValueChange={(value) => setOperationType(value as 'deposit' | 'withdrawal')}>
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="deposit">Dépôt</TabsTrigger>
-            <TabsTrigger value="withdrawal">Retrait</TabsTrigger>
-          </TabsList>
-          
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4 py-4">
-              <div className="text-sm font-medium">
-                Client: <span className="font-semibold">{clientName}</span>
-              </div>
-              
-              {operationType === 'withdrawal' && (
-                <div className="text-sm">
-                  Solde disponible: <span className="font-semibold">{balance.toLocaleString('fr-FR')} FCFA</span>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="amount" className="text-right">
-                  Montant
-                </Label>
-                <div className="col-span-3">
+        
+        <form onSubmit={handleSubmit}>
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+            <TabsList className="grid grid-cols-2 mb-4">
+              <TabsTrigger value="deposit" className="flex items-center gap-2">
+                <ArrowDown className="h-4 w-4" /> Dépôt
+              </TabsTrigger>
+              <TabsTrigger value="withdrawal" className="flex items-center gap-2">
+                <ArrowUp className="h-4 w-4" /> Retrait
+              </TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="deposit">
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-amount">Montant à déposer (FCFA)</Label>
                   <Input
-                    id="amount"
+                    id="deposit-amount"
                     type="number"
-                    min={1}
-                    step={1}
+                    min="0"
+                    step="1000"
                     value={amount}
                     onChange={(e) => setAmount(Number(e.target.value))}
-                    className="col-span-3"
-                    disabled={isTransactionLoading}
-                    required
+                    placeholder="0"
                   />
                 </div>
-              </div>
-              
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="description" className="text-right">
-                  Description
-                </Label>
-                <div className="col-span-3">
-                  <Input
-                    id="description"
+                <div className="space-y-2">
+                  <Label htmlFor="deposit-description">Description (optionnel)</Label>
+                  <Textarea
+                    id="deposit-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
-                    className="col-span-3"
-                    disabled={isTransactionLoading}
-                    placeholder={operationType === 'deposit' ? 'Dépôt sur compte client' : 'Retrait du compte client'}
+                    placeholder="Raison du dépôt"
+                    rows={3}
                   />
                 </div>
               </div>
-            </div>
+            </TabsContent>
             
-            <DialogFooter>
-              <Button 
-                type="button" 
-                variant="outline" 
-                onClick={onClose}
-                disabled={isTransactionLoading}
-              >
-                Annuler
-              </Button>
-              <Button 
-                type="submit" 
-                disabled={isTransactionLoading || !isValidAmount()}
-              >
-                {isTransactionLoading && <Loader size="sm" className="mr-2" />}
-                {operationType === 'deposit' ? 'Effectuer le dépôt' : 'Effectuer le retrait'}
-              </Button>
-            </DialogFooter>
-          </form>
-        </Tabs>
+            <TabsContent value="withdrawal">
+              <div className="space-y-4 py-2">
+                <div className="space-y-2">
+                  <Label htmlFor="withdrawal-amount">Montant à retirer (FCFA)</Label>
+                  <Input
+                    id="withdrawal-amount"
+                    type="number"
+                    min="0"
+                    step="1000"
+                    value={amount}
+                    onChange={(e) => setAmount(Number(e.target.value))}
+                    placeholder="0"
+                  />
+                  {account && (
+                    <p className="text-sm text-gray-500">
+                      Solde disponible: {account.balance.toLocaleString()} FCFA
+                    </p>
+                  )}
+                  {activeTab === 'withdrawal' && account?.balance && amount > account.balance && (
+                    <p className="text-sm text-red-500">
+                      Solde insuffisant pour ce retrait
+                    </p>
+                  )}
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="withdrawal-description">Description (optionnel)</Label>
+                  <Textarea
+                    id="withdrawal-description"
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    placeholder="Raison du retrait"
+                    rows={3}
+                  />
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+          
+          <DialogFooter className="mt-4">
+            <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
+              Annuler
+            </Button>
+            <Button 
+              type="submit" 
+              disabled={isDisabled}
+              className={activeTab === 'deposit' ? 'bg-green-600 hover:bg-green-700' : ''}
+            >
+              {isSubmitting ? (
+                <span className="flex items-center">
+                  <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                  Traitement...
+                </span>
+              ) : activeTab === 'deposit' ? 'Effectuer le dépôt' : 'Effectuer le retrait'}
+            </Button>
+          </DialogFooter>
+        </form>
       </DialogContent>
     </Dialog>
   );
-};
-
-export default AccountOperationDialog;
+}

@@ -1,375 +1,309 @@
-import { useState, useCallback, useEffect } from 'react';
-import { supabase } from '@/integrations/supabase/client';
+
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { savingsAccountService } from '@/services/savings/savingsAccountService';
+import { supabase } from '@/integrations/supabase/client';
 
-export function useClientSavingsAccount(clientId: string) {
-  const [account, setAccount] = useState<any>(null);
-  const [transactions, setTransactions] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isTransactionLoading, setIsTransactionLoading] = useState(false);
+export interface ClientAccount {
+  id: string;
+  user_id: string;
+  balance: number;
+  currency: string;
+  last_updated?: string;
+  sfd_id?: string;
+}
+
+export interface ClientTransaction {
+  id: string;
+  amount: number;
+  type: string;
+  status: string;
+  description?: string;
+  created_at: string;
+  name?: string;
+}
+
+export function useClientSavingsAccount(clientId?: string) {
   const { toast } = useToast();
-  const { activeSfdId } = useAuth();
-
-  // Fetch account data
-  const fetchAccountData = useCallback(async () => {
-    if (!clientId) return;
-    
-    setIsLoading(true);
-    try {
-      const accountData = await savingsAccountService.getClientAccount(clientId);
-      setAccount(accountData || null);
-      return accountData;
-    } catch (error: any) {
-      console.error('Error fetching client account:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer les informations du compte",
-        variant: "destructive",
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clientId, toast]);
-
-  // Fetch transaction history
-  const fetchTransactionHistory = useCallback(async () => {
-    if (!clientId) return;
-    
-    try {
-      const transactionsData = await savingsAccountService.getTransactionHistory(clientId);
-      setTransactions(transactionsData || []);
-    } catch (error: any) {
-      console.error('Error fetching transaction history:', error);
-      toast({
-        title: "Erreur",
-        description: "Impossible de récupérer l'historique des transactions",
-        variant: "destructive",
-      });
-    }
-  }, [clientId, toast]);
-
-  // Subscribe to real-time account updates
-  const subscribeToAccountUpdates = useCallback(() => {
-    if (!account?.id) return null;
-    
-    const channel = supabase
-      .channel('account-updates')
-      .on('postgres_changes', 
-        { 
-          event: 'UPDATE', 
-          schema: 'public', 
-          table: 'accounts', 
-          filter: `id=eq.${account.id}` 
-        }, 
-        (payload) => {
-          console.log('Account updated:', payload);
-          setAccount(prev => ({...prev, ...payload.new}));
-          toast({
-            title: "Compte mis à jour",
-            description: "Le solde de votre compte a été mis à jour",
-          });
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [account?.id, toast]);
-
-  // Process a deposit
-  const processDeposit = useCallback(async (amount: number, description?: string) => {
-    if (!clientId || !activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "Information client ou SFD manquante",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (!amount || amount <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Montant invalide pour le dépôt",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    setIsTransactionLoading(true);
-    try {
-      // First get the user_id from the client record
-      const { data: client, error: clientError } = await supabase
+  const queryClient = useQueryClient();
+  const { activeSfdId, user } = useAuth();
+  const [isCreatingAccount, setIsCreatingAccount] = useState(false);
+  
+  // Get client details
+  const clientQuery = useQuery({
+    queryKey: ['client', clientId],
+    queryFn: async () => {
+      if (!clientId) return null;
+      const { data, error } = await supabase
         .from('sfd_clients')
-        .select('user_id')
+        .select('*')
         .eq('id', clientId)
         .single();
       
-      if (clientError || !client?.user_id) {
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId
+  });
+  
+  // Get client account details
+  const accountQuery = useQuery({
+    queryKey: ['client-account', clientId],
+    queryFn: async () => {
+      if (!clientId || !clientQuery.data?.user_id) return null;
+      
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', clientQuery.data.user_id)
+        .maybeSingle();
+        
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!clientId && !!clientQuery.data?.user_id
+  });
+  
+  // Get transaction history
+  const transactionsQuery = useQuery({
+    queryKey: ['client-transactions', clientId, clientQuery.data?.user_id],
+    queryFn: async () => {
+      if (!clientId || !clientQuery.data?.user_id) return [];
+      
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', clientQuery.data.user_id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!clientId && !!clientQuery.data?.user_id && !!accountQuery.data?.id
+  });
+  
+  // Create savings account if doesn't exist
+  const ensureSavingsAccount = async () => {
+    if (!clientId || !activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "Informations manquantes pour créer un compte",
+        variant: "destructive"
+      });
+      return null;
+    }
+    
+    try {
+      setIsCreatingAccount(true);
+      
+      console.log("Ensuring savings account for client:", clientId);
+      const { data, error } = await supabase.functions.invoke('ensure-client-savings', {
+        body: {
+          clientId,
+          sfdId: activeSfdId
+        }
+      });
+      
+      if (error) {
+        console.error("Error ensuring savings account:", error);
+        throw new Error(error.message || "Impossible de créer un compte épargne");
+      }
+      
+      if (!data.success) {
+        throw new Error(data.error || "Impossible de créer un compte épargne");
+      }
+      
+      await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+      await queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+      
+      toast({
+        title: data.accountExists ? "Compte existant" : "Compte créé",
+        description: data.accountExists 
+          ? "Le compte épargne existe déjà pour ce client" 
+          : "Le compte épargne a été créé avec succès",
+        variant: "default",
+      });
+      
+      return data.account;
+    } catch (error: any) {
+      console.error("Error creating savings account:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Impossible de créer un compte épargne pour ce client",
+        variant: "destructive"
+      });
+      return null;
+    } finally {
+      setIsCreatingAccount(false);
+    }
+  };
+  
+  // Process a deposit transaction
+  const processDeposit = async (amount: number, description?: string): Promise<boolean> => {
+    try {
+      if (!clientId || !activeSfdId) {
         toast({
           title: "Erreur",
-          description: "Client non trouvé ou compte utilisateur non associé",
-          variant: "destructive",
+          description: "Informations manquantes pour effectuer le dépôt",
+          variant: "destructive"
         });
         return false;
       }
       
-      console.log(`Initiating deposit for user ${client.user_id} with amount ${amount}`);
+      if (amount <= 0) {
+        toast({
+          title: "Erreur",
+          description: "Le montant doit être supérieur à 0",
+          variant: "destructive"
+        });
+        return false;
+      }
       
-      // Use the service to process the transaction
-      const result = await savingsAccountService.processTransaction({
-        userId: client.user_id,
-        amount,
-        description,
-        transactionType: 'deposit',
-        sfdId: activeSfdId
+      if (!clientQuery.data?.user_id) {
+        toast({
+          title: "Erreur",
+          description: "Client non associé à un compte utilisateur",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-account-transaction', {
+        body: {
+          userId: clientQuery.data.user_id,
+          clientId,
+          sfdId: activeSfdId,
+          amount,
+          description,
+          transactionType: 'deposit',
+          performedBy: user?.id
+        }
       });
+      
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || "Échec du dépôt");
+      }
+      
+      // Refresh data
+      await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+      await queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
       
       toast({
         title: "Dépôt effectué",
-        description: `${amount.toLocaleString('fr-FR')} FCFA ont été déposés sur le compte client`,
+        description: `${amount} FCFA ont été déposés sur le compte du client`,
+        variant: "default",
       });
-      
-      // Refresh account data and transaction history
-      await fetchAccountData();
-      await fetchTransactionHistory();
       
       return true;
     } catch (error: any) {
-      console.error('Error processing deposit:', error);
+      console.error("Erreur lors du dépôt:", error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible d'effectuer le dépôt",
-        variant: "destructive",
+        variant: "destructive"
       });
       return false;
-    } finally {
-      setIsTransactionLoading(false);
     }
-  }, [clientId, toast, fetchAccountData, fetchTransactionHistory, activeSfdId]);
-
+  };
+  
   // Process a withdrawal
-  const processWithdrawal = useCallback(async (amount: number, description?: string) => {
-    if (!clientId || !activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "Information client ou SFD manquante",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (!amount || amount <= 0) {
-      toast({
-        title: "Erreur",
-        description: "Montant invalide pour le retrait",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    if (!account || account.balance < amount) {
-      toast({
-        title: "Solde insuffisant",
-        description: "Le solde du compte est insuffisant pour ce retrait",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    setIsTransactionLoading(true);
+  const processWithdrawal = async (amount: number, description?: string): Promise<boolean> => {
     try {
-      // First get the user_id from the client record
-      const { data: client, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('user_id')
-        .eq('id', clientId)
-        .single();
-      
-      if (clientError || !client?.user_id) {
+      if (!clientId || !activeSfdId) {
         toast({
           title: "Erreur",
-          description: "Client non trouvé ou compte utilisateur non associé",
-          variant: "destructive",
+          description: "Informations manquantes pour effectuer le retrait",
+          variant: "destructive"
         });
         return false;
       }
       
-      // Use the service to process the transaction
-      const result = await savingsAccountService.processTransaction({
-        userId: client.user_id,
-        amount,
-        description,
-        transactionType: 'withdrawal',
-        sfdId: activeSfdId
+      if (amount <= 0) {
+        toast({
+          title: "Erreur",
+          description: "Le montant doit être supérieur à 0",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      if (!clientQuery.data?.user_id) {
+        toast({
+          title: "Erreur",
+          description: "Client non associé à un compte utilisateur",
+          variant: "destructive"
+        });
+        return false;
+      }
+      
+      // Check if balance is sufficient
+      const account = accountQuery.data;
+      if (!account || account.balance < amount) {
+        toast({
+          title: "Solde insuffisant",
+          description: "Le solde du compte est insuffisant pour ce retrait",
+          variant: "destructive"
+        });
+        return false;
+      }
+
+      const { data, error } = await supabase.functions.invoke('process-account-transaction', {
+        body: {
+          userId: clientQuery.data.user_id,
+          clientId,
+          sfdId: activeSfdId,
+          amount,
+          description,
+          transactionType: 'withdrawal',
+          performedBy: user?.id
+        }
       });
+      
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || "Échec du retrait");
+      }
+      
+      // Refresh data
+      await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+      await queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
       
       toast({
         title: "Retrait effectué",
-        description: `${amount.toLocaleString('fr-FR')} FCFA ont été retirés du compte client`,
+        description: `${amount} FCFA ont été retirés du compte du client`,
+        variant: "default",
       });
-      
-      // Refresh account data and transaction history
-      await fetchAccountData();
-      await fetchTransactionHistory();
       
       return true;
     } catch (error: any) {
-      console.error('Error processing withdrawal:', error);
+      console.error("Erreur lors du retrait:", error);
       toast({
         title: "Erreur",
         description: error.message || "Impossible d'effectuer le retrait",
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsTransactionLoading(false);
-    }
-  }, [clientId, account, toast, fetchAccountData, fetchTransactionHistory, activeSfdId]);
-
-  // Create a new account if it doesn't exist
-  const createAccount = useCallback(async (initialBalance: number = 0) => {
-    if (!clientId || !activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "ID client ou SFD invalide",
-        variant: "destructive",
+        variant: "destructive"
       });
       return false;
     }
-    
-    setIsLoading(true);
-    try {
-      const result = await savingsAccountService.createClientSavingsAccount(clientId, activeSfdId, initialBalance);
-      
-      if (result) {
-        toast({
-          title: "Compte créé",
-          description: "Le compte d'épargne client a été créé avec succès",
-        });
-        
-        // Refresh data
-        await fetchAccountData();
-        await fetchTransactionHistory();
-        
-        return true;
-      } else {
-        throw new Error("Échec de la création du compte");
-      }
-    } catch (error: any) {
-      console.error('Error creating account:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de créer le compte client: ${error.message}`,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory]);
-
-  // Ensure client has a savings account
-  const ensureSavingsAccount = useCallback(async () => {
-    if (!clientId || !activeSfdId) {
-      toast({
-        title: "Erreur",
-        description: "ID client ou SFD invalide",
-        variant: "destructive",
-      });
-      return false;
-    }
-    
-    setIsLoading(true);
-    try {
-      const success = await savingsAccountService.ensureClientSavingsAccount(clientId, activeSfdId);
-      
-      if (success) {
-        toast({
-          title: "Compte créé",
-          description: "Le compte d'épargne client a été créé avec succès",
-        });
-        
-        // Refresh data
-        await fetchAccountData();
-        await fetchTransactionHistory();
-        
-        return true;
-      } else {
-        throw new Error("Échec de la création du compte");
-      }
-    } catch (error: any) {
-      console.error('Error ensuring savings account:', error);
-      toast({
-        title: "Erreur",
-        description: `Impossible de créer le compte client: ${error.message}`,
-        variant: "destructive",
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  }, [clientId, activeSfdId, toast, fetchAccountData, fetchTransactionHistory]);
-
-  // Load data on component mount
-  useEffect(() => {
-    if (clientId) {
-      fetchAccountData();
-      fetchTransactionHistory();
-    }
-  }, [clientId, fetchAccountData, fetchTransactionHistory]);
-
-  // Set up real-time subscription
-  useEffect(() => {
-    const unsubscribe = subscribeToAccountUpdates();
-    return () => {
-      if (unsubscribe) unsubscribe();
-    };
-  }, [subscribeToAccountUpdates]);
-
-  // Set up notification subscription
-  useEffect(() => {
-    if (!account?.user_id) return;
-    
-    const notificationChannel = supabase
-      .channel('notification-updates')
-      .on('postgres_changes', 
-        { 
-          event: 'INSERT', 
-          schema: 'public', 
-          table: 'admin_notifications',
-          filter: `recipient_id=eq.${account.user_id}` 
-        }, 
-        (payload) => {
-          console.log('New notification:', payload);
-          const notification = payload.new;
-          
-          toast({
-            title: notification.title,
-            description: notification.message,
-          });
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(notificationChannel);
-    };
-  }, [account?.user_id, toast]);
-
+  };
+  
+  const refreshData = async () => {
+    await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+    await queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
+    await clientQuery.refetch();
+    await accountQuery.refetch();
+    await transactionsQuery.refetch();
+  };
+  
   return {
-    account,
-    transactions,
-    isLoading,
-    isTransactionLoading,
+    client: clientQuery.data,
+    account: accountQuery.data,
+    transactions: transactionsQuery.data || [],
+    isLoading: clientQuery.isLoading || accountQuery.isLoading || transactionsQuery.isLoading || isCreatingAccount,
+    isError: clientQuery.isError || accountQuery.isError || transactionsQuery.isError,
+    ensureSavingsAccount,
     processDeposit,
     processWithdrawal,
-    createAccount: ensureSavingsAccount, // Alias for backward compatibility
-    ensureSavingsAccount,
-    refreshData: fetchAccountData,
-    balance: account?.balance || 0,
+    refreshData
   };
 }

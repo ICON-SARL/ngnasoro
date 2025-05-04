@@ -37,6 +37,7 @@ import RoleTestingPage from '@/pages/RoleTestingPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
 import SfdClientDetailPage from '@/pages/SfdClientDetailPage';
 import { NotificationsOverlay } from '@/components/mobile/NotificationsOverlay';
+import MobileDepositPage from '@/pages/mobile/MobileDepositPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -204,6 +205,11 @@ function App() {
                   <Route path="/mobile-flow/sfd-adhesion/:sfdId" element={
                     <ProtectedRoute>
                       <MobileFlowPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mobile-flow/deposit" element={
+                    <ProtectedRoute>
+                      <MobileDepositPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/mobile-flow/*" element={

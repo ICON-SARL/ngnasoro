@@ -16,14 +16,17 @@ serve(async (req) => {
   }
 
   try {
+    console.log("Starting ensure-client-savings function");
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
     );
 
     const { clientId, sfdId } = await req.json();
+    console.log("Request params:", { clientId, sfdId });
 
     if (!clientId) {
+      console.error("Client ID is required");
       return new Response(
         JSON.stringify({ error: "Client ID is required" }),
         { headers: corsHeaders, status: 400 }
@@ -38,31 +41,55 @@ serve(async (req) => {
       .single();
 
     if (clientError || !client) {
+      console.error("Client not found:", clientError);
       return new Response(
         JSON.stringify({ error: "Client not found", details: clientError }),
         { headers: corsHeaders, status: 404 }
       );
     }
 
-    // If client doesn't have a user_id, attempt to find user by email
-    if (!client.user_id && client.email) {
-      const { data: userProfile } = await supabaseAdmin
-        .from('profiles')
-        .select('id')
-        .ilike('email', client.email)
-        .maybeSingle();
-        
-      if (userProfile) {
-        // Update client with found user_id
-        await supabaseAdmin
-          .from('sfd_clients')
-          .update({ user_id: userProfile.id })
-          .eq('id', clientId);
+    console.log("Client found:", client);
+
+    // If client doesn't have a user_id, create one
+    let userId = client.user_id;
+    
+    if (!userId) {
+      console.log("No user_id found, looking up or creating user");
+      
+      // Try to find an existing user by email
+      if (client.email) {
+        const { data: userProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('id')
+          .ilike('email', client.email)
+          .maybeSingle();
           
-        client.user_id = userProfile.id;
-      } else {
-        // Create new user if no matching email found
+        if (userProfile) {
+          console.log("Found user by email:", userProfile.id);
+          userId = userProfile.id;
+          
+          // Update client with found user_id
+          await supabaseAdmin
+            .from('sfd_clients')
+            .update({ user_id: userId })
+            .eq('id', clientId);
+            
+          console.log("Updated client with user_id");
+        }
+      }
+      
+      // If still no user_id, create a new user
+      if (!userId) {
+        console.log("Creating new user for client");
         const tempPassword = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 12).toUpperCase();
+        
+        if (!client.email) {
+          console.error("Client email is required to create user account");
+          return new Response(
+            JSON.stringify({ error: "Client email is required to create user account" }),
+            { headers: corsHeaders, status: 400 }
+          );
+        }
         
         const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
           email: client.email,
@@ -75,23 +102,28 @@ serve(async (req) => {
         });
         
         if (authError || !authUser.user) {
+          console.error("Failed to create user account:", authError);
           return new Response(
             JSON.stringify({ error: "Failed to create user account", details: authError }),
             { headers: corsHeaders, status: 500 }
           );
         }
         
+        userId = authUser.user.id;
+        console.log("Created new user with ID:", userId);
+        
         // Update client with new user_id
         await supabaseAdmin
           .from('sfd_clients')
-          .update({ user_id: authUser.user.id })
+          .update({ user_id: userId })
           .eq('id', clientId);
           
-        client.user_id = authUser.user.id;
+        console.log("Updated client with new user_id");
       }
     }
     
-    if (!client.user_id) {
+    if (!userId) {
+      console.error("Unable to get or create user_id for client");
       return new Response(
         JSON.stringify({ error: "Cannot create savings account without a user account" }),
         { headers: corsHeaders, status: 400 }
@@ -102,6 +134,7 @@ serve(async (req) => {
     const useSfdId = sfdId || client.sfd_id;
 
     if (!useSfdId) {
+      console.error("SFD ID is required");
       return new Response(
         JSON.stringify({ error: "SFD ID is required" }),
         { headers: corsHeaders, status: 400 }
@@ -112,10 +145,11 @@ serve(async (req) => {
     const { data: existingAccount, error: accountError } = await supabaseAdmin
       .from('accounts')
       .select('*')
-      .eq('user_id', client.user_id)
+      .eq('user_id', userId)
       .maybeSingle();
 
     if (accountError) {
+      console.error("Error checking existing accounts:", accountError);
       return new Response(
         JSON.stringify({ error: "Error checking existing accounts", details: accountError }),
         { headers: corsHeaders, status: 500 }
@@ -124,6 +158,7 @@ serve(async (req) => {
 
     // If account exists, return it
     if (existingAccount) {
+      console.log("Savings account already exists:", existingAccount);
       return new Response(
         JSON.stringify({ 
           success: true, 
@@ -136,10 +171,11 @@ serve(async (req) => {
     }
 
     // Create new savings account
+    console.log("Creating new savings account for user:", userId);
     const { data: newAccount, error: createError } = await supabaseAdmin
       .from('accounts')
       .insert({
-        user_id: client.user_id,
+        user_id: userId,
         balance: 0,
         currency: 'FCFA',
         sfd_id: useSfdId
@@ -148,12 +184,14 @@ serve(async (req) => {
       .single();
 
     if (createError) {
+      console.error("Failed to create savings account:", createError);
       return new Response(
         JSON.stringify({ error: "Failed to create savings account", details: createError }),
         { headers: corsHeaders, status: 500 }
       );
     }
 
+    console.log("Successfully created savings account:", newAccount);
     return new Response(
       JSON.stringify({
         success: true,

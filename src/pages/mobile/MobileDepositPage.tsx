@@ -1,116 +1,91 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { ArrowLeft, Wallet } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogTrigger } from '@/components/ui/dialog';
-import { ArrowLeft, Smartphone, QrCode } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Label } from '@/components/ui/label';
 import { useAuth } from '@/hooks/useAuth';
-import { useTransactionOperations } from '@/hooks/transactions/useTransactionOperations';
-import { MobileMoneyTab } from '@/components/mobile/secure-payment/MobileMoneyTab';
-import QRCodeScannerDialog from '@/components/mobile/secure-payment/QRCodeScannerDialog';
-import { useMobileMoneyOperations } from '@/hooks/mobile-money';
+import { useToast } from '@/hooks/use-toast';
+import { formatCurrency } from '@/utils/formatters';
+import { useTransactions } from '@/hooks/transactions';
+import FundsBalanceSection from '@/components/mobile/funds-management/FundsBalanceSection';
+import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 
 const MobileDepositPage: React.FC = () => {
   const navigate = useNavigate();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
-  const { user } = useAuth();
-  const { makeDeposit } = useTransactionOperations(user?.id);
-  const { processPayment } = useMobileMoneyOperations();
+  const { accounts, isLoading } = useSfdAccounts();
+  const [amount, setAmount] = useState<number>(0);
+  const [description, setDescription] = useState<string>('');
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const { makeDeposit, getBalance } = useTransactions(user?.id, activeSfdId);
+  const [balance, setBalance] = useState<number>(0);
+  const [selectedSfd, setSelectedSfd] = useState<string>(activeSfdId || 'all');
   
-  const [amount, setAmount] = useState(5000);
-  const [depositMethod, setDepositMethod] = useState<'sfd' | 'mobile_money'>('sfd');
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed' | null>(null);
-  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
-  const [phoneNumber, setPhoneNumber] = useState('');
-  const [provider, setProvider] = useState('orange');
-  
-  const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    if (!isNaN(value)) {
-      setAmount(value);
-    } else {
-      setAmount(0);
-    }
-  };
-  
-  const handlePayment = async () => {
-    if (amount <= 0) {
+  useEffect(() => {
+    const loadBalance = async () => {
+      if (user?.id && activeSfdId) {
+        try {
+          const currentBalance = await getBalance();
+          setBalance(currentBalance);
+        } catch (error) {
+          console.error('Failed to load balance:', error);
+        }
+      }
+    };
+    
+    loadBalance();
+  }, [user?.id, activeSfdId, getBalance]);
+
+  const handleDeposit = async () => {
+    if (!user?.id || !activeSfdId) {
       toast({
-        title: "Montant invalide",
-        description: "Le montant doit être supérieur à 0",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Vous devez être connecté pour effectuer un dépôt',
+        variant: 'destructive',
       });
       return;
     }
-    
-    setPaymentStatus('pending');
-    
+
+    if (amount <= 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Le montant doit être supérieur à 0',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsSubmitting(true);
+
     try {
-      if (depositMethod === 'mobile_money') {
-        // Process mobile money payment
-        const success = await processPayment(phoneNumber, amount, provider);
-        
-        if (success) {
-          // Record the deposit
-          await makeDeposit(amount, "Dépôt via Mobile Money", "mobile_money");
-          
-          setPaymentStatus('success');
-          toast({
-            title: "Dépôt réussi",
-            description: `Votre dépôt de ${amount} FCFA a été enregistré.`,
-          });
-          
-          // Redirect after a short delay
-          setTimeout(() => {
-            navigate('/mobile-flow/savings');
-          }, 2000);
-        } else {
-          setPaymentStatus('failed');
-          toast({
-            title: "Échec du dépôt",
-            description: "Veuillez réessayer ou contacter le support.",
-            variant: "destructive",
-          });
-        }
+      const transaction = await makeDeposit(amount, description || 'Dépôt mobile');
+      
+      if (transaction) {
+        toast({
+          title: 'Dépôt effectué',
+          description: `Vous avez déposé ${formatCurrency(amount)} FCFA sur votre compte`,
+          variant: 'default',
+        });
+        navigate('/mobile-flow/savings');
       } else {
-        // For SFD deposit, we'll open the QR scanner dialog
-        setIsQRScannerOpen(true);
-        setPaymentStatus(null);
+        toast({
+          title: 'Erreur',
+          description: 'Le dépôt a échoué, veuillez réessayer',
+          variant: 'destructive',
+        });
       }
     } catch (error: any) {
-      setPaymentStatus('failed');
       toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors du traitement",
-        variant: "destructive",
+        title: 'Erreur',
+        description: error.message || 'Une erreur est survenue lors du dépôt',
+        variant: 'destructive',
       });
-    }
-  };
-  
-  const handleQRScanSuccess = async (transactionData: any) => {
-    try {
-      // Record the deposit
-      await makeDeposit(amount, "Dépôt en agence SFD", "agency_qr");
-      
-      setPaymentStatus('success');
-      toast({
-        title: "Dépôt réussi",
-        description: `Votre dépôt de ${amount} FCFA a été enregistré.`,
-      });
-      
-      // Redirect after a short delay
-      setTimeout(() => {
-        navigate('/mobile-flow/savings');
-      }, 2000);
-    } catch (error: any) {
-      console.error('Error processing deposit:', error);
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'enregistrement du dépôt",
-        variant: "destructive",
-      });
+    } finally {
+      setIsSubmitting(false);
     }
   };
   
@@ -127,117 +102,63 @@ const MobileDepositPage: React.FC = () => {
         <h1 className="text-xl font-semibold">Dépôt</h1>
       </div>
       
-      <div className="p-4 space-y-6">
-        {/* Deposit amount section */}
-        <div className="bg-blue-50 rounded-lg p-4">
-          <h2 className="text-lg font-semibold mb-4">Détails du dépôt</h2>
-          <div className="space-y-2">
-            <label htmlFor="amount" className="block text-sm font-medium">
-              Montant du dépôt
-            </label>
-            <div className="flex">
-              <Input
-                id="amount"
-                type="number"
-                value={amount}
-                onChange={handleAmountChange}
-                className="rounded-r-none"
-              />
-              <div className="bg-gray-100 px-3 flex items-center rounded-r-md border-y border-r">
-                <span className="text-gray-500">FCFA</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      <div className="p-4">
+        <FundsBalanceSection 
+          balance={balance}
+          isRefreshing={isLoading}
+          sfdAccounts={accounts}
+          onSelectSfd={(sfdId) => setSelectedSfd(sfdId)}
+          selectedSfd={selectedSfd}
+        />
         
-        {/* Payment method selection */}
-        <div className="grid grid-cols-2 gap-2">
-          <Button
-            variant={depositMethod === 'sfd' ? 'default' : 'outline'}
-            className={`flex gap-2 ${depositMethod === 'sfd' ? 'bg-primary' : ''}`}
-            onClick={() => setDepositMethod('sfd')}
-          >
-            <QrCode className="h-5 w-5" />
-            <span>SFD</span>
-          </Button>
-          
-          <Button
-            variant={depositMethod === 'mobile_money' ? 'default' : 'outline'}
-            className={`flex gap-2 ${depositMethod === 'mobile_money' ? 'bg-primary' : ''}`}
-            onClick={() => setDepositMethod('mobile_money')}
-          >
-            <Smartphone className="h-5 w-5" />
-            <span>Mobile Money</span>
-          </Button>
-        </div>
-        
-        {/* Payment method specific UI */}
-        <div className="bg-white rounded-lg shadow-sm p-4">
-          {depositMethod === 'mobile_money' ? (
-            <MobileMoneyTab 
-              paymentStatus={paymentStatus}
-              handlePayment={handlePayment}
-              isWithdrawal={false}
-            />
-          ) : (
+        <Card className="mt-6">
+          <CardContent className="pt-6">
             <div className="space-y-4">
-              <h3 className="text-lg font-medium">Paiement en agence SFD</h3>
-              <p className="text-sm text-gray-600">
-                Rendez-vous en agence SFD avec le QR code pour effectuer votre dépôt.
-              </p>
+              <div className="space-y-2">
+                <Label htmlFor="amount">Montant à déposer (FCFA)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  min="0"
+                  step="1000"
+                  value={amount}
+                  onChange={(e) => setAmount(Number(e.target.value))}
+                  placeholder="0"
+                  className="text-lg"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="description">Description (optionnel)</Label>
+                <Input
+                  id="description"
+                  value={description}
+                  onChange={(e) => setDescription(e.target.value)}
+                  placeholder="Motif du dépôt"
+                />
+              </div>
+              
               <Button 
-                className="w-full flex items-center justify-center gap-2"
-                onClick={() => setIsQRScannerOpen(true)}
+                className="w-full bg-green-600 hover:bg-green-700 mt-4" 
+                onClick={handleDeposit}
+                disabled={isSubmitting || amount <= 0}
               >
-                <QrCode className="h-4 w-4" />
-                Scanner le code QR
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2"></span>
+                    Traitement...
+                  </span>
+                ) : (
+                  <>
+                    <Wallet className="mr-2 h-4 w-4" /> 
+                    Effectuer le dépôt
+                  </>
+                )}
               </Button>
             </div>
-          )}
-        </div>
-        
-        {/* Payment status */}
-        {paymentStatus === 'success' && (
-          <div className="bg-green-50 p-4 rounded-lg border border-green-200">
-            <h3 className="font-semibold text-green-800 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-              </svg>
-              Dépôt réussi
-            </h3>
-            <p className="text-sm text-green-700 mt-1">
-              Votre dépôt de {amount} FCFA a été effectué avec succès.
-            </p>
-          </div>
-        )}
-        
-        {paymentStatus === 'failed' && (
-          <div className="bg-red-50 p-4 rounded-lg border border-red-200">
-            <h3 className="font-semibold text-red-800 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-              Échec du dépôt
-            </h3>
-            <p className="text-sm text-red-700 mt-1">
-              Une erreur est survenue lors du traitement de votre dépôt. Veuillez réessayer.
-            </p>
-            <Button className="mt-2 w-full" onClick={handlePayment}>
-              Réessayer
-            </Button>
-          </div>
-        )}
+          </CardContent>
+        </Card>
       </div>
-      
-      {/* QR Code Scanner Dialog */}
-      <Dialog open={isQRScannerOpen} onOpenChange={setIsQRScannerOpen}>
-        <DialogTrigger className="hidden">Scan QR Code</DialogTrigger>
-        <QRCodeScannerDialog 
-          onClose={() => setIsQRScannerOpen(false)} 
-          onSuccess={handleQRScanSuccess}
-          isWithdrawal={false} 
-        />
-      </Dialog>
     </div>
   );
 };
