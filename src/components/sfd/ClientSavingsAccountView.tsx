@@ -12,9 +12,10 @@ import { NotificationsOverlay } from '@/components/mobile/NotificationsOverlay';
 interface ClientSavingsAccountViewProps {
   clientId: string;
   clientName: string;
+  sfdId?: string; // Added sfdId as an optional prop
 }
 
-const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ clientId, clientName }) => {
+const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ clientId, clientName, sfdId }) => {
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
   
   const {
