@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { savingsAccountService } from '@/services/savings/savingsAccountService';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
+import { PiggyBank } from 'lucide-react';
 
 interface ClientBankAccountTabProps {
   client: any;
@@ -80,6 +81,10 @@ export const ClientBankAccountTab: React.FC<ClientBankAccountTabProps> = ({ clie
     setIsDialogOpen(false);
   };
 
+  const handleCreateAccountManually = () => {
+    handleEnsureSavingsAccount();
+  };
+
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
@@ -87,6 +92,23 @@ export const ClientBankAccountTab: React.FC<ClientBankAccountTabProps> = ({ clie
           clientId={client.id} 
           clientName={client.full_name || 'Client'} 
         />
+        
+        {/* Ajout du bouton de création de compte si nécessaire */}
+        {client && !client.user_id && (
+          <Card>
+            <CardContent className="pt-6 text-center">
+              <p className="mb-4">Le client n'a pas encore de compte utilisateur associé</p>
+              <Button
+                onClick={handleCreateAccountManually}
+                disabled={isLoading}
+                className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+              >
+                <PiggyBank className="mr-2 h-4 w-4" />
+                {isLoading ? 'Création en cours...' : 'Créer un compte d\'épargne'}
+              </Button>
+            </CardContent>
+          </Card>
+        )}
       </div>
       
       <ClientTransactionHistory clientId={client.id} />

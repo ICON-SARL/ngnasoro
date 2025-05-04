@@ -40,7 +40,7 @@ serve(async (req) => {
     if (!userId) {
       console.error("User ID is required");
       return new Response(
-        JSON.stringify({ error: "User ID is required" }),
+        JSON.stringify({ error: "User ID is required", success: false }),
         { headers: corsHeaders, status: 400 }
       );
     }
@@ -48,7 +48,7 @@ serve(async (req) => {
     if (!amount || amount <= 0) {
       console.error("Amount must be greater than 0");
       return new Response(
-        JSON.stringify({ error: "Amount must be greater than 0" }),
+        JSON.stringify({ error: "Amount must be greater than 0", success: false }),
         { headers: corsHeaders, status: 400 }
       );
     }
@@ -56,7 +56,7 @@ serve(async (req) => {
     if (transactionType !== 'deposit' && transactionType !== 'withdrawal') {
       console.error("Invalid transaction type");
       return new Response(
-        JSON.stringify({ error: "Transaction type must be 'deposit' or 'withdrawal'" }),
+        JSON.stringify({ error: "Transaction type must be 'deposit' or 'withdrawal'", success: false }),
         { headers: corsHeaders, status: 400 }
       );
     }
@@ -71,7 +71,7 @@ serve(async (req) => {
     if (accountError || !account) {
       console.error("Account not found:", accountError);
       return new Response(
-        JSON.stringify({ error: "Account not found" }),
+        JSON.stringify({ error: "Account not found", success: false }),
         { headers: corsHeaders, status: 404 }
       );
     }
@@ -80,7 +80,7 @@ serve(async (req) => {
     if (transactionType === 'withdrawal' && account.balance < amount) {
       console.error("Insufficient balance for withdrawal");
       return new Response(
-        JSON.stringify({ error: "Insufficient balance for withdrawal" }),
+        JSON.stringify({ error: "Insufficient balance for withdrawal", success: false }),
         { headers: corsHeaders, status: 400 }
       );
     }
@@ -107,7 +107,7 @@ serve(async (req) => {
     if (transactionError) {
       console.error("Failed to create transaction:", transactionError);
       return new Response(
-        JSON.stringify({ error: "Failed to create transaction" }),
+        JSON.stringify({ error: "Failed to create transaction", success: false }),
         { headers: corsHeaders, status: 500 }
       );
     }
@@ -128,7 +128,7 @@ serve(async (req) => {
     if (updateError) {
       console.error("Failed to update account balance:", updateError);
       return new Response(
-        JSON.stringify({ error: "Failed to update account balance" }),
+        JSON.stringify({ error: "Failed to update account balance", success: false }),
         { headers: corsHeaders, status: 500 }
       );
     }
@@ -188,7 +188,7 @@ serve(async (req) => {
   } catch (error) {
     console.error("Error in process-account-transaction function:", error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error.message, success: false }),
       { headers: corsHeaders, status: 500 }
     );
   }

@@ -17,6 +17,7 @@ serve(async (req) => {
 
   try {
     console.log("Starting ensure-client-savings function");
+
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL") ?? "",
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? ""
@@ -25,186 +26,172 @@ serve(async (req) => {
     const { clientId, sfdId } = await req.json();
     console.log("Request params:", { clientId, sfdId });
 
-    if (!clientId) {
-      console.error("Client ID is required");
+    if (!clientId || !sfdId) {
       return new Response(
-        JSON.stringify({ error: "Client ID is required" }),
+        JSON.stringify({
+          success: false,
+          error: "Client ID and SFD ID are required",
+        }),
         { headers: corsHeaders, status: 400 }
       );
     }
 
-    // Get client details including user_id
+    // 1. Get the client details to find user_id
     const { data: client, error: clientError } = await supabaseAdmin
-      .from('sfd_clients')
-      .select('*')
-      .eq('id', clientId)
+      .from("sfd_clients")
+      .select("*")
+      .eq("id", clientId)
       .single();
 
     if (clientError || !client) {
-      console.error("Client not found:", clientError);
+      console.error("Error fetching client:", clientError);
       return new Response(
-        JSON.stringify({ error: "Client not found", details: clientError }),
+        JSON.stringify({
+          success: false,
+          error: "Client not found",
+        }),
         { headers: corsHeaders, status: 404 }
       );
     }
 
     console.log("Client found:", client);
 
-    // If client doesn't have a user_id, create one
-    let userId = client.user_id;
-    
-    if (!userId) {
-      console.log("No user_id found, looking up or creating user");
+    // 2. Check if the client already has a user account
+    if (!client.user_id) {
+      console.log("Client does not have a user_id, attempting to create a user account");
       
-      // Try to find an existing user by email
-      if (client.email) {
-        const { data: userProfile } = await supabaseAdmin
-          .from('profiles')
-          .select('id')
-          .ilike('email', client.email)
-          .maybeSingle();
-          
-        if (userProfile) {
-          console.log("Found user by email:", userProfile.id);
-          userId = userProfile.id;
-          
-          // Update client with found user_id
-          await supabaseAdmin
-            .from('sfd_clients')
-            .update({ user_id: userId })
-            .eq('id', clientId);
-            
-          console.log("Updated client with user_id");
-        }
-      }
-      
-      // If still no user_id, create a new user
-      if (!userId) {
-        console.log("Creating new user for client");
-        const tempPassword = Math.random().toString(36).substring(2, 12) + Math.random().toString(36).substring(2, 12).toUpperCase();
-        
-        if (!client.email) {
-          console.error("Client email is required to create user account");
-          return new Response(
-            JSON.stringify({ error: "Client email is required to create user account" }),
-            { headers: corsHeaders, status: 400 }
-          );
-        }
-        
-        const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.createUser({
-          email: client.email,
-          password: tempPassword,
+      // Call function to create or link user account
+      // This would normally be a separate Edge Function, but simplified here
+      const { data: userData, error: userError } = await supabaseAdmin
+        .auth.admin.createUser({
+          email: client.email || `client-${clientId}@example.com`,
           email_confirm: true,
           user_metadata: {
             full_name: client.full_name,
-            phone: client.phone
+            phone: client.phone,
+            client_id: client.id
+          },
+          app_metadata: {
+            role: "client"
           }
         });
-        
-        if (authError || !authUser.user) {
-          console.error("Failed to create user account:", authError);
-          return new Response(
-            JSON.stringify({ error: "Failed to create user account", details: authError }),
-            { headers: corsHeaders, status: 500 }
-          );
-        }
-        
-        userId = authUser.user.id;
-        console.log("Created new user with ID:", userId);
-        
-        // Update client with new user_id
-        await supabaseAdmin
-          .from('sfd_clients')
-          .update({ user_id: userId })
-          .eq('id', clientId);
-          
-        console.log("Updated client with new user_id");
+
+      if (userError) {
+        console.error("Error creating user account:", userError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Failed to create user account",
+          }),
+          { headers: corsHeaders, status: 500 }
+        );
       }
-    }
-    
-    if (!userId) {
-      console.error("Unable to get or create user_id for client");
-      return new Response(
-        JSON.stringify({ error: "Cannot create savings account without a user account" }),
-        { headers: corsHeaders, status: 400 }
-      );
-    }
 
-    // Use provided sfdId or the one from the client record
-    const useSfdId = sfdId || client.sfd_id;
+      // Link the user_id to the client record
+      const { error: updateError } = await supabaseAdmin
+        .from("sfd_clients")
+        .update({ user_id: userData.user.id })
+        .eq("id", clientId);
 
-    if (!useSfdId) {
-      console.error("SFD ID is required");
-      return new Response(
-        JSON.stringify({ error: "SFD ID is required" }),
-        { headers: corsHeaders, status: 400 }
-      );
-    }
+      if (updateError) {
+        console.error("Error linking user to client:", updateError);
+        return new Response(
+          JSON.stringify({
+            success: false,
+            error: "Failed to link user to client",
+          }),
+          { headers: corsHeaders, status: 500 }
+        );
+      }
 
-    // Check if savings account already exists
-    const { data: existingAccount, error: accountError } = await supabaseAdmin
-      .from('accounts')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (accountError) {
-      console.error("Error checking existing accounts:", accountError);
-      return new Response(
-        JSON.stringify({ error: "Error checking existing accounts", details: accountError }),
-        { headers: corsHeaders, status: 500 }
-      );
+      client.user_id = userData.user.id;
     }
 
-    // If account exists, return it
-    if (existingAccount) {
-      console.log("Savings account already exists:", existingAccount);
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          message: "Savings account already exists",
-          account: existingAccount,
-          accountExists: true
-        }),
-        { headers: corsHeaders, status: 200 }
-      );
+    // 3. Check if savings account already exists
+    try {
+      const { data: existingAccounts, error: accountsError } = await supabaseAdmin
+        .from("accounts")
+        .select("*")
+        .eq("user_id", client.user_id)
+        .eq("sfd_id", sfdId);
+
+      if (accountsError) {
+        throw accountsError;
+      }
+
+      if (existingAccounts && existingAccounts.length > 0) {
+        console.log("Savings account already exists:", existingAccounts[0]);
+        return new Response(
+          JSON.stringify({
+            success: true,
+            accountExists: true,
+            account: existingAccounts[0],
+          }),
+          { headers: corsHeaders, status: 200 }
+        );
+      }
+    } catch (error) {
+      console.error("Error checking existing accounts:", error);
+      // Continue with account creation as it might just be a query error
     }
 
-    // Create new savings account
-    console.log("Creating new savings account for user:", userId);
-    const { data: newAccount, error: createError } = await supabaseAdmin
-      .from('accounts')
+    // 4. Create savings account
+    const { data: account, error: createError } = await supabaseAdmin
+      .from("accounts")
       .insert({
-        user_id: userId,
+        user_id: client.user_id,
         balance: 0,
-        currency: 'FCFA',
-        sfd_id: useSfdId
+        currency: "FCFA",
+        sfd_id: sfdId,
       })
       .select()
       .single();
 
     if (createError) {
-      console.error("Failed to create savings account:", createError);
+      console.error("Error creating savings account:", createError);
       return new Response(
-        JSON.stringify({ error: "Failed to create savings account", details: createError }),
+        JSON.stringify({
+          success: false,
+          error: "Failed to create savings account",
+        }),
         { headers: corsHeaders, status: 500 }
       );
     }
 
-    console.log("Successfully created savings account:", newAccount);
+    console.log("Created savings account:", account);
+    
+    // 5. Create audit log
+    await supabaseAdmin
+      .from("audit_logs")
+      .insert({
+        action: "create_savings_account",
+        category: "ACCOUNT_MANAGEMENT",
+        status: "success",
+        severity: "info",
+        target_resource: `accounts/${account.id}`,
+        details: {
+          account_id: account.id,
+          user_id: client.user_id,
+          client_id: clientId,
+          sfd_id: sfdId,
+        },
+      });
+
     return new Response(
       JSON.stringify({
         success: true,
-        message: "Savings account created successfully",
-        account: newAccount,
-        accountExists: false
+        accountExists: false,
+        account,
       }),
-      { headers: corsHeaders, status: 201 }
+      { headers: corsHeaders, status: 200 }
     );
-  } catch (error) {
-    console.error("Error in ensure-client-savings function:", error);
+  } catch (err) {
+    console.error("Unexpected error:", err);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({
+        success: false,
+        error: err.message,
+      }),
       { headers: corsHeaders, status: 500 }
     );
   }
