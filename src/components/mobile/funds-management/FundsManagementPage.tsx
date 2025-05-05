@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -16,6 +15,7 @@ import AvailableChannels from './AvailableChannels';
 import TransactionList, { TransactionListItem } from '../TransactionList';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { supabase } from '@/integrations/supabase/client';
+import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 const FundsManagementPage = () => {
   const navigate = useNavigate();
@@ -37,6 +37,24 @@ const FundsManagementPage = () => {
   const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
   
   const { dashboardData, refreshDashboardData } = useMobileDashboard();
+
+  // Map SfdClientAccount array to SfdAccountDisplay array
+  const mapToSfdAccountDisplay = useCallback((accounts) => {
+    return accounts.map(acc => ({
+      id: acc.id,
+      name: acc.name || acc.description || `Account ${acc.account_type || ''}`,
+      balance: acc.balance || 0,
+      currency: acc.currency || 'FCFA',
+      code: acc.code || '',
+      region: acc.region || '',
+      logo_url: acc.logoUrl || acc.logo_url,
+      is_default: acc.isDefault || false,
+      isVerified: acc.isVerified !== false,
+      isActive: acc.id === selectedSfd,
+      status: acc.status || 'active',
+      description: acc.description || acc.name
+    }));
+  }, [selectedSfd]);
 
   // Subscribe to account changes
   useEffect(() => {
@@ -175,7 +193,7 @@ const FundsManagementPage = () => {
           <FundsBalanceSection 
             balance={totalBalance}
             isRefreshing={isRefreshing || isSyncing}
-            sfdAccounts={sfdAccounts}
+            sfdAccounts={mapToSfdAccountDisplay(sfdAccounts)}
             onSelectSfd={handleSfdSelection}
             selectedSfd={selectedSfd}
           />

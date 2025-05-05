@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { formatCurrency } from '@/utils/formatters';
 import { useTransactions } from '@/hooks/transactions';
 import FundsBalanceSection from '@/components/mobile/funds-management/FundsBalanceSection';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 const MobileDepositPage: React.FC = () => {
   const navigate = useNavigate();
@@ -24,6 +24,24 @@ const MobileDepositPage: React.FC = () => {
   const { makeDeposit, getBalance } = useTransactions(user?.id, activeSfdId);
   const [balance, setBalance] = useState<number>(0);
   const [selectedSfd, setSelectedSfd] = useState<string>(activeSfdId || 'all');
+  
+  // Map the accounts to SfdAccountDisplay type
+  const mapToSfdAccountDisplay = (accounts): SfdAccountDisplay[] => {
+    return accounts.map(acc => ({
+      id: acc.id,
+      name: acc.description || acc.account_type || 'Account',
+      balance: acc.balance || 0,
+      currency: acc.currency || 'FCFA',
+      code: '',
+      region: '',
+      logo_url: null,
+      is_default: false,
+      isVerified: true,
+      isActive: acc.sfd_id === selectedSfd,
+      status: acc.status || 'active',
+      description: acc.description || ''
+    }));
+  };
   
   useEffect(() => {
     const loadBalance = async () => {
@@ -106,7 +124,7 @@ const MobileDepositPage: React.FC = () => {
         <FundsBalanceSection 
           balance={balance}
           isRefreshing={isLoading}
-          sfdAccounts={accounts}
+          sfdAccounts={mapToSfdAccountDisplay(accounts)}
           onSelectSfd={(sfdId) => setSelectedSfd(sfdId)}
           selectedSfd={selectedSfd}
         />
