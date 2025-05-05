@@ -1,85 +1,36 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { SyncResult, LoanPaymentParams } from './types';
 
-/**
- * Processes a loan payment
- */
+// Process loan payment via the Edge Function
 export async function processLoanPayment(
-  userId: string, 
-  activeSfdId: string, 
-  params: LoanPaymentParams
-): Promise<SyncResult> {
-  if (!userId || !activeSfdId) {
-    throw new Error('User or active SFD not set');
-  }
-  
-  // Add a transaction record
-  const { apiClient } = await import('@/utils/apiClient');
-  await apiClient.callEdgeFunction('process-repayment', {
-    userId: userId,
-    sfdId: activeSfdId,
-    loanId: params.loanId,
-    amount: params.amount,
-    paymentMethod: params.paymentMethod
-  });
-  
-  return { 
-    success: true,
-    message: 'Payment processed successfully',
-    updates: [{
-      sfdId: activeSfdId,
-      name: 'SFD Account',
-      newBalance: 0 // The actual balance will be updated during sync
-    }]
-  };
-}
-
-/**
- * Processes a mobile money payment
- */
-export async function processMobileMoneyPayment(
-  userId: string,
-  phoneNumber: string,
+  loanId: string, 
   amount: number,
-  provider: string,
-  isRepayment: boolean = false,
-  loanId?: string
+  paymentMethod: string = 'mobile_money',
+  description?: string
 ): Promise<SyncResult> {
-  if (!userId) {
-    throw new Error('Utilisateur non connecté');
-  }
-  
   try {
-    const { apiClient } = await import('@/utils/apiClient');
-    const payload: any = {
-      userId,
-      phoneNumber,
-      amount,
-      provider,
-      isRepayment
-    };
+    const { data, error } = await supabase.functions.invoke('process-repayment', {
+      body: {
+        loanId,
+        amount,
+        paymentMethod,
+        description: description || 'Remboursement de prêt'
+      }
+    });
     
-    if (isRepayment && loanId) {
-      payload.loanId = loanId;
-    }
+    if (error) throw error;
     
-    const response = await apiClient.callEdgeFunction('mobile-money-payment', payload);
-    
-    if (!response || !response.success) {
-      throw new Error(response?.message || 'Échec du paiement mobile money');
-    }
-    
-    return { 
+    return {
       success: true,
-      message: 'Paiement mobile money initié avec succès',
-      updates: [{
-        sfdId: 'mobile-money',
-        name: 'Mobile Money',
-        newBalance: 0 // Mobile money doesn't directly update SFD balance
-      }]
+      message: 'Paiement traité avec succès'
     };
   } catch (error: any) {
-    console.error('Failed to process mobile money payment:', error);
-    throw new Error(typeof error === 'string' ? error : error.message || 'Échec du paiement mobile money');
+    console.error('Error processing loan payment:', error);
+    return {
+      success: false,
+      error,
+      message: error.message || 'Une erreur est survenue lors du traitement du paiement'
+    };
   }
 }

@@ -8,6 +8,7 @@ export interface SfdData {
   logo_url?: string;
   description?: string;
   settings?: Record<string, any>;
+  token?: string; // Added token property
 }
 
 export interface SfdBalanceData {
@@ -26,7 +27,7 @@ export interface SfdLoan {
 export interface SfdAccount {
   id: string;
   name: string;
-  description?: string; // Added this property
+  description?: string;
   logoUrl?: string | null;
   code?: string;
   region?: string;
@@ -34,7 +35,7 @@ export interface SfdAccount {
   currency?: string;
   isDefault?: boolean;
   isVerified?: boolean;
-  status?: string; // Added this property
+  status?: string;
   loans?: SfdLoan[];
   sfd_id?: string;
   account_type?: string;
@@ -43,6 +44,22 @@ export interface SfdAccount {
 }
 
 export interface SfdClientAccount extends SfdAccount {
-  description?: string; // Added this property for components that need it
-  status?: string; // Added this property for components that need it
+  description?: string;
+  status?: string;
+}
+
+// Add missing types
+export interface SyncResult {
+  success: boolean;
+  message?: string;
+  syncedAccounts?: SfdAccount[];
+  error?: any;
+}
+
+export interface LoanPaymentParams {
+  loanId: string;
+  amount: number;
+  paymentMethod: string;
+  description?: string;
+  reference?: string;
 }

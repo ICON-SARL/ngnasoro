@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SfdBalanceData, SfdData, SfdLoan } from '@/hooks/sfd/types';
 
@@ -65,18 +64,24 @@ export const sfdApi = {
   /**
    * Get list of all SFDs
    */
-  getSfdsList: async (): Promise<SfdData[]> => {
+  getSfds: async (): Promise<SfdData[]> => {
     try {
       const { data, error } = await supabase
         .from('sfds')
         .select('*')
-        .order('created_at', { ascending: false });
+        .order('name');
       
       if (error) throw error;
       
-      return data || [];
+      // Transform the settings field to ensure it's treated as Record<string, any>
+      return data.map((sfd: any) => ({
+        ...sfd,
+        settings: typeof sfd.settings === 'string' 
+          ? JSON.parse(sfd.settings)
+          : sfd.settings
+      })) as SfdData[];
     } catch (error) {
-      console.error('Error fetching SFDs list:', error);
+      console.error('Error fetching SFDs:', error);
       return [];
     }
   },

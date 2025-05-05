@@ -5,7 +5,7 @@ import { sfdAccountService } from '@/services/sfdAccountService';
 import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { SfdClientAccount } from '@/hooks/sfd/types';
+import { SfdClientAccount, LoanPaymentParams } from '@/hooks/sfd/types';
 
 export interface SfdLoanPaymentParams {
   loanId: string;
@@ -106,7 +106,7 @@ export function useSfdAccounts(sfdId?: string) {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
-      description: acc.description || `Compte ${acc.account_type}`,  // Added this property
+      description: acc.description || `Compte ${acc.account_type}`,
       logoUrl: null,
       code: '',
       region: '',
@@ -114,7 +114,7 @@ export function useSfdAccounts(sfdId?: string) {
       currency: acc.currency,
       isDefault: false,
       isVerified: true,
-      status: acc.status || 'active',  // Added this property
+      status: acc.status || 'active',
       sfd_id: acc.sfd_id,
       account_type: acc.account_type,
       created_at: acc.created_at,
@@ -129,13 +129,13 @@ export function useSfdAccounts(sfdId?: string) {
   const activeSfdAccount = accounts.length > 0 ? {
     id: effectiveSfdId || accounts[0].sfd_id,
     name: 'SFD Account',
-    description: 'Main SFD Account',  // Added description property
+    description: 'Main SFD Account',
     logoUrl: null,
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
     currency: accounts[0]?.currency || 'FCFA',
     isDefault: true,
     isVerified: true,
-    status: 'active',  // Added status property
+    status: 'active',
     loans: [],
     sfd_id: effectiveSfdId || accounts[0].sfd_id,
     account_type: '',
@@ -155,9 +155,9 @@ export function useSfdAccounts(sfdId?: string) {
     repaymentAccount,
     savingsAccount,
     transferFunds,
-    makeLoanPayment,  // Added this missing property
-    activeSfdAccount,  // Added this missing property
-    synchronizeBalances,  // Added this missing property
+    makeLoanPayment,
+    activeSfdAccount,
+    synchronizeBalances,
     refetchAccounts,
     refetchHistory,
     refetch: refetchAccounts,  // Alias for backward compatibility

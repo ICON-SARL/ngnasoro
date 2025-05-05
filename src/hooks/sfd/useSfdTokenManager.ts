@@ -1,74 +1,83 @@
+import { useState, useEffect } from 'react';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
+import { SfdData } from '@/hooks/sfd/types';
 
-import { useCallback } from 'react';
-import { 
-  generateSfdContextToken, 
-  refreshSfdContextToken, 
-  shouldRefreshSfdToken 
-} from '@/utils/sfdJwtContext';
-import { SfdData } from './types';
+interface SfdToken {
+  token: string;
+  expiresAt: number;
+}
 
-export function useSfdTokenManager(sfdData: SfdData[], setSfdData: React.Dispatch<React.SetStateAction<SfdData[]>>) {
-  // Generate a new token for a specific SFD
-  const generateTokenForSfd = useCallback(async (userId: string, sfdId: string): Promise<string | null> => {
-    if (!userId) return null;
+interface UseSfdTokenManagerReturn {
+  getToken: (sfdId: string) => Promise<string | null>;
+  refreshToken: (sfdId: string) => Promise<string | null>;
+  isLoading: boolean;
+  error: Error | null;
+}
+
+export function useSfdTokenManager(): UseSfdTokenManagerReturn {
+  const [tokens, setTokens] = useState<Record<string, SfdToken>>({});
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [error, setError] = useState<Error | null>(null);
+  const { user } = useAuth();
+
+  // Function to refresh the token for a specific SFD
+  const refreshToken = async (sfdId: string): Promise<string | null> => {
+    if (!user?.id) return null;
     
     try {
-      const token = await generateSfdContextToken(userId, sfdId);
+      setIsLoading(true);
+      setError(null);
       
-      // Update the token in our state
-      setSfdData(prev => prev.map(sfd => 
-        sfd.id === sfdId 
-          ? { ...sfd, token, lastFetched: new Date() } 
-          : sfd
-      ));
+      // Call an API or edge function to get a new token
+      const { data, error } = await supabase.functions.invoke('get-sfd-token', {
+        body: { sfdId, userId: user.id }
+      });
       
-      return token;
-    } catch (error) {
-      console.error('Error generating token:', error);
-      return null;
-    }
-  }, [setSfdData]);
-
-  // Refresh a token if needed
-  const refreshTokenIfNeeded = useCallback(async (userId: string, sfdId: string): Promise<string | null> => {
-    const sfd = sfdData.find(s => s.id === sfdId);
-    if (!sfd || !sfd.token) {
-      return generateTokenForSfd(userId, sfdId);
-    }
-    
-    try {
-      // Check if token needs refresh
-      const needsRefresh = await shouldRefreshSfdToken(sfd.token);
+      if (error) throw new Error(error.message);
       
-      if (needsRefresh) {
-        // Token needs refresh, get a new one
-        const refreshedToken = await refreshSfdContextToken(sfd.token);
-        
-        if (refreshedToken) {
-          // Update token in state
-          setSfdData(prev => prev.map(s => 
-            s.id === sfdId 
-              ? { ...s, token: refreshedToken, lastFetched: new Date() } 
-              : s
-          ));
-          
-          return refreshedToken;
-        } else {
-          // If refresh failed, generate a new token
-          return generateTokenForSfd(userId, sfdId);
-        }
+      if (!data?.sfd?.token) {
+        throw new Error('No token received from server');
       }
       
-      // Token is still valid
-      return sfd.token;
-    } catch (error) {
-      console.error('Error refreshing token:', error);
-      return generateTokenForSfd(userId, sfdId);
+      const newToken: SfdToken = {
+        token: data.sfd.token,
+        expiresAt: Date.now() + (data.expiresIn || 3600) * 1000
+      };
+      
+      setTokens(prev => ({
+        ...prev,
+        [sfdId]: newToken
+      }));
+      
+      return newToken.token;
+    } catch (err: any) {
+      const errorMessage = err.message || 'Failed to refresh token';
+      console.error(errorMessage);
+      setError(new Error(errorMessage));
+      return null;
+    } finally {
+      setIsLoading(false);
     }
-  }, [sfdData, generateTokenForSfd, setSfdData]);
+  };
+
+  // Function to get a token, refreshing if necessary
+  const getToken = async (sfdId: string): Promise<string | null> => {
+    const currentToken = tokens[sfdId];
+    
+    // If we have a valid token that hasn't expired, return it
+    if (currentToken && currentToken.token && currentToken.expiresAt > Date.now()) {
+      return currentToken.token;
+    }
+    
+    // Otherwise, refresh the token
+    return refreshToken(sfdId);
+  };
 
   return {
-    generateTokenForSfd,
-    refreshTokenIfNeeded
+    getToken,
+    refreshToken,
+    isLoading,
+    error
   };
 }

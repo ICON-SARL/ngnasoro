@@ -1,199 +1,61 @@
-import { useState } from 'react';
+
 import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/hooks/useAuth';
-import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
-import { LoanPaymentParams, SyncResult } from './types';
+import { SyncResult, LoanPaymentParams } from './types';
 
-export interface SfdAccount {
-  id: string;
-  name: string;
-  code: string;
-  region: string;
-  logoUrl: string | null;
-  isDefault: boolean;
-  balance: number;
-  currency: string;
-}
-
-/**
- * Synchronize accounts with SFD backend
- */
+// Function to synchronize accounts with the SFD API
 export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
   try {
-    const { data, error, success } = await edgeFunctionApi.callFunction('synchronize-sfd-accounts', {
-      userId,
-      forceSync: true
+    const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+      body: { userId }
     });
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
     return {
-      success: success || false,
-      message: data?.message || 'Synchronization completed',
-      updates: data?.updates || []
+      success: true,
+      syncedAccounts: data?.accounts || [],
+      message: 'Comptes synchronisés avec succès'
     };
   } catch (error: any) {
     console.error('Error synchronizing accounts:', error);
     return {
       success: false,
-      message: error.message || 'Failed to synchronize accounts',
-      updates: []
+      error,
+      message: error.message || 'Une erreur est survenue lors de la synchronisation'
     };
   }
 }
 
-/**
- * Process a loan payment
- */
+// Function to process a loan payment
 export async function processLoanPayment(
   userId: string,
   sfdId: string,
   params: LoanPaymentParams
-): Promise<SyncResult> {
+): Promise<{ success: boolean; message?: string }> {
   try {
-    const { data, error, success } = await edgeFunctionApi.callFunction('process-repayment', {
-      userId,
-      sfdId,
-      loanId: params.loanId,
-      amount: params.amount,
-      paymentMethod: params.paymentMethod
+    const { data, error } = await supabase.functions.invoke('process-repayment', {
+      body: {
+        userId,
+        sfdId,
+        loanId: params.loanId,
+        amount: params.amount,
+        paymentMethod: params.paymentMethod,
+        description: params.description,
+        reference: params.reference
+      }
     });
     
-    if (error) {
-      throw error;
-    }
+    if (error) throw error;
     
     return {
-      success: success || false,
-      message: data?.message || 'Payment processed successfully',
-      updates: data?.updates || []
+      success: true,
+      message: 'Paiement traité avec succès'
     };
   } catch (error: any) {
     console.error('Error processing loan payment:', error);
     return {
       success: false,
-      message: error.message || 'Failed to process payment',
-      updates: []
+      message: error.message || 'Une erreur est survenue lors du traitement du paiement'
     };
   }
-}
-
-export function useSfdAccountsApi() {
-  const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
-  const { user } = useAuth();
-
-  const getAccounts = async (): Promise<SfdAccount[]> => {
-    if (!user) return [];
-    
-    setIsLoading(true);
-    try {
-      const { data, error } = await edgeFunctionApi.callFunction('sfd-accounts', {
-        action: 'getSfdAccounts'
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data?.data || [];
-    } catch (error) {
-      console.error('Error fetching SFD accounts:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de récupérer vos comptes SFD',
-        variant: 'destructive',
-      });
-      return [];
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const requestSfdAccess = async (sfdId: string, phoneNumber?: string): Promise<boolean> => {
-    if (!user) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez être connecté pour effectuer cette action',
-        variant: 'destructive',
-      });
-      return false;
-    }
-    
-    setIsLoading(true);
-    try {
-      const { data, error } = await edgeFunctionApi.callFunction('sfd-accounts', {
-        action: 'requestSfdAccess',
-        data: {
-          sfdId,
-          phoneNumber
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      if (!data?.success) {
-        throw new Error(data?.message || 'Échec de la demande d\'accès');
-      }
-      
-      toast({
-        title: 'Demande envoyée',
-        description: 'Votre demande a été envoyée avec succès',
-      });
-      
-      return true;
-    } catch (error) {
-      console.error('Error requesting SFD access:', error);
-      toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible d\'envoyer votre demande',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const synchronizeAccounts = async (forceSync = false): Promise<boolean> => {
-    if (!user) return false;
-    
-    setIsLoading(true);
-    try {
-      const { data, error } = await edgeFunctionApi.callFunction('sfd-accounts', {
-        action: 'synchronizeSfdAccounts',
-        data: {
-          forceSync
-        }
-      });
-      
-      if (error) {
-        throw error;
-      }
-      
-      return data?.success || false;
-    } catch (error) {
-      console.error('Error synchronizing accounts:', error);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de synchroniser vos comptes',
-        variant: 'destructive',
-      });
-      return false;
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  return {
-    isLoading,
-    getAccounts,
-    requestSfdAccess,
-    synchronizeAccounts
-  };
 }

@@ -7,7 +7,11 @@ import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdId?: string | null) {
   const [displayAccounts, setDisplayAccounts] = useState<SfdAccountDisplay[]>([]);
   const { activeSfdId: authActiveSfdId } = useAuth();
-  const { accounts: hookAccounts, isLoading: hookIsLoading } = useSfdAccounts();
+  const { 
+    accounts: hookAccounts, 
+    isLoading: hookIsLoading,
+    refetchAccounts 
+  } = useSfdAccounts();
   
   // Determine effective SFD ID and accounts data
   const effectiveActiveSfdId = propsActiveSfdId !== undefined 
@@ -29,13 +33,13 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
       name: sfd.name || sfd.sfds?.name,
       description: sfd.description || sfd.name || sfd.sfds?.name,
       logo: sfd.logo_url || sfd.sfds?.logo_url,
-      logo_url: sfd.logo_url || sfd.sfds?.logo_url, // Added for compatibility
+      logo_url: sfd.logo_url || sfd.sfds?.logo_url,
       balance: sfd.balance || 0,
       currency: sfd.currency || 'FCFA',
       isActive: sfd.id === effectiveActiveSfdId || sfd.sfds?.id === effectiveActiveSfdId,
       is_default: sfd.is_default || false,
       isVerified: sfd.status === 'active' || true,
-      status: sfd.status || 'active' // Added for compatibility
+      status: sfd.status || 'active'
     }));
     
     setDisplayAccounts(formatted);
@@ -48,7 +52,7 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     }
     
     try {
-      await useSfdAccounts().refetchAccounts();
+      await refetchAccounts();
       return true;
     } catch (error) {
       console.error('Failed to refetch SFD accounts', error);
