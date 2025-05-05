@@ -1,56 +1,64 @@
 
-import { useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
-export default function useSfdAccountsData(
-  propsSfdData?: any[],
-  propsActiveSfdId?: string | null
-) {
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  logo?: string;
+  balance: number;
+  currency: string;
+  isActive: boolean;
+}
+
+export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdId?: string | null) {
+  const [displayAccounts, setDisplayAccounts] = useState<SfdAccountDisplay[]>([]);
   const { activeSfdId: authActiveSfdId } = useAuth();
-  const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
+  const { accounts: hookAccounts, isLoading: hookIsLoading } = useSfdAccounts();
   
-  const effectiveActiveSfdId = propsActiveSfdId !== undefined ? propsActiveSfdId : authActiveSfdId;
+  // Determine effective SFD ID and accounts data
+  const effectiveActiveSfdId = propsActiveSfdId !== undefined 
+    ? propsActiveSfdId 
+    : authActiveSfdId;
 
-  // Transform SfdData to SfdAccountDisplay
-  const transformSfdData = (data: any[]): SfdAccountDisplay[] => {
-    if (!data || !Array.isArray(data)) {
-      console.log('Invalid SFD data format:', data);
-      return [];
+  const effectiveSfdData = propsSfdData || hookAccounts;
+  const isLoading = hookIsLoading && !propsSfdData;
+  
+  useEffect(() => {
+    if (!effectiveSfdData) {
+      setDisplayAccounts([]);
+      return;
     }
     
-    return data.map(sfd => {
-      if (!sfd) return null;
-      
-      return {
-        id: sfd.id || '',
-        name: sfd.name || 'Nom inconnu',
-        balance: typeof sfd.balance === 'number' ? sfd.balance : 0,
-        currency: sfd.currency || 'FCFA',
-        code: sfd.code || '',
-        region: sfd.region || '',
-        logo_url: sfd.logoUrl || sfd.logo_url || null,
-        is_default: Boolean(sfd.isDefault || sfd.is_default),
-        isVerified: Boolean(sfd.isVerified || true),
-        status: sfd.status || 'active'
-      };
-    }).filter(Boolean);
+    // Transform accounts data to display format
+    const formatted = effectiveSfdData.map((sfd: any) => ({
+      id: sfd.id || sfd.sfds?.id,
+      name: sfd.name || sfd.sfds?.name,
+      logo: sfd.logo_url || sfd.sfds?.logo_url,
+      balance: sfd.balance || 0,
+      currency: sfd.currency || 'FCFA',
+      isActive: sfd.id === effectiveActiveSfdId || sfd.sfds?.id === effectiveActiveSfdId
+    }));
+    
+    setDisplayAccounts(formatted);
+  }, [effectiveSfdData, effectiveActiveSfdId]);
+  
+  // Function to refetch accounts data
+  const refetch = async () => {
+    if (propsSfdData) {
+      return; // No need to refetch when data is provided via props
+    }
+    
+    try {
+      await useSfdAccounts().refetch();
+      return true;
+    } catch (error) {
+      console.error('Failed to refetch SFD accounts', error);
+      return false;
+    }
   };
-
-  // Determine which data source to use
-  const displayAccounts = useMemo(() => {
-    if (propsSfdData && Array.isArray(propsSfdData) && propsSfdData.length > 0) {
-      return transformSfdData(propsSfdData);
-    }
-    
-    if (sfdAccounts && Array.isArray(sfdAccounts) && sfdAccounts.length > 0) {
-      return transformSfdData(sfdAccounts);
-    }
-    
-    return [];
-  }, [propsSfdData, sfdAccounts]);
-
+  
   return {
     displayAccounts,
     effectiveActiveSfdId,

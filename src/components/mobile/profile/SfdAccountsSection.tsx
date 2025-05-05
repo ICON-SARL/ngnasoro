@@ -9,6 +9,8 @@ import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
 import ErrorState from '../sfd-savings/ErrorState';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SfdAccountsSectionProps {
   sfdData?: any[];
@@ -29,6 +31,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const { sfdAccounts, refetch, synchronizeBalances } = useSfdAccounts();
   const { synchronizeWithSfd, isSyncing, syncError, retryCount } = useRealtimeSynchronization();
   const navigate = useNavigate();
+  const { user, activeSfdId } = useAuth();
 
   useEffect(() => {
     let isMounted = true;
@@ -50,6 +53,60 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       isMounted = false;
     };
   }, [synchronizeWithSfd, refetch]);
+
+  // Check if user is linked to an SFD on mount
+  useEffect(() => {
+    const checkSfdLinking = async () => {
+      if (!user?.id) return;
+      
+      try {
+        // Get user-SFD associations
+        const { data: userSfds, error } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', user.id);
+        
+        if (error) throw error;
+        
+        // If no SFD is linked and we have client info
+        if (!userSfds || userSfds.length === 0) {
+          console.log("No SFD associations found for user. Checking if user is a client...");
+          
+          // Check if user is a client in any SFD
+          const { data: clientData } = await supabase
+            .from('sfd_clients')
+            .select('id, sfd_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
+          if (clientData && clientData.sfd_id) {
+            console.log("Found client record with SFD. Creating association...");
+            
+            // Create the association
+            await supabase
+              .from('user_sfds')
+              .insert({
+                user_id: user.id,
+                sfd_id: clientData.sfd_id,
+                is_default: true
+              });
+            
+            // Refresh
+            toast({
+              title: "Association SFD créée",
+              description: "Vous avez été associé à une SFD",
+            });
+            
+            refetch();
+          }
+        }
+      } catch (err) {
+        console.error("Error checking SFD linking:", err);
+      }
+    };
+    
+    checkSfdLinking();
+  }, [user?.id]);
 
   const handleRetrySync = () => {
     synchronizeWithSfd()
@@ -111,4 +168,3 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
 };
 
 export default SfdAccountsSection;
-

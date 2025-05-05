@@ -49,30 +49,46 @@ export function useClientSavingsAccount(clientId?: string) {
   
   // Get client account details
   const accountQuery = useQuery({
-    queryKey: ['client-account', clientId, clientQuery.data?.user_id],
+    queryKey: ['client-account', clientId, clientQuery.data?.user_id, activeSfdId],
     queryFn: async () => {
       if (!clientId || !clientQuery.data?.user_id) return null;
       
       try {
-        // Fetch all accounts for this user
-        const { data, error } = await supabase
+        console.log("Fetching accounts for user:", clientQuery.data.user_id);
+        console.log("Active SFD ID:", activeSfdId);
+        
+        // Try to fetch account specific to this SFD
+        let query = supabase
           .from('accounts')
           .select('*')
           .eq('user_id', clientQuery.data.user_id);
+        
+        if (activeSfdId) {
+          query = query.eq('sfd_id', activeSfdId);
+        }
+        
+        const { data, error } = await query;
           
         if (error) throw error;
         
-        // If multiple accounts exist, return the one matching the active SFD if possible
         if (data && data.length > 0) {
-          if (data.length === 1) {
-            return data[0];
-          } else if (activeSfdId) {
-            // Try to find an account matching the active SFD
-            const sfdAccount = data.find(acc => acc.sfd_id === activeSfdId);
-            if (sfdAccount) return sfdAccount;
+          console.log("Found account(s):", data);
+          return data[0]; // Return the first account found
+        }
+        
+        // If no account found with this SFD, return any account
+        if (!activeSfdId) {
+          const { data: anyData, error: anyError } = await supabase
+            .from('accounts')
+            .select('*')
+            .eq('user_id', clientQuery.data.user_id);
+            
+          if (anyError) throw anyError;
+          
+          if (anyData && anyData.length > 0) {
+            console.log("Found any account:", anyData[0]);
+            return anyData[0];
           }
-          // Default to first account if no matching SFD account found
-          return data[0];
         }
         
         return null;
@@ -86,7 +102,7 @@ export function useClientSavingsAccount(clientId?: string) {
   
   // Get transaction history
   const transactionsQuery = useQuery({
-    queryKey: ['client-transactions', clientId, clientQuery.data?.user_id],
+    queryKey: ['client-transactions', clientId, clientQuery.data?.user_id, accountQuery.data?.id],
     queryFn: async () => {
       if (!clientId || !clientQuery.data?.user_id) return [];
       
@@ -191,6 +207,14 @@ export function useClientSavingsAccount(clientId?: string) {
         return false;
       }
 
+      console.log("Processing deposit with data:", {
+        userId: clientQuery.data.user_id,
+        clientId,
+        sfdId: activeSfdId,
+        amount,
+        description,
+      });
+
       const { data, error } = await supabase.functions.invoke('process-account-transaction', {
         body: {
           userId: clientQuery.data.user_id,
@@ -203,8 +227,14 @@ export function useClientSavingsAccount(clientId?: string) {
         }
       });
       
-      if (error || !data?.success) {
-        throw new Error(error?.message || data?.error || "Échec du dépôt");
+      if (error) {
+        console.error("Error in deposit transaction:", error);
+        throw new Error(error.message || "Échec du dépôt");
+      }
+      
+      if (!data?.success) {
+        console.error("Process-account-transaction returned error:", data?.error);
+        throw new Error(data?.error || "Échec du dépôt");
       }
       
       // Refresh data

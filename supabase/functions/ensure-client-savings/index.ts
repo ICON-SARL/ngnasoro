@@ -60,37 +60,56 @@ serve(async (req) => {
     if (!client.user_id) {
       console.log("Client does not have a user_id, attempting to create a user account");
       
-      // Call function to create or link user account
-      // This would normally be a separate Edge Function, but simplified here
-      const { data: userData, error: userError } = await supabaseAdmin
-        .auth.admin.createUser({
-          email: client.email || `client-${clientId}@example.com`,
-          email_confirm: true,
-          user_metadata: {
-            full_name: client.full_name,
-            phone: client.phone,
-            client_id: client.id
-          },
-          app_metadata: {
-            role: "client"
-          }
-        });
+      // Let's try to find a matching user by email first
+      let userId = null;
+      if (client.email) {
+        const { data: existingUser } = await supabaseAdmin
+          .from("profiles")
+          .select("id")
+          .eq("email", client.email)
+          .single();
 
-      if (userError) {
-        console.error("Error creating user account:", userError);
-        return new Response(
-          JSON.stringify({
-            success: false,
-            error: "Failed to create user account",
-          }),
-          { headers: corsHeaders, status: 500 }
-        );
+        if (existingUser) {
+          userId = existingUser.id;
+          console.log("Found existing user with matching email:", userId);
+        }
+      }
+
+      // If no user found by email, create a new one
+      if (!userId) {
+        // Call function to create or link user account
+        const { data: userData, error: userError } = await supabaseAdmin
+          .auth.admin.createUser({
+            email: client.email || `client-${clientId}@example.com`,
+            email_confirm: true,
+            user_metadata: {
+              full_name: client.full_name,
+              phone: client.phone,
+              client_id: client.id
+            },
+            app_metadata: {
+              role: "client"
+            }
+          });
+
+        if (userError) {
+          console.error("Error creating user account:", userError);
+          return new Response(
+            JSON.stringify({
+              success: false,
+              error: "Failed to create user account",
+            }),
+            { headers: corsHeaders, status: 500 }
+          );
+        }
+
+        userId = userData.user.id;
       }
 
       // Link the user_id to the client record
       const { error: updateError } = await supabaseAdmin
         .from("sfd_clients")
-        .update({ user_id: userData.user.id })
+        .update({ user_id: userId })
         .eq("id", clientId);
 
       if (updateError) {
@@ -104,7 +123,38 @@ serve(async (req) => {
         );
       }
 
-      client.user_id = userData.user.id;
+      // Add user-sfds association
+      await supabaseAdmin
+        .from("user_sfds")
+        .upsert({
+          user_id: userId,
+          sfd_id: sfdId,
+          is_default: true
+        })
+        .select();
+
+      client.user_id = userId;
+      console.log("Updated client with user_id:", userId);
+    } else {
+      // Ensure user has the SFD association
+      const { data: existingAssoc } = await supabaseAdmin
+        .from("user_sfds")
+        .select("*")
+        .eq("user_id", client.user_id)
+        .eq("sfd_id", sfdId);
+
+      if (!existingAssoc || existingAssoc.length === 0) {
+        // Create the association
+        await supabaseAdmin
+          .from("user_sfds")
+          .insert({
+            user_id: client.user_id,
+            sfd_id: sfdId,
+            is_default: true
+          });
+        
+        console.log("Created new user-SFD association for user:", client.user_id);
+      }
     }
 
     // 3. Check if savings account already exists
@@ -125,7 +175,7 @@ serve(async (req) => {
         // Check if any account matches the current SFD
         let matchingAccount = existingAccounts.find(acc => acc.sfd_id === sfdId);
         
-        // If no matching account, use the first one
+        // If no matching account, use the first one and update it
         if (!matchingAccount) {
           matchingAccount = existingAccounts[0];
           
@@ -137,10 +187,12 @@ serve(async (req) => {
             
           if (updateError) {
             console.error("Error updating account SFD:", updateError);
+          } else {
+            matchingAccount.sfd_id = sfdId;
+            console.log("Updated existing account with new SFD ID:", matchingAccount);
           }
         }
         
-        console.log("Savings account already exists:", matchingAccount);
         return new Response(
           JSON.stringify({
             success: true,

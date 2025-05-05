@@ -1,104 +1,48 @@
-
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 
-export default function useSfdAccountSwitching(
-  onSwitchSfd?: (sfdId: string) => Promise<boolean> | void
-) {
+export default function useSfdAccountSwitching(onSwitchSfd?: (sfdId: string) => Promise<boolean> | void) {
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
-  const [verificationRequired, setVerificationRequired] = useState(false);
-  const [pendingSfdId, setPendingSfdId] = useState<string | null>(null);
-  const [pendingSfdName, setPendingSfdName] = useState('');
   const { toast } = useToast();
-  const { setActiveSfdId } = useAuth();
-
-  const handleSwitchSfd = useCallback(async (sfdId: string) => {
-    if (isVerifying) return;
-    
-    setSwitchingId(sfdId);
-    
+  const { switchSfd } = useAuth();
+  
+  const handleSwitchSfd = async (sfdId: string) => {
     try {
+      setSwitchingId(sfdId);
+      setIsVerifying(true);
+      
       if (onSwitchSfd) {
-        // Use provided switch function from props
-        const result = await onSwitchSfd(sfdId);
+        // If custom handler provided, use it
+        await onSwitchSfd(sfdId);
+      } else if (switchSfd) {
+        // Otherwise use the default auth context handler
+        const result = await switchSfd(sfdId);
         
-        if (result === false) {
-          // If onSwitchSfd returns false, we'll show verification dialog
-          setPendingSfdId(sfdId);
-          setVerificationRequired(true);
-          return;
+        if (result) {
+          toast({
+            title: 'SFD changée avec succès',
+            description: 'Votre SFD active a été mise à jour',
+          });
         }
-      } else {
-        // Default behavior - direct switch
-        setActiveSfdId(sfdId);
-        toast({
-          title: "Compte SFD changé",
-          description: "Vous avez changé de compte SFD",
-        });
       }
-    } catch (error) {
-      console.error("Error switching SFD:", error);
+    } catch (error: any) {
+      console.error('Error switching SFD:', error);
       toast({
-        title: "Erreur",
-        description: "Impossible de changer de compte SFD",
-        variant: "destructive",
+        title: 'Erreur',
+        description: error.message || 'Impossible de changer de SFD',
+        variant: 'destructive',
       });
-    } finally {
-      setSwitchingId(null);
-    }
-  }, [isVerifying, onSwitchSfd, setActiveSfdId, toast]);
-
-  const handleVerificationComplete = useCallback(async (code: string) => {
-    if (!pendingSfdId) return false;
-    
-    setIsVerifying(true);
-    
-    try {
-      // Here you would validate the verification code with the backend
-      // For now we'll simulate success
-      setActiveSfdId(pendingSfdId);
-      
-      toast({
-        title: "Compte SFD vérifié",
-        description: "Vous avez changé de compte SFD avec succès",
-      });
-      
-      setVerificationRequired(false);
-      setPendingSfdId(null);
-      setPendingSfdName('');
-      
-      return true;
-    } catch (error) {
-      console.error("Error verifying SFD switch:", error);
-      toast({
-        title: "Erreur de vérification",
-        description: "Le code de vérification est invalide",
-        variant: "destructive",
-      });
-      return false;
     } finally {
       setIsVerifying(false);
+      setSwitchingId(null);
     }
-  }, [pendingSfdId, setActiveSfdId, toast]);
-
-  const cancelSwitch = useCallback(() => {
-    setVerificationRequired(false);
-    setPendingSfdId(null);
-    setPendingSfdName('');
-    setSwitchingId(null);
-    setIsVerifying(false);
-  }, []);
+  };
 
   return {
     switchingId,
     isVerifying,
-    verificationRequired,
-    pendingSfdId,
-    pendingSfdName,
     handleSwitchSfd,
-    handleVerificationComplete,
-    cancelSwitch
   };
 }

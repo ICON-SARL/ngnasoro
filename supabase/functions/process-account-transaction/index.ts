@@ -61,20 +61,46 @@ serve(async (req) => {
       );
     }
 
-    // Get the account
-    const { data: account, error: accountError } = await supabaseAdmin
+    // Get account with proper SFD ID if specified
+    let accountQuery = supabaseAdmin
       .from('accounts')
       .select('*')
-      .eq('user_id', userId)
-      .single();
-
-    if (accountError || !account) {
-      console.error("Account not found:", accountError);
+      .eq('user_id', userId);
+    
+    // If SFD ID is specified, try to find an account for that SFD
+    if (sfdId) {
+      accountQuery = accountQuery.eq('sfd_id', sfdId);
+    }
+    
+    const { data: accounts, error: accountError } = await accountQuery;
+    
+    if (accountError) {
+      console.error("Error fetching accounts:", accountError);
       return new Response(
-        JSON.stringify({ error: "Account not found", success: false }),
+        JSON.stringify({ error: "Error fetching accounts", success: false }),
+        { headers: corsHeaders, status: 500 }
+      );
+    }
+    
+    if (!accounts || accounts.length === 0) {
+      console.error("No accounts found for user");
+      return new Response(
+        JSON.stringify({ error: "No accounts found for user", success: false }),
         { headers: corsHeaders, status: 404 }
       );
     }
+    
+    // Choose the right account - prefer the one with matching SFD ID if specified
+    let account = accounts[0]; // Default to first account
+    
+    if (sfdId && accounts.length > 1) {
+      const matchingSfdAccount = accounts.find(a => a.sfd_id === sfdId);
+      if (matchingSfdAccount) {
+        account = matchingSfdAccount;
+      }
+    }
+    
+    console.log("Using account:", account);
 
     // Check if sufficient balance for withdrawal
     if (transactionType === 'withdrawal' && account.balance < amount) {
@@ -93,7 +119,7 @@ serve(async (req) => {
       .from('transactions')
       .insert({
         user_id: userId,
-        sfd_id: sfdId,
+        sfd_id: account.sfd_id, // Use the account's SFD ID
         amount: adjustedAmount,
         type: transactionType,
         name: transactionType === 'deposit' ? 'Dépôt' : 'Retrait',
