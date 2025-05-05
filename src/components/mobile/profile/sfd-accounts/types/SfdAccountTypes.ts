@@ -31,7 +31,14 @@ export interface SfdAccountDisplay {
   logo_url?: string;
   is_default: boolean;
   isVerified: boolean;
+  isActive?: boolean; // Added this property
   status?: string; 
   description?: string;
   logo?: string; // Added for compatibility with some components
+}
+
+// Helper function to check if balance can be displayed
+export function canDisplayBalance(account: SfdAccountDisplay): boolean {
+  return account?.isVerified !== false && 
+    (account?.status === 'active' || account?.status === undefined);
 }

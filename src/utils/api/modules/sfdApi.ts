@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { SfdData, SfdBalanceData, SfdLoan } from '@/hooks/sfd/types';
 
@@ -245,7 +244,7 @@ export const sfdApi = {
   /**
    * Get SFD loans for a client
    */
-  getSfdLoans: async (userId: string, sfdId: string): Promise<SfdLoan[]> => {
+  async getSfdLoans(userId: string, sfdId: string): Promise<SfdLoan[]> {
     try {
       const { data, error } = await supabase
         .from('sfd_loans')

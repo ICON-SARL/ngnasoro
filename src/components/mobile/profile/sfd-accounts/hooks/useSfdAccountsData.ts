@@ -53,7 +53,11 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     }
     
     try {
-      await (refetchAccounts || refetch)();
+      if (refetchAccounts) {
+        await refetchAccounts();
+      } else if (refetch) {
+        await refetch();
+      }
       return true;
     } catch (error) {
       console.error('Failed to refetch SFD accounts', error);
