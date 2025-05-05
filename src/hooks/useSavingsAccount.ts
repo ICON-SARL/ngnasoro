@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useToast } from '@/hooks/use-toast';
 import { savingsAccountService, SavingsTransactionOptions } from '@/services/savings/savingsAccountService';
@@ -174,6 +173,12 @@ export function useSavingsAccount(clientId?: string) {
     }
   };
   
+  // Function to refetch the balance and transactions
+  const refetchBalance = () => {
+    accountQuery.refetch();
+    transactionsQuery.refetch();
+  };
+  
   return {
     account: accountQuery.data,
     transactions: transactionsQuery.data,
@@ -185,6 +190,8 @@ export function useSavingsAccount(clientId?: string) {
     refetch: () => {
       accountQuery.refetch();
       transactionsQuery.refetch();
-    }
+    },
+    // Add the refetchBalance function to the return object
+    refetchBalance
   };
 }

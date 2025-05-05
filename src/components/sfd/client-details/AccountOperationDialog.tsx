@@ -107,6 +107,11 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
           : `Retrait de ${amount} FCFA effectué avec succès`
       });
       
+      // After successful operation, refresh the account data
+      if (refetchBalance) {
+        refetchBalance();
+      }
+      
       if (onOperationComplete) {
         onOperationComplete();
       }
