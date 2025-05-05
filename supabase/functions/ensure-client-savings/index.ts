@@ -109,23 +109,43 @@ serve(async (req) => {
 
     // 3. Check if savings account already exists
     try {
+      // Get ALL accounts for this user
       const { data: existingAccounts, error: accountsError } = await supabaseAdmin
         .from("accounts")
         .select("*")
-        .eq("user_id", client.user_id)
-        .eq("sfd_id", sfdId);
+        .eq("user_id", client.user_id);
 
       if (accountsError) {
         throw accountsError;
       }
 
+      // If any account exists, we'll return the first one
+      // Or preferably one that matches the current SFD
       if (existingAccounts && existingAccounts.length > 0) {
-        console.log("Savings account already exists:", existingAccounts[0]);
+        // Check if any account matches the current SFD
+        let matchingAccount = existingAccounts.find(acc => acc.sfd_id === sfdId);
+        
+        // If no matching account, use the first one
+        if (!matchingAccount) {
+          matchingAccount = existingAccounts[0];
+          
+          // Update the account to link it to the current SFD
+          const { error: updateError } = await supabaseAdmin
+            .from("accounts")
+            .update({ sfd_id: sfdId })
+            .eq("id", matchingAccount.id);
+            
+          if (updateError) {
+            console.error("Error updating account SFD:", updateError);
+          }
+        }
+        
+        console.log("Savings account already exists:", matchingAccount);
         return new Response(
           JSON.stringify({
             success: true,
             accountExists: true,
-            account: existingAccounts[0],
+            account: matchingAccount,
           }),
           { headers: corsHeaders, status: 200 }
         );

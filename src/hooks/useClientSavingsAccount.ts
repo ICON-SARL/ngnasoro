@@ -49,18 +49,37 @@ export function useClientSavingsAccount(clientId?: string) {
   
   // Get client account details
   const accountQuery = useQuery({
-    queryKey: ['client-account', clientId],
+    queryKey: ['client-account', clientId, clientQuery.data?.user_id],
     queryFn: async () => {
       if (!clientId || !clientQuery.data?.user_id) return null;
       
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', clientQuery.data.user_id)
-        .maybeSingle();
+      try {
+        // Fetch all accounts for this user
+        const { data, error } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', clientQuery.data.user_id);
+          
+        if (error) throw error;
         
-      if (error) throw error;
-      return data;
+        // If multiple accounts exist, return the one matching the active SFD if possible
+        if (data && data.length > 0) {
+          if (data.length === 1) {
+            return data[0];
+          } else if (activeSfdId) {
+            // Try to find an account matching the active SFD
+            const sfdAccount = data.find(acc => acc.sfd_id === activeSfdId);
+            if (sfdAccount) return sfdAccount;
+          }
+          // Default to first account if no matching SFD account found
+          return data[0];
+        }
+        
+        return null;
+      } catch (error) {
+        console.error("Error fetching client account:", error);
+        return null;
+      }
     },
     enabled: !!clientId && !!clientQuery.data?.user_id
   });
@@ -117,6 +136,8 @@ export function useClientSavingsAccount(clientId?: string) {
       
       await queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
       await queryClient.invalidateQueries({ queryKey: ['client', clientId] });
+      await clientQuery.refetch();
+      await accountQuery.refetch();
       
       toast({
         title: data.accountExists ? "Compte existant" : "Compte créé",

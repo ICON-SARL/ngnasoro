@@ -7,6 +7,7 @@ import AccountOperationDialog from './client-accounts/AccountOperationDialog';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Banknote, PiggyBank, RefreshCw } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface ClientSavingsAccountProps {
   clientId: string;
@@ -15,6 +16,7 @@ interface ClientSavingsAccountProps {
 
 const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, clientName }) => {
   const [isOperationDialogOpen, setIsOperationDialogOpen] = useState(false);
+  const { toast } = useToast();
   
   const {
     account,
@@ -24,7 +26,28 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, c
   } = useClientSavingsAccount(clientId);
 
   const handleCreateAccount = async () => {
-    await ensureSavingsAccount();
+    try {
+      await ensureSavingsAccount();
+      toast({
+        title: "Compte créé",
+        description: "Le compte d'épargne a été créé avec succès",
+      });
+    } catch (error: any) {
+      console.error('Error creating account:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Impossible de créer le compte d\'épargne',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  const handleRefresh = async () => {
+    await refreshData();
+    toast({
+      title: "Rafraîchissement",
+      description: "Les données du compte ont été mises à jour",
+    });
   };
 
   if (isLoading) {
@@ -52,7 +75,7 @@ const ClientSavingsAccount: React.FC<ClientSavingsAccountProps> = ({ clientId, c
           <Button
             variant="outline"
             size="sm"
-            onClick={() => refreshData()}
+            onClick={handleRefresh}
             className="h-8 w-8 p-0"
           >
             <RefreshCw className="h-4 w-4" />
