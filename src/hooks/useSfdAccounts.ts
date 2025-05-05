@@ -1,175 +1,191 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { sfdAccountService } from '@/services/sfdAccountService';
-import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
+import { useState, useEffect } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { SfdClientAccount } from '@/hooks/sfd/types';
 
-export interface SfdLoanPaymentParams {
-  loanId: string;
-  amount: number;
-  paymentMethod: string;
-  reference?: string;
+export interface SfdAccountDisplay {
+  id: string;
+  name: string;
+  code?: string;
+  logoUrl?: string | null;
+  balance?: number; 
+  currency?: string;
+  isDefault?: boolean;
+  isVerified?: boolean;
+  sfd_id?: string;
+  account_type?: string;
 }
 
-export function useSfdAccounts(sfdId?: string) {
-  const { activeSfdId, user } = useAuth();
+export function useSfdAccounts() {
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const effectiveSfdId = sfdId || activeSfdId;
-
-  // Get all accounts for the SFD
-  const {
-    data: accounts = [],
-    isLoading,
+  
+  // Fetch SFD accounts associated with the user
+  const { 
+    data: sfdAccounts = [],
+    isLoading, 
     error,
-    refetch: refetchAccounts
+    refetch 
   } = useQuery({
-    queryKey: ['sfd-accounts', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Get transfer history
-  const {
-    data: transferHistory = [],
-    isLoading: isLoadingHistory,
-    refetch: refetchHistory
-  } = useQuery({
-    queryKey: ['sfd-transfers', effectiveSfdId],
-    queryFn: () => sfdAccountService.getSfdTransferHistory(effectiveSfdId || ''),
-    enabled: !!effectiveSfdId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-  });
-
-  // Add refetchSavingsAccount as an alias to refetchAccounts
-  const refetchSavingsAccount = useCallback(() => {
-    return refetchAccounts();
-  }, [refetchAccounts]);
-
-  // Transfer funds between accounts
-  const transferFunds = useMutation({
-    mutationFn: (params: CreateTransferParams) => 
-      sfdAccountService.transferBetweenAccounts(params),
-    onSuccess: () => {
-      // Refresh accounts and transfer history
-      queryClient.invalidateQueries({ queryKey: ['sfd-accounts'] });
-      queryClient.invalidateQueries({ queryKey: ['sfd-transfers'] });
+    queryKey: ['user-sfds', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
       
-      toast({
-        title: "Transfert réussi",
-        description: "Le transfert de fonds entre les comptes a été effectué avec succès",
-      });
+      try {
+        // First get all SFDs the user has access to
+        const { data: userSfds, error: sfdsError } = await supabase
+          .from('user_sfds')
+          .select(`
+            sfd_id,
+            is_default,
+            sfds:sfd_id (
+              id, 
+              name,
+              code,
+              logo_url
+            )
+          `)
+          .eq('user_id', user.id);
+          
+        if (sfdsError) throw sfdsError;
+        if (!userSfds || userSfds.length === 0) return [];
+        
+        // Then get all accounts for this user
+        const { data: accounts, error: accountsError } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (accountsError) throw accountsError;
+        
+        // Map SFDs to accounts or create placeholder accounts
+        return userSfds.map(userSfd => {
+          const sfdData = userSfd.sfds as any;
+          // Find matching account or use default values
+          const matchingAccount = accounts?.find(acc => acc.sfd_id === userSfd.sfd_id) || null;
+          
+          return {
+            id: userSfd.sfd_id,
+            sfd_id: userSfd.sfd_id,
+            name: sfdData.name,
+            code: sfdData.code,
+            logoUrl: sfdData.logo_url,
+            balance: matchingAccount?.balance || 0,
+            currency: matchingAccount?.currency || 'FCFA',
+            isDefault: userSfd.is_default,
+            isVerified: true, // Assume verified for now
+            account_type: matchingAccount ? 'main' : null
+          };
+        });
+      } catch (err: any) {
+        console.error('Error fetching SFD accounts:', err);
+        toast({
+          title: 'Erreur',
+          description: 'Impossible de récupérer vos comptes SFD.',
+          variant: 'destructive',
+        });
+        return [];
+      }
     },
-    onError: (error: any) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors du transfert",
-        variant: "destructive",
-      });
-    }
+    enabled: !!user?.id,
   });
-
-  // Make loan payment mutation
-  const makeLoanPayment = useMutation({
-    mutationFn: async (params: SfdLoanPaymentParams) => {
-      // This is a placeholder as we haven't implemented the full loan payment functionality yet
-      toast({
-        title: "Paiement effectué",
-        description: `Paiement de ${params.amount} FCFA pour le prêt #${params.loanId}`,
-      });
-      return { success: true };
-    }
-  });
-
-  // Synchronize balances mutation
-  const synchronizeBalances = useMutation({
-    mutationFn: async () => {
-      // Placeholder for balance synchronization
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      await refetchAccounts();
-      return { success: true };
+  
+  // Get the active savings account if there is an active SFD
+  const {
+    data: savingsAccount,
+    isLoading: isSavingsLoading,
+    refetch: refetchSavingsAccount
+  } = useQuery({
+    queryKey: ['active-savings', activeSfdId, user?.id],
+    queryFn: async () => {
+      if (!user?.id || !activeSfdId) return null;
+      
+      try {
+        // Get the account for the active SFD
+        const { data, error } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('sfd_id', activeSfdId)
+          .maybeSingle();
+          
+        if (error) throw error;
+        
+        if (!data) {
+          // Try to synchronize with the server
+          const { error: syncError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+            body: { userId: user.id, sfdId: activeSfdId, forceFullSync: true }
+          });
+          
+          if (syncError) throw syncError;
+          
+          // Try to fetch again after sync
+          const { data: syncedData, error: fetchError } = await supabase
+            .from('accounts')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('sfd_id', activeSfdId)
+            .maybeSingle();
+            
+          if (fetchError) throw fetchError;
+          return syncedData;
+        }
+        
+        return data;
+      } catch (err: any) {
+        console.error('Error fetching active savings account:', err);
+        return null;
+      }
     },
-    onSuccess: () => {
-      toast({
-        title: "Synchronisation réussie",
-        description: "Les soldes de vos comptes ont été mis à jour",
-      });
-    }
+    enabled: !!user?.id && !!activeSfdId,
   });
-
-  // Categorize accounts by type
-  const operationAccount = accounts.find(account => account.account_type === 'operation');
-  const repaymentAccount = accounts.find(account => account.account_type === 'remboursement');
-  const savingsAccount = accounts.find(account => account.account_type === 'epargne');
-
-  // For compatibility with components expecting SfdClientAccount type
-  const transformAccounts = (accounts: DbSfdAccount[]): SfdClientAccount[] => {
-    return accounts.map(acc => ({
-      id: acc.id,
-      name: acc.description || `Compte ${acc.account_type}`,
-      logoUrl: null,
-      code: '',
-      region: '',
-      balance: acc.balance,
-      currency: acc.currency,
-      isDefault: false,
-      isVerified: true,
-      status: acc.status,
-      sfd_id: acc.sfd_id,  // Include the required fields for compatibility
-      account_type: acc.account_type,
-      description: acc.description,
-      created_at: acc.created_at,
-      updated_at: acc.updated_at
-    }));
+  
+  // Function to synchronize accounts with the server
+  const synchronizeAccounts = async () => {
+    if (!user?.id) return;
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+        body: { userId: user.id }
+      });
+      
+      if (error) throw error;
+      
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey: ['user-sfds', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['active-savings', activeSfdId, user.id] });
+      
+      return data?.syncedAccounts || [];
+    } catch (err: any) {
+      console.error('Failed to synchronize accounts:', err);
+      toast({
+        title: 'Synchronisation échouée',
+        description: 'Impossible de synchroniser vos comptes. Veuillez réessayer.',
+        variant: 'destructive',
+      });
+      return [];
+    }
   };
-
-  // Get transformed accounts as client accounts
-  const sfdAccounts = transformAccounts(accounts);
-
-  // Compute the active SFD account for UI components that expect it
-  const activeSfdAccount = accounts.length > 0 ? {
-    id: effectiveSfdId || accounts[0].sfd_id,
-    name: 'SFD Account',
-    logoUrl: null,
-    balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
-    currency: accounts[0]?.currency || 'FCFA',
-    isDefault: true,
-    isVerified: true,
-    loans: [],
-    status: 'active',
-    sfd_id: effectiveSfdId || accounts[0].sfd_id,  // Add the required field
-    account_type: '',
-    description: null,
-    created_at: '',
-    updated_at: ''
-  } as SfdClientAccount : null;
-
-  // Return both the original accounts and transformed accounts for compatibility
+  
+  // Use this effect to synchronize once on component mount
+  useEffect(() => {
+    if (user?.id && !isLoading && sfdAccounts.length === 0) {
+      synchronizeAccounts();
+    }
+  }, [user?.id, isLoading]);
+  
   return {
-    accounts,
+    accounts: sfdAccounts, 
     sfdAccounts,
     isLoading,
     error,
-    transferHistory,
-    isLoadingHistory,
-    operationAccount,
-    repaymentAccount,
+    refetch,
+    synchronizeAccounts,
     savingsAccount,
-    transferFunds,
-    refetchAccounts,
-    refetchHistory,
-    refetchSavingsAccount,
-    refetch: refetchAccounts,
-    synchronizeBalances,
-    activeSfdAccount,
-    makeLoanPayment
+    isSavingsLoading,
+    refetchSavingsAccount
   };
 }
-
-// Also export the types for components that need them
-export type { DbSfdAccount, SfdAccountTransfer, CreateTransferParams };
-export type { SfdClientAccount };

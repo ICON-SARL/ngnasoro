@@ -10,7 +10,7 @@ interface BalanceDisplayProps {
   balance: number;
   currency: string;
   isUpdating: boolean;
-  refreshBalance: () => void;
+  refreshBalance: () => Promise<number | void>;
   isPending?: boolean;
   isVerified?: boolean;
 }
@@ -25,6 +25,11 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
   isVerified = true
 }) => {
   const formattedBalance = formatCurrency(balance);
+  
+  const handleRefresh = async () => {
+    if (isUpdating) return;
+    await refreshBalance();
+  };
   
   return (
     <div className="relative flex flex-col items-center justify-center my-4 pt-2 pb-4 px-4 bg-gray-50 rounded-xl">
@@ -49,7 +54,7 @@ const BalanceDisplay: React.FC<BalanceDisplayProps> = ({
       )}
       
       <Button
-        onClick={refreshBalance}
+        onClick={handleRefresh}
         disabled={isUpdating || !isVerified}
         variant="outline"
         size="sm"

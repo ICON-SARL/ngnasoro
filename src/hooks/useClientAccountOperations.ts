@@ -27,15 +27,43 @@ export function useClientAccountOperations(clientId: string) {
     queryFn: async () => {
       if (!clientId) return null;
       
-      const { data, error } = await supabase.functions.invoke('client-accounts', {
-        body: {
-          action: 'getBalance',
-          clientId
-        }
-      });
+      // First, get the user_id associated with this client
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id, sfd_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !clientData?.user_id) {
+        console.error('Error fetching client data:', clientError);
+        return { balance: 0, currency: 'FCFA' };
+      }
       
-      if (error) throw error;
-      return data;
+      // Then get the account using the user_id
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', clientData.user_id)
+        .eq('sfd_id', clientData.sfd_id)
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error fetching account data:', error);
+        return { balance: 0, currency: 'FCFA' };
+      }
+      
+      // If no account exists, return default values
+      if (!data) {
+        return { balance: 0, currency: 'FCFA' };
+      }
+      
+      return {
+        balance: data.balance || 0,
+        currency: data.currency || 'FCFA',
+        id: data.id,
+        userId: data.user_id,
+        sfdId: data.sfd_id
+      };
     },
     enabled: !!clientId
   });
@@ -53,12 +81,13 @@ export function useClientAccountOperations(clientId: string) {
     mutationFn: async ({ amount, description }: CreditDebitParams) => {
       if (!clientId || !user) throw new Error('Missing client ID or user');
       
-      const { data, error } = await supabase.functions.invoke('client-accounts', {
+      // Call the Edge Function to process the transaction
+      const { data, error } = await supabase.functions.invoke('process-account-transaction', {
         body: {
-          action: 'updateBalance',
           clientId,
           amount,
-          description: description || (amount > 0 ? 'Crédit manuel' : 'Débit manuel'),
+          transactionType: 'deposit',
+          description: description || 'Crédit manuel',
           performedBy: user.id
         }
       });
@@ -73,14 +102,53 @@ export function useClientAccountOperations(clientId: string) {
       
       toast({
         title: 'Opération réussie',
-        description: 'Le compte client a été mis à jour avec succès.',
+        description: 'Le compte client a été crédité avec succès.',
         variant: 'default',
       });
     },
     onError: (error: any) => {
       toast({
         title: 'Erreur',
-        description: error.message || 'Erreur lors de l\'opération sur le compte',
+        description: error.message || 'Erreur lors du crédit du compte',
+        variant: 'destructive',
+      });
+    }
+  });
+
+  // Debit client account
+  const debitAccount = useMutation({
+    mutationFn: async ({ amount, description }: CreditDebitParams) => {
+      if (!clientId || !user) throw new Error('Missing client ID or user');
+      
+      // Call the Edge Function to process the transaction
+      const { data, error } = await supabase.functions.invoke('process-account-transaction', {
+        body: {
+          clientId,
+          amount,
+          transactionType: 'withdrawal',
+          description: description || 'Débit manuel',
+          performedBy: user.id
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      refetch();
+      queryClient.invalidateQueries({ queryKey: ['client-account', clientId] });
+      queryClient.invalidateQueries({ queryKey: ['client-transactions', clientId] });
+      
+      toast({
+        title: 'Opération réussie',
+        description: 'Le compte client a été débité avec succès.',
+        variant: 'default',
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: 'Erreur',
+        description: error.message || 'Erreur lors du débit du compte',
         variant: 'destructive',
       });
     }
@@ -95,15 +163,31 @@ export function useClientAccountOperations(clientId: string) {
     queryFn: async () => {
       if (!clientId) return [];
       
-      const { data, error } = await supabase.functions.invoke('client-accounts', {
-        body: {
-          action: 'getTransactions',
-          clientId,
-          limit: 10
-        }
-      });
+      // First, get the user_id associated with this client
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError || !clientData?.user_id) {
+        console.error('Error fetching client user_id:', clientError);
+        return [];
+      }
       
-      if (error) throw error;
+      // Then get transactions using the user_id
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', clientData.user_id)
+        .order('created_at', { ascending: false })
+        .limit(10);
+      
+      if (error) {
+        console.error('Error fetching transactions:', error);
+        return [];
+      }
+      
       return data || [];
     },
     enabled: !!clientId
@@ -121,6 +205,7 @@ export function useClientAccountOperations(clientId: string) {
     transactions,
     isLoadingTransactions,
     creditAccount,
+    debitAccount,
     refetchBalance
   };
 }
