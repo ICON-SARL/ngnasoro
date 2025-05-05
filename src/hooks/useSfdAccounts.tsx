@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { sfdAccountService } from '@/services/sfdAccountService';
@@ -6,6 +5,10 @@ import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } 
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdClientAccount, LoanPaymentParams } from '@/hooks/sfd/types';
+
+// Import and re-export the SfdAccountDisplay type for components that need it
+import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
+export type { SfdAccountDisplay };
 
 export interface SfdLoanPaymentParams {
   loanId: string;
@@ -166,6 +169,9 @@ export function useSfdAccounts(sfdId?: string) {
     refetchSavingsAccount: refetchAccountsQuery  // Add this property that some components use
   };
 }
+
+// Import the sfdAccountService here to avoid circular dependencies
+import { sfdAccountService } from '@/services/sfdAccountService';
 
 // Also export the types for components that need them
 export type { DbSfdAccount, SfdAccountTransfer, CreateTransferParams };

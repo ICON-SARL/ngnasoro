@@ -7,7 +7,7 @@ import { RefreshCw, Lock } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { formatCurrency } from '@/utils/formatters';
 import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
-import { SfdAccountDisplay } from '@/hooks/useSfdAccounts';
+import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 interface FundsBalanceSectionProps {
   balance: number;

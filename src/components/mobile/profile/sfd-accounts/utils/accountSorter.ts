@@ -18,3 +18,9 @@ export function sortAccounts(accounts: SfdAccountDisplay[]): SfdAccountDisplay[]
     return a.name.localeCompare(b.name);
   });
 }
+
+// Helper function to check if balance can be displayed
+export function canDisplayBalance(account: SfdAccountDisplay): boolean {
+  return account?.isVerified !== false && 
+    (account?.status === 'active' || account?.status === undefined);
+}
