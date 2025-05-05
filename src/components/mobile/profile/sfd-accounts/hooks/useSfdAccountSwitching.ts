@@ -6,7 +6,7 @@ export default function useSfdAccountSwitching(onSwitchSfd?: (sfdId: string) => 
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
-  const { switchSfd } = useAuth();
+  const { setActiveSfdId } = useAuth();
   
   const handleSwitchSfd = async (sfdId: string) => {
     try {
@@ -16,16 +16,16 @@ export default function useSfdAccountSwitching(onSwitchSfd?: (sfdId: string) => 
       if (onSwitchSfd) {
         // If custom handler provided, use it
         await onSwitchSfd(sfdId);
-      } else if (switchSfd) {
+      } else if (setActiveSfdId) {
         // Otherwise use the default auth context handler
-        const result = await switchSfd(sfdId);
+        setActiveSfdId(sfdId);
         
-        if (result) {
-          toast({
-            title: 'SFD changée avec succès',
-            description: 'Votre SFD active a été mise à jour',
-          });
-        }
+        toast({
+          title: 'SFD changée avec succès',
+          description: 'Votre SFD active a été mise à jour',
+        });
+        
+        return true;
       }
     } catch (error: any) {
       console.error('Error switching SFD:', error);

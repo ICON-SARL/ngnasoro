@@ -2,15 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-
-export interface SfdAccountDisplay {
-  id: string;
-  name: string;
-  logo?: string;
-  balance: number;
-  currency: string;
-  isActive: boolean;
-}
+import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
 export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdId?: string | null) {
   const [displayAccounts, setDisplayAccounts] = useState<SfdAccountDisplay[]>([]);
@@ -38,7 +30,9 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
       logo: sfd.logo_url || sfd.sfds?.logo_url,
       balance: sfd.balance || 0,
       currency: sfd.currency || 'FCFA',
-      isActive: sfd.id === effectiveActiveSfdId || sfd.sfds?.id === effectiveActiveSfdId
+      isActive: sfd.id === effectiveActiveSfdId || sfd.sfds?.id === effectiveActiveSfdId,
+      is_default: sfd.is_default || false,
+      isVerified: sfd.status === 'active' || true
     }));
     
     setDisplayAccounts(formatted);
