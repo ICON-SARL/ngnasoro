@@ -1,43 +1,32 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
 import { SyncResult } from './types';
 
-// Function to synchronize accounts with the SFD server
-export async function syncWithSfd(userId?: string, sfdId?: string): Promise<SyncResult> {
+export async function syncAccounts(userId: string, sfdId?: string): Promise<SyncResult> {
   try {
-    const { user } = useAuth();
-    const effectiveUserId = userId || user?.id;
-    
-    if (!effectiveUserId) {
-      return { 
-        success: false, 
-        message: 'Utilisateur non connecté' 
-      };
-    }
-    
-    // Call the Edge Function
     const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
       body: { 
-        userId: effectiveUserId,
-        sfdId,
-        forceFullSync: true
+        userId, 
+        sfdId, 
+        forceFullSync: true 
       }
     });
     
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
     
     return {
       success: true,
-      syncedAccounts: data?.accounts || [],
-      message: data?.message || 'Comptes synchronisés avec succès'
+      message: 'Accounts synchronized successfully',
+      syncedAccounts: data?.syncedAccounts || []
     };
-  } catch (error: any) {
-    console.error('Error synchronizing with SFD:', error);
+  } catch (err: any) {
+    console.error('Failed to synchronize accounts:', err);
     return {
       success: false,
-      error,
-      message: error.message || 'Erreur de synchronisation avec la SFD'
+      message: err.message || 'Failed to synchronize accounts',
+      error: err
     };
   }
 }

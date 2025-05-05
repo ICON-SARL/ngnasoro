@@ -1,61 +1,58 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { SyncResult, LoanPaymentParams } from './types';
+import { LoanPaymentParams, SyncResult } from './types';
 
-// Function to synchronize accounts with the SFD API
+// Synchronize accounts with SFD
 export async function synchronizeAccounts(userId: string): Promise<SyncResult> {
   try {
     const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-      body: { userId }
+      body: { userId, forceFullSync: true }
     });
     
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
     
     return {
       success: true,
-      syncedAccounts: data?.accounts || [],
-      message: 'Comptes synchronisés avec succès'
+      message: 'Accounts synchronized successfully',
+      syncedAccounts: data?.syncedAccounts || []
     };
-  } catch (error: any) {
-    console.error('Error synchronizing accounts:', error);
+  } catch (err: any) {
+    console.error('Failed to synchronize accounts:', err);
     return {
       success: false,
-      error,
-      message: error.message || 'Une erreur est survenue lors de la synchronisation'
+      message: err.message || 'Failed to synchronize accounts',
+      error: err
     };
   }
 }
 
-// Function to process a loan payment
+// Process loan payment
 export async function processLoanPayment(
-  userId: string,
-  sfdId: string,
+  userId: string, 
+  sfdId: string, 
   params: LoanPaymentParams
-): Promise<{ success: boolean; message?: string }> {
+): Promise<{ success: boolean; message?: string; error?: any }> {
   try {
-    const { data, error } = await supabase.functions.invoke('process-repayment', {
-      body: {
-        userId,
-        sfdId,
-        loanId: params.loanId,
-        amount: params.amount,
-        paymentMethod: params.paymentMethod,
-        description: params.description,
-        reference: params.reference
-      }
+    const { data, error } = await supabase.functions.invoke('process-loan-payment', {
+      body: { userId, sfdId, ...params }
     });
     
-    if (error) throw error;
+    if (error) {
+      throw new Error(error.message);
+    }
     
     return {
       success: true,
-      message: 'Paiement traité avec succès'
+      message: 'Payment processed successfully'
     };
-  } catch (error: any) {
-    console.error('Error processing loan payment:', error);
+  } catch (err: any) {
+    console.error('Failed to process loan payment:', err);
     return {
       success: false,
-      message: error.message || 'Une erreur est survenue lors du traitement du paiement'
+      message: err.message || 'Failed to process payment',
+      error: err
     };
   }
 }

@@ -1,5 +1,6 @@
+
 import { supabase } from '@/integrations/supabase/client';
-import { SfdData, SfdBalanceData } from '@/hooks/sfd/types';
+import { SfdData, SfdBalanceData, SfdLoan } from '@/hooks/sfd/types';
 
 // Define the SfdBalanceResult interface
 export interface SfdBalanceResult {
@@ -86,9 +87,9 @@ export const sfdApi = {
   },
   
   /**
-   * Get list of all SFDs
+   * Get list of all SFDs - alternative implementation
    */
-  getSfds: async (): Promise<SfdData[]> => {
+  async getAllSfds(): Promise<SfdData[]> {
     try {
       const { data, error } = await supabase
         .from('sfds')

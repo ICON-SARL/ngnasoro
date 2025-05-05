@@ -1,23 +1,27 @@
 
 import { SfdAccountDisplay } from '../types/SfdAccountTypes';
 
-export type AccountStatus = 'active' | 'verified' | 'pending' | 'inactive';
+// Define the possible account status values for UI display
+export type AccountStatus = 'active' | 'pending' | 'inactive' | 'error';
 
-/**
- * Determines the account status from the SFD account data
- */
+// Get the appropriate account status for display
 export function getAccountStatus(account: SfdAccountDisplay): AccountStatus {
-  if (account.is_default) {
-    return 'active';
+  if (!account.status) {
+    return 'error';
   }
   
-  if (account.isVerified) {
-    return 'verified';
+  switch (account.status.toLowerCase()) {
+    case 'active':
+      return 'active';
+    case 'pending':
+    case 'validating':
+    case 'awaiting_validation':
+      return 'pending';
+    case 'inactive':
+    case 'suspended':
+    case 'disabled':
+      return 'inactive';
+    default:
+      return 'error';
   }
-  
-  if (account.status === 'pending') {
-    return 'pending';
-  }
-  
-  return 'inactive';
 }

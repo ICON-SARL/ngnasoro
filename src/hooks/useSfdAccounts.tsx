@@ -162,7 +162,6 @@ export function useSfdAccounts(sfdId?: string) {
     activeSfdAccount,
     synchronizeBalances,
     refetchAccounts,
-    refetchHistory,
     refetch: refetchAccountsQuery,  // Alias for backward compatibility
     refetchSavingsAccount: refetchAccountsQuery  // Add this property that some components use
   };

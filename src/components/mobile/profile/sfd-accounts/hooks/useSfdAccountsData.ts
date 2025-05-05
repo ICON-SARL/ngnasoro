@@ -10,7 +10,8 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
   const { 
     accounts: hookAccounts, 
     isLoading: hookIsLoading,
-    refetch 
+    refetch,
+    refetchAccounts 
   } = useSfdAccounts();
   
   // Determine effective SFD ID and accounts data
@@ -46,13 +47,13 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
   }, [effectiveSfdData, effectiveActiveSfdId]);
   
   // Function to refetch accounts data
-  const refetchAccounts = async () => {
+  const refetchAccountsData = async () => {
     if (propsSfdData) {
       return; // No need to refetch when data is provided via props
     }
     
     try {
-      await refetch();
+      await (refetchAccounts || refetch)();
       return true;
     } catch (error) {
       console.error('Failed to refetch SFD accounts', error);
@@ -64,6 +65,6 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     displayAccounts,
     effectiveActiveSfdId,
     isLoading,
-    refetch: refetchAccounts
+    refetch: refetchAccountsData
   };
 }

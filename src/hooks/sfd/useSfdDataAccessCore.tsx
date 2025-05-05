@@ -14,7 +14,7 @@ export function useSfdDataAccessCore() {
   
   // Use the sub-hooks
   const { loading, error, fetchUserSfds } = useSfdDataFetcher(setSfdData);
-  const { getToken, refreshToken } = useSfdTokenManager();
+  const { getToken, refreshToken, refreshTokenIfNeeded, generateTokenForSfd } = useSfdTokenManager();
 
   // Fetch SFDs on component mount
   useEffect(() => {
@@ -42,11 +42,6 @@ export function useSfdDataAccessCore() {
       initializeSfds();
     }
   }, [user, activeSfdId, sfdData.length, setActiveSfdId, fetchUserSfds]);
-
-  // Helper function to refresh token if needed
-  const refreshTokenIfNeeded = useCallback(async (sfdId: string) => {
-    return await refreshToken(sfdId);
-  }, [refreshToken]);
 
   // Switch the active SFD
   const switchActiveSfd = useCallback(async (sfdId: string) => {
