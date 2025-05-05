@@ -62,7 +62,7 @@ serve(async (req) => {
       // First, get the user_id from the sfd_clients table if needed
       const { data: clientData, error: clientError } = await supabaseAdmin
         .from('sfd_clients')
-        .select('user_id')
+        .select('user_id, sfd_id')
         .eq('id', clientId)
         .single();
 
@@ -87,7 +87,7 @@ serve(async (req) => {
         .from('accounts')
         .select('*')
         .eq('user_id', clientData.user_id)
-        .order('created_at', { ascending: false });
+        .order('updated_at', { ascending: false });  // Use updated_at instead of created_at
 
       if (accountError) {
         console.error("Error fetching account:", accountError);
@@ -104,7 +104,7 @@ serve(async (req) => {
             .from('accounts')
             .insert({
               user_id: clientData.user_id,
-              sfd_id: sfdId,
+              sfd_id: sfdId || clientData.sfd_id,
               balance: 0,
               currency: 'FCFA'
             })

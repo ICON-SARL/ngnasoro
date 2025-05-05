@@ -10,6 +10,8 @@ import { ArrowUp, ArrowDown } from 'lucide-react';
 import { useSavingsAccount } from '@/hooks/useSavingsAccount';
 import { Loader } from '@/components/ui/loader';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+import { edgeFunctionApi } from '@/utils/api/modules/edgeFunctionApi';
 
 interface AccountOperationDialogProps {
   isOpen: boolean;
@@ -31,13 +33,15 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
   const [description, setDescription] = useState<string>('');
   const [client, setClient] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
   
   const { 
     processDeposit, 
     processWithdrawal, 
     account, 
-    isLoading: accountLoading
-  } = useSavingsAccount(clientId);
+    isLoading: accountLoading,
+    refetchBalance
+  } = useSavingsAccount(client?.user_id || '');
 
   useEffect(() => {
     if (isOpen && clientId) {
@@ -79,26 +83,42 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
     setIsLoading(true);
     
     try {
-      if (!client?.user_id) {
-        throw new Error("Le client n'a pas de compte utilisateur associé");
+      if (!client?.id) {
+        throw new Error("Client information is missing");
       }
       
-      let success = false;
-      
-      if (activeTab === 'deposit') {
-        success = await processDeposit(amount, description);
-      } else {
-        success = await processWithdrawal(amount, description);
+      // Use edgeFunctionApi to directly call the edge function
+      const { data, error } = await edgeFunctionApi.callFunction('process-account-transaction', {
+        clientId: client.id,
+        amount: amount,
+        transactionType: activeTab === 'deposit' ? 'deposit' : 'withdrawal',
+        description: description || (activeTab === 'deposit' ? 'Dépôt manuel' : 'Retrait manuel'),
+        performedBy: (await supabase.auth.getUser()).data.user?.id
+      });
+
+      if (error || !data?.success) {
+        throw new Error(error?.message || data?.error || "Échec de l'opération");
       }
       
-      if (success) {
-        if (onOperationComplete) {
-          onOperationComplete();
-        }
-        handleClose();
+      toast({
+        title: 'Opération réussie',
+        description: activeTab === 'deposit'
+          ? `Dépôt de ${amount} FCFA effectué avec succès`
+          : `Retrait de ${amount} FCFA effectué avec succès`
+      });
+      
+      if (onOperationComplete) {
+        onOperationComplete();
       }
-    } catch (error) {
+      
+      handleClose();
+    } catch (error: any) {
       console.error('Error processing operation:', error);
+      toast({
+        title: 'Erreur',
+        description: error.message || `Échec de l'opération: ${activeTab}`,
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
@@ -180,10 +200,8 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
                   disabled={
                     isLoading || 
                     amount <= 0 || 
-                    (activeTab === 'withdrawal' && account && account.balance < amount) ||
-                    !client?.user_id
+                    (activeTab === 'withdrawal' && account && account.balance < amount)
                   }
-                  title={!client?.user_id ? "Le client n'a pas de compte utilisateur" : ""}
                 >
                   {isLoading && <Loader size="sm" className="mr-2" />}
                   {activeTab === 'deposit' ? 'Effectuer le dépôt' : 'Effectuer le retrait'}
