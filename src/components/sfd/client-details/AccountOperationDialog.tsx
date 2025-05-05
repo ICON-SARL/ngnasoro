@@ -87,13 +87,16 @@ const AccountOperationDialog: React.FC<AccountOperationDialogProps> = ({
         throw new Error("Client information is missing");
       }
       
-      // Use edgeFunctionApi to directly call the edge function
-      const { data, error } = await edgeFunctionApi.callFunction('process-account-transaction', {
-        clientId: client.id,
-        amount: amount,
-        transactionType: activeTab === 'deposit' ? 'deposit' : 'withdrawal',
-        description: description || (activeTab === 'deposit' ? 'Dépôt manuel' : 'Retrait manuel'),
-        performedBy: (await supabase.auth.getUser()).data.user?.id
+      // Use the edge function directly for better error handling
+      const { data, error } = await supabase.functions.invoke('process-account-transaction', {
+        body: {
+          clientId: client.id,
+          amount: amount,
+          transactionType: activeTab === 'deposit' ? 'deposit' : 'withdrawal',
+          description: description || (activeTab === 'deposit' ? 'Dépôt manuel' : 'Retrait manuel'),
+          performedBy: (await supabase.auth.getUser()).data.user?.id,
+          sfdId: client.sfd_id // Explicitly pass the client's SFD ID
+        }
       });
 
       if (error || !data?.success) {

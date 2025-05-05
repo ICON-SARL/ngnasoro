@@ -32,7 +32,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
   const { synchronizeWithSfd, isSyncing, syncError, retryCount } = useRealtimeSynchronization();
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
-
+  
   useEffect(() => {
     let isMounted = true;
     
@@ -54,58 +54,57 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     };
   }, [synchronizeWithSfd, refetch]);
 
-  // Check if user is linked to an SFD on mount
+  // Filter to only show SFDs where the user is a client
   useEffect(() => {
-    const checkSfdLinking = async () => {
+    const filterAndLinkAccounts = async () => {
       if (!user?.id) return;
       
       try {
-        // Get user-SFD associations
-        const { data: userSfds, error } = await supabase
-          .from('user_sfds')
-          .select('sfd_id')
+        // Get user's client accounts
+        const { data: clientAccounts, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('id, sfd_id, user_id')
           .eq('user_id', user.id);
         
-        if (error) throw error;
+        if (clientError) throw clientError;
         
-        // If no SFD is linked and we have client info
-        if (!userSfds || userSfds.length === 0) {
-          console.log("No SFD associations found for user. Checking if user is a client...");
+        // If user is a client in any SFD
+        if (clientAccounts && clientAccounts.length > 0) {
+          console.log('User is a client in SFDs:', clientAccounts.map(ca => ca.sfd_id));
           
-          // Check if user is a client in any SFD
-          const { data: clientData } = await supabase
-            .from('sfd_clients')
-            .select('id, sfd_id')
-            .eq('user_id', user.id)
-            .maybeSingle();
-          
-          if (clientData && clientData.sfd_id) {
-            console.log("Found client record with SFD. Creating association...");
-            
-            // Create the association
-            await supabase
+          // Ensure the user has SFD associations
+          for (const account of clientAccounts) {
+            // Check if user-sfd association exists
+            const { data: existing } = await supabase
               .from('user_sfds')
-              .insert({
-                user_id: user.id,
-                sfd_id: clientData.sfd_id,
-                is_default: true
-              });
-            
-            // Refresh
-            toast({
-              title: "Association SFD créée",
-              description: "Vous avez été associé à une SFD",
-            });
-            
-            refetch();
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('sfd_id', account.sfd_id)
+              .maybeSingle();
+              
+            // If no association exists, create it
+            if (!existing) {
+              console.log('Creating user_sfds association for sfd:', account.sfd_id);
+              
+              await supabase
+                .from('user_sfds')
+                .insert({
+                  user_id: user.id,
+                  sfd_id: account.sfd_id,
+                  is_default: true // Make first one default
+                });
+            }
           }
+          
+          // Make sure to refetch after creating associations
+          await refetch();
         }
       } catch (err) {
-        console.error("Error checking SFD linking:", err);
+        console.error("Error filtering SFD accounts:", err);
       }
     };
     
-    checkSfdLinking();
+    filterAndLinkAccounts();
   }, [user?.id]);
 
   const handleRetrySync = () => {

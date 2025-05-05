@@ -56,10 +56,13 @@ serve(async (req) => {
 
     // Step 1: Get account by clientId if provided (admin flow) or userId (mobile app flow)
     let account = null;
+    let userIdToUse = userId;
     
     // If clientId is provided (admin interface)
     if (clientId) {
-      // First, get the user_id from the sfd_clients table if needed
+      // First, get the user_id from the sfd_clients table
+      console.log('Admin flow: Looking up user_id from sfd_clients for clientId:', clientId);
+      
       const { data: clientData, error: clientError } = await supabaseAdmin
         .from('sfd_clients')
         .select('user_id, sfd_id')
@@ -81,61 +84,27 @@ serve(async (req) => {
           { headers: corsHeaders, status: 404 }
         );
       }
-
-      // Get account using the client's user_id
-      const { data: accounts, error: accountError } = await supabaseAdmin
-        .from('accounts')
-        .select('*')
-        .eq('user_id', clientData.user_id)
-        .order('updated_at', { ascending: false });  // Use updated_at instead of created_at
-
-      if (accountError) {
-        console.error("Error fetching account:", accountError);
-        return new Response(
-          JSON.stringify({ error: "Error fetching account", success: false }),
-          { headers: corsHeaders, status: 500 }
-        );
+      
+      console.log('Found user_id for client:', clientData.user_id);
+      userIdToUse = clientData.user_id;
+      
+      // Use the sfd_id from the client record if none provided
+      if (!sfdId && clientData.sfd_id) {
+        console.log('Using sfd_id from client record:', clientData.sfd_id);
+        sfdId = clientData.sfd_id;
       }
-
-      if (!accounts || accounts.length === 0) {
-        // Try to create a new account
-        try {
-          const { data: newAccount, error: createError } = await supabaseAdmin
-            .from('accounts')
-            .insert({
-              user_id: clientData.user_id,
-              sfd_id: sfdId || clientData.sfd_id,
-              balance: 0,
-              currency: 'FCFA'
-            })
-            .select()
-            .single();
-
-          if (createError) throw createError;
-          account = newAccount;
-          
-          console.log("Created new account for client:", account);
-        } catch (error) {
-          console.error("Failed to create account:", error);
-          return new Response(
-            JSON.stringify({ error: "Failed to create account for client", success: false }),
-            { headers: corsHeaders, status: 500 }
-          );
-        }
-      } else {
-        // Use the first account
-        account = accounts[0];
-        console.log("Using existing account:", account);
-      }
-    } 
-    // If userId is provided (mobile app flow)
-    else if (userId) {
+    }
+    
+    // Now fetch the account with the determined userId
+    if (userIdToUse) {
+      console.log('Fetching account for userId:', userIdToUse);
+      
       let query = supabaseAdmin
         .from('accounts')
         .select('*')
-        .eq('user_id', userId);
-        
-      // Filter by SFD if specified
+        .eq('user_id', userIdToUse);
+      
+      // Filter by SFD if specified  
       if (sfdId) {
         query = query.eq('sfd_id', sfdId);
       }
@@ -151,19 +120,70 @@ serve(async (req) => {
       }
       
       if (!accounts || accounts.length === 0) {
-        console.error("No accounts found for user");
-        return new Response(
-          JSON.stringify({ error: "No accounts found for user", success: false }),
-          { headers: corsHeaders, status: 404 }
-        );
+        console.log('No account found, attempting to create one');
+        
+        // Try to create a new account
+        try {
+          if (!sfdId) {
+            // If no SFD ID provided, try to get from user_sfds
+            const { data: userSfds, error: userSfdsError } = await supabaseAdmin
+              .from('user_sfds')
+              .select('sfd_id')
+              .eq('user_id', userIdToUse)
+              .eq('is_default', true)
+              .single();
+              
+            if (userSfdsError || !userSfds) {
+              const { data: anySfd } = await supabaseAdmin
+                .from('user_sfds')
+                .select('sfd_id')
+                .eq('user_id', userIdToUse)
+                .limit(1)
+                .single();
+                
+              if (anySfd) {
+                sfdId = anySfd.sfd_id;
+              }
+            } else {
+              sfdId = userSfds.sfd_id;
+            }
+            
+            if (!sfdId) {
+              throw new Error('No SFD found for this user');
+            }
+          }
+          
+          const { data: newAccount, error: createError } = await supabaseAdmin
+            .from('accounts')
+            .insert({
+              user_id: userIdToUse,
+              sfd_id: sfdId,
+              balance: 0,
+              currency: 'FCFA'
+            })
+            .select()
+            .single();
+
+          if (createError) throw createError;
+          account = newAccount;
+          
+          console.log("Created new account:", account);
+        } catch (error) {
+          console.error("Failed to create account:", error);
+          return new Response(
+            JSON.stringify({ error: "Failed to create account: " + error.message, success: false }),
+            { headers: corsHeaders, status: 500 }
+          );
+        }
+      } else {
+        // Use the first account
+        account = accounts[0];
+        console.log("Using existing account:", account);
       }
-      
-      account = accounts[0];
-      console.log("Using account:", account);
     } else {
-      console.error("Either userId or clientId is required");
+      console.error("No user ID could be determined");
       return new Response(
-        JSON.stringify({ error: "Either userId or clientId is required", success: false }),
+        JSON.stringify({ error: "No user ID could be determined", success: false }),
         { headers: corsHeaders, status: 400 }
       );
     }
@@ -195,8 +215,8 @@ serve(async (req) => {
     const { data: transaction, error: transactionError } = await supabaseAdmin
       .from('transactions')
       .insert({
-        user_id: account.user_id, // Use account's user_id
-        sfd_id: account.sfd_id || sfdId, // Use account's SFD ID or provided one
+        user_id: account.user_id,
+        sfd_id: account.sfd_id,
         amount: transactionType === 'withdrawal' ? -Math.abs(amount) : Math.abs(amount),
         type: transactionType,
         name: transactionType === 'deposit' ? 'Dépôt' : 'Retrait',
