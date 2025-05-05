@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,7 +9,7 @@ interface SfdToken {
   expiresAt: number;
 }
 
-interface UseSfdTokenManagerReturn {
+export interface UseSfdTokenManagerReturn {
   getToken: (sfdId: string) => Promise<string | null>;
   refreshToken: (sfdId: string) => Promise<string | null>;
   isLoading: boolean;

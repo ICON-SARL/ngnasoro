@@ -27,15 +27,16 @@ export interface SfdLoan {
 export interface SfdAccount {
   id: string;
   name: string;
-  description?: string;
+  description?: string; // Ensure description is included
   logoUrl?: string | null;
+  logo_url?: string | null;
   code?: string;
   region?: string;
   balance?: number;
   currency?: string;
   isDefault?: boolean;
   isVerified?: boolean;
-  status?: string;
+  status?: string; // Ensure status is included
   loans?: SfdLoan[];
   sfd_id?: string;
   account_type?: string;

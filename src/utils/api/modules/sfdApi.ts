@@ -1,5 +1,5 @@
 import { supabase } from '@/integrations/supabase/client';
-import { SfdBalanceData, SfdData, SfdLoan } from '@/hooks/sfd/types';
+import { SfdData, SfdBalanceData } from '@/hooks/sfd/types';
 
 // Define the SfdBalanceResult interface
 export interface SfdBalanceResult {
@@ -10,57 +10,81 @@ export interface SfdBalanceResult {
 // SFD API client module
 export const sfdApi = {
   /**
-   * GetSfdBalance the balance for a specific SFD account
+   * Get all SFDs
    */
-  getSfdBalance: async (userId: string, sfdId: string): Promise<SfdBalanceData> => {
+  async getSfds(): Promise<SfdData[]> {
     try {
-      // In a real implementation, you would call your backend API
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      
+      // Transform the results to match SfdData type
+      return data.map(sfd => ({
+        id: sfd.id,
+        name: sfd.name,
+        code: sfd.code,
+        region: sfd.region,
+        status: sfd.status,
+        logo_url: sfd.logo_url,
+        description: sfd.description,
+        settings: typeof sfd.settings === 'string' 
+          ? JSON.parse(sfd.settings) 
+          : sfd.settings
+      }));
+    } catch (error) {
+      console.error('Error fetching SFDs:', error);
+      return [];
+    }
+  },
+  
+  /**
+   * For backward compatibility (aliased method)
+   */
+  async getSfdsList(): Promise<SfdData[]> {
+    return this.getSfds();
+  },
+  
+  /**
+   * Get SFD balance for a user
+   */
+  async getSfdBalance(userId: string, sfdId: string): Promise<SfdBalanceData> {
+    try {
       const { data, error } = await supabase.functions.invoke('get-sfd-balance', {
-        body: { 
-          userId,
-          sfdId
-        }
+        body: { userId, sfdId }
       });
       
-      if (error) {
-        console.error('Error fetching SFD balance:', error);
-        return { balance: 0, currency: 'FCFA' };
-      }
+      if (error) throw error;
       
       return {
         balance: data?.balance || 0,
         currency: data?.currency || 'FCFA'
       };
     } catch (error) {
-      console.error('SFD balance fetch error:', error);
+      console.error('Error fetching SFD balance:', error);
       return { balance: 0, currency: 'FCFA' };
     }
   },
   
   /**
-   * Synchronize SFD accounts
+   * Synchronize user accounts with SFD
    */
-  synchronizeAccounts: async (userId: string): Promise<boolean> => {
+  async synchronizeAccounts(userId: string): Promise<boolean> {
     try {
       const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-        body: { 
-          userId,
-          forceSync: true
-        }
+        body: { userId }
       });
       
-      if (error) {
-        console.error('Error synchronizing SFD accounts:', error);
-        return false;
-      }
-      
-      return data?.success || false;
+      if (error) throw error;
+      return true;
     } catch (error) {
-      console.error('SFD synchronization error:', error);
+      console.error('Error synchronizing accounts:', error);
       return false;
     }
   },
-
+  
   /**
    * Get list of all SFDs
    */

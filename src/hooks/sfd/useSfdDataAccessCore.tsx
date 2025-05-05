@@ -14,7 +14,7 @@ export function useSfdDataAccessCore() {
   
   // Use the sub-hooks
   const { loading, error, fetchUserSfds } = useSfdDataFetcher(setSfdData);
-  const { generateTokenForSfd, refreshTokenIfNeeded } = useSfdTokenManager(sfdData, setSfdData);
+  const { getToken, refreshToken } = useSfdTokenManager();
 
   // Fetch SFDs on component mount
   useEffect(() => {
@@ -43,6 +43,11 @@ export function useSfdDataAccessCore() {
     }
   }, [user, activeSfdId, sfdData.length, setActiveSfdId, fetchUserSfds]);
 
+  // Helper function to refresh token if needed
+  const refreshTokenIfNeeded = useCallback(async (sfdId: string) => {
+    return await refreshToken(sfdId);
+  }, [refreshToken]);
+
   // Switch the active SFD
   const switchActiveSfd = useCallback(async (sfdId: string) => {
     if (!user) return false;
@@ -60,7 +65,7 @@ export function useSfdDataAccessCore() {
     setActiveSfdId(sfdId);
     
     // Ensure we have a valid token for this SFD
-    await refreshTokenIfNeeded(user.id, sfdId);
+    await refreshTokenIfNeeded(sfdId);
     
     toast({
       title: "SFD changé",
@@ -78,7 +83,7 @@ export function useSfdDataAccessCore() {
     if (!sfd) return null;
     
     // Ensure we have a valid token
-    await refreshTokenIfNeeded(user.id, activeSfdId);
+    await refreshTokenIfNeeded(activeSfdId);
     
     // Return the possibly updated SFD data
     return sfdData.find(s => s.id === activeSfdId) || null;
@@ -86,10 +91,10 @@ export function useSfdDataAccessCore() {
 
   // Get the current token for API calls
   const getCurrentSfdToken = useCallback(async (): Promise<string | null> => {
-    if (!activeSfdId || !user) return null;
+    if (!activeSfdId) return null;
     
-    return refreshTokenIfNeeded(user.id, activeSfdId);
-  }, [activeSfdId, refreshTokenIfNeeded, user]);
+    return getToken(activeSfdId);
+  }, [activeSfdId, getToken]);
 
   return {
     sfdData,

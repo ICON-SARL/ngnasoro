@@ -25,7 +25,7 @@ export function useSfdAccounts(sfdId?: string) {
     data: accounts = [],
     isLoading,
     error,
-    refetch: refetchAccounts
+    refetch: refetchAccountsQuery
   } = useQuery({
     queryKey: ['sfd-accounts', effectiveSfdId],
     queryFn: () => sfdAccountService.getSfdAccounts(effectiveSfdId || ''),
@@ -85,7 +85,7 @@ export function useSfdAccounts(sfdId?: string) {
     mutationFn: async () => {
       // Placeholder for balance synchronization
       await new Promise(resolve => setTimeout(resolve, 1000));
-      await refetchAccounts();
+      await refetchAccountsQuery();
       return { success: true };
     },
     onSuccess: () => {
@@ -143,6 +143,9 @@ export function useSfdAccounts(sfdId?: string) {
     updated_at: ''
   } as SfdClientAccount : null;
 
+  // Define refetchAccounts for consistency across app
+  const refetchAccounts = refetchAccountsQuery;
+
   // Return both the original accounts and transformed accounts for compatibility
   return {
     accounts,
@@ -160,8 +163,8 @@ export function useSfdAccounts(sfdId?: string) {
     synchronizeBalances,
     refetchAccounts,
     refetchHistory,
-    refetch: refetchAccounts,  // Alias for backward compatibility
-    refetchSavingsAccount: refetchAccounts  // Add this property that some components use
+    refetch: refetchAccountsQuery,  // Alias for backward compatibility
+    refetchSavingsAccount: refetchAccountsQuery  // Add this property that some components use
   };
 }
 
