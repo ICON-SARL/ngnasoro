@@ -32,4 +32,6 @@ export interface SfdAccountDisplay {
   is_default: boolean;
   isVerified: boolean;
   status?: string;
+  description?: string; // Added this property
+  logo?: string; // Added for compatibility with some components
 }

@@ -106,6 +106,7 @@ export function useSfdAccounts(sfdId?: string) {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
+      description: acc.description || `Compte ${acc.account_type}`,  // Added this property
       logoUrl: null,
       code: '',
       region: '',
@@ -113,10 +114,9 @@ export function useSfdAccounts(sfdId?: string) {
       currency: acc.currency,
       isDefault: false,
       isVerified: true,
-      status: acc.status,
-      sfd_id: acc.sfd_id,  // Include the required fields for compatibility
+      status: acc.status || 'active',  // Added this property
+      sfd_id: acc.sfd_id,
       account_type: acc.account_type,
-      description: acc.description,
       created_at: acc.created_at,
       updated_at: acc.updated_at
     }));
@@ -129,16 +129,16 @@ export function useSfdAccounts(sfdId?: string) {
   const activeSfdAccount = accounts.length > 0 ? {
     id: effectiveSfdId || accounts[0].sfd_id,
     name: 'SFD Account',
+    description: 'Main SFD Account',  // Added description property
     logoUrl: null,
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
     currency: accounts[0]?.currency || 'FCFA',
     isDefault: true,
     isVerified: true,
+    status: 'active',  // Added status property
     loans: [],
-    status: 'active',
-    sfd_id: effectiveSfdId || accounts[0].sfd_id,  // Add the required field
+    sfd_id: effectiveSfdId || accounts[0].sfd_id,
     account_type: '',
-    description: null,
     created_at: '',
     updated_at: ''
   } as SfdClientAccount : null;
@@ -155,12 +155,13 @@ export function useSfdAccounts(sfdId?: string) {
     repaymentAccount,
     savingsAccount,
     transferFunds,
+    makeLoanPayment,  // Added this missing property
+    activeSfdAccount,  // Added this missing property
+    synchronizeBalances,  // Added this missing property
     refetchAccounts,
     refetchHistory,
-    refetch: refetchAccounts,
-    synchronizeBalances,
-    activeSfdAccount,
-    makeLoanPayment
+    refetch: refetchAccounts,  // Alias for backward compatibility
+    refetchSavingsAccount: refetchAccounts  // Add this property that some components use
   };
 }
 

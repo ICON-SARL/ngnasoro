@@ -1,54 +1,19 @@
+
 export interface SfdData {
   id: string;
   name: string;
-  logo_url?: string;
-  code?: string;
+  code: string;
   region?: string;
   status: string;
-  balance?: number;
-  currency?: string;
-  token?: string | null;
-  lastFetched?: Date | null;
-  is_default?: boolean;
+  logo_url?: string;
+  description?: string;
+  settings?: Record<string, any>;
 }
 
-export interface QRCodeRequest {
-  userId: string;
-  sfdId: string;
-  amount: number;
-  type: 'deposit' | 'withdrawal' | 'loan_payment';
-  loanId?: string;
-  reference?: string;
-}
-
-export interface SyncResult {
-  success: boolean;
-  message: string;
-  updates?: any;
-}
-
-export interface SfdClientAccount {
-  id: string;
-  name: string;
-  logoUrl?: string | null;
-  code?: string;
-  region?: string;
+export interface SfdBalanceData {
   balance: number;
   currency: string;
-  isDefault?: boolean;
-  isVerified?: boolean;
-  status?: string;
-  loans?: SfdLoan[];
-  token?: string;
-  lastFetched?: Date;
-  sfd_id: string;
-  account_type?: string;
-  description?: string | null;
-  created_at?: string;
-  updated_at?: string;
 }
-
-export type SfdAccount = SfdClientAccount;
 
 export interface SfdLoan {
   id: string;
@@ -58,26 +23,26 @@ export interface SfdLoan {
   isLate: boolean;
 }
 
-export interface UserSfd {
+export interface SfdAccount {
   id: string;
-  is_default: boolean;
-  sfds: {
-    id: string;
-    name: string;
-    code?: string;
-    region?: string;
-    logo_url?: string | null;
-  };
+  name: string;
+  description?: string; // Added this property
+  logoUrl?: string | null;
+  code?: string;
+  region?: string;
+  balance?: number;
+  currency?: string;
+  isDefault?: boolean;
+  isVerified?: boolean;
+  status?: string; // Added this property
+  loans?: SfdLoan[];
+  sfd_id?: string;
+  account_type?: string;
+  created_at?: string;
+  updated_at?: string;
 }
 
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-export interface LoanPaymentParams {
-  loanId: string;
-  amount: number;
-  paymentMethod: string;
-  reference?: string;
+export interface SfdClientAccount extends SfdAccount {
+  description?: string; // Added this property for components that need it
+  status?: string; // Added this property for components that need it
 }

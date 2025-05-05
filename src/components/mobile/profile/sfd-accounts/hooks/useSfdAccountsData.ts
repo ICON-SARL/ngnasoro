@@ -27,12 +27,15 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     const formatted = effectiveSfdData.map((sfd: any) => ({
       id: sfd.id || sfd.sfds?.id,
       name: sfd.name || sfd.sfds?.name,
+      description: sfd.description || sfd.name || sfd.sfds?.name,
       logo: sfd.logo_url || sfd.sfds?.logo_url,
+      logo_url: sfd.logo_url || sfd.sfds?.logo_url, // Added for compatibility
       balance: sfd.balance || 0,
       currency: sfd.currency || 'FCFA',
       isActive: sfd.id === effectiveActiveSfdId || sfd.sfds?.id === effectiveActiveSfdId,
       is_default: sfd.is_default || false,
-      isVerified: sfd.status === 'active' || true
+      isVerified: sfd.status === 'active' || true,
+      status: sfd.status || 'active' // Added for compatibility
     }));
     
     setDisplayAccounts(formatted);
@@ -45,7 +48,7 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     }
     
     try {
-      await useSfdAccounts().refetch();
+      await useSfdAccounts().refetchAccounts();
       return true;
     } catch (error) {
       console.error('Failed to refetch SFD accounts', error);
