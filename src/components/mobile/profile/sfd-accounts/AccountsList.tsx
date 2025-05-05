@@ -12,7 +12,7 @@ export type { SfdAccountDisplay } from './types/SfdAccountTypes';
 interface AccountsListProps {
   accounts: SfdAccountDisplay[];
   activeSfdId: string | null;
-  onSwitchSfd: (sfdId: string) => Promise<void>;
+  onSwitchSfd: (sfdId: string) => Promise<boolean | void> | void;
   switchingId: string | null;
   isVerifying: boolean;
   onAddSfd?: () => void;

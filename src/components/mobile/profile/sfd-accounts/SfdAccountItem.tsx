@@ -12,7 +12,7 @@ interface SfdAccountItemProps {
   sfd: SfdAccountDisplay;
   status: AccountStatus;
   isActive: boolean;
-  onSwitchSfd: (sfdId: string) => Promise<void>;
+  onSwitchSfd: (sfdId: string) => Promise<boolean | void> | void;
   isProcessing: boolean;
 }
 

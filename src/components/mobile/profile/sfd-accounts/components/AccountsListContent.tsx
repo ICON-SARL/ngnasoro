@@ -1,13 +1,13 @@
 
 import React from 'react';
-import SfdAccountItem from '../SfdAccountItem';
 import { SfdAccountDisplay } from '../types/SfdAccountTypes';
+import SfdAccountItem from '../SfdAccountItem';
 import { getAccountStatus } from '../utils/accountStatus';
 
 interface AccountsListContentProps {
   accounts: SfdAccountDisplay[];
   activeSfdId: string | null;
-  onSwitchSfd: (sfdId: string) => Promise<void>;
+  onSwitchSfd: (sfdId: string) => Promise<boolean | void> | void;
   switchingId: string | null;
   isVerifying: boolean;
 }
@@ -19,23 +19,24 @@ const AccountsListContent: React.FC<AccountsListContentProps> = ({
   switchingId,
   isVerifying
 }) => {
-  // Fonction pour empêcher la navigation par défaut
-  const handleContainerClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-  };
-
   return (
-    <div className="space-y-3" onClick={handleContainerClick}>
-      {accounts.map((sfd) => (
-        <SfdAccountItem
-          key={sfd.id}
-          sfd={sfd}
-          status={getAccountStatus(sfd)}
-          isActive={sfd.id === activeSfdId}
-          onSwitchSfd={onSwitchSfd}
-          isProcessing={switchingId === sfd.id || isVerifying}
-        />
-      ))}
+    <div className="space-y-3">
+      {accounts.map((sfd) => {
+        const isActive = sfd.id === activeSfdId;
+        const isProcessing = switchingId === sfd.id && isVerifying;
+        const status = getAccountStatus(sfd);
+        
+        return (
+          <SfdAccountItem
+            key={sfd.id}
+            sfd={sfd}
+            status={status}
+            isActive={isActive}
+            onSwitchSfd={onSwitchSfd}
+            isProcessing={isProcessing}
+          />
+        );
+      })}
     </div>
   );
 };
