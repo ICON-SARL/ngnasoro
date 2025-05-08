@@ -54,30 +54,33 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     };
   }, [synchronizeWithSfd, refetch]);
 
-  // Filter to only show SFDs where the user is a client
+  // Enhanced logic to ensure client accounts are properly linked
   useEffect(() => {
-    const filterAndLinkAccounts = async () => {
+    const ensureClientAccountsLinked = async () => {
       if (!user?.id) return;
       
       try {
-        // Get user's client accounts
+        // Fetch client accounts from sfd_clients table
         const { data: clientAccounts, error: clientError } = await supabase
           .from('sfd_clients')
-          .select('id, sfd_id, user_id')
-          .eq('user_id', user.id);
+          .select('id, sfd_id, user_id, status')
+          .eq('user_id', user.id)
+          .eq('status', 'validated'); // Only get validated clients
         
         if (clientError) throw clientError;
         
-        // If user is a client in any SFD
+        console.log('Found client accounts:', clientAccounts);
+        
+        // If user is a validated client in any SFD
         if (clientAccounts && clientAccounts.length > 0) {
-          console.log('User is a client in SFDs:', clientAccounts.map(ca => ca.sfd_id));
+          console.log('User is a validated client in SFDs:', clientAccounts.map(ca => ca.sfd_id));
           
-          // Ensure the user has SFD associations
+          // Process each client account
           for (const account of clientAccounts) {
             // Check if user-sfd association exists
             const { data: existing } = await supabase
               .from('user_sfds')
-              .select('id')
+              .select('id, is_default')
               .eq('user_id', user.id)
               .eq('sfd_id', account.sfd_id)
               .maybeSingle();
@@ -91,21 +94,55 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
                 .insert({
                   user_id: user.id,
                   sfd_id: account.sfd_id,
-                  is_default: true // Make first one default
+                  is_default: true // Make default
                 });
+            }
+            
+            // Ensure actual account record exists in accounts table
+            const { data: existingAccount } = await supabase
+              .from('accounts')
+              .select('id, balance')
+              .eq('user_id', user.id)
+              .eq('sfd_id', account.sfd_id)
+              .maybeSingle();
+              
+            if (!existingAccount) {
+              console.log('Creating account record for user:', user.id, 'in SFD:', account.sfd_id);
+              
+              // Create account with initial balance
+              await supabase
+                .from('accounts')
+                .insert({
+                  user_id: user.id,
+                  sfd_id: account.sfd_id,
+                  balance: 0,
+                  currency: 'FCFA'
+                });
+                
+              // Force synchronize with the edge function to ensure consistent data
+              try {
+                const { data: syncResult, error: syncError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+                  body: { userId: user.id, sfdId: account.sfd_id, forceFullSync: true }
+                });
+                
+                if (syncError) throw syncError;
+                console.log('Account synchronized:', syncResult);
+              } catch (err) {
+                console.error('Synchronization error:', err);
+              }
             }
           }
           
-          // Make sure to refetch after creating associations
+          // Refetch data after ensuring accounts exist
           await refetch();
         }
       } catch (err) {
-        console.error("Error filtering SFD accounts:", err);
+        console.error("Error ensuring client accounts are linked:", err);
       }
     };
     
-    filterAndLinkAccounts();
-  }, [user?.id]);
+    ensureClientAccountsLinked();
+  }, [user?.id, refetch]);
 
   const handleRetrySync = () => {
     synchronizeWithSfd()

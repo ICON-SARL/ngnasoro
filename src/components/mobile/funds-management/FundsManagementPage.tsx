@@ -40,22 +40,24 @@ const FundsManagementPage = () => {
   
   const { dashboardData, refreshDashboardData } = useMobileDashboard();
 
-  // Fetch the SFDs where the user has a client account
+  // Fetch the SFDs where the user has a client account and ensure accounts exist
   useEffect(() => {
     const fetchClientSfds = async () => {
       if (!user?.id) return;
       
       try {
+        // Get client accounts from sfd_clients table
         const { data, error } = await supabase
           .from('sfd_clients')
-          .select('sfd_id')
-          .eq('user_id', user.id);
+          .select('id, sfd_id, status')
+          .eq('user_id', user.id)
+          .eq('status', 'validated');
           
         if (error) throw error;
         
         if (data && data.length > 0) {
           const sfdIds = data.map(item => item.sfd_id);
-          console.log('User is client in SFDs:', sfdIds);
+          console.log('User is validated client in SFDs:', sfdIds);
           setClientSfdIds(sfdIds);
           
           // If we have client SFDs but the selected SFD is not one of them,
@@ -64,6 +66,44 @@ const FundsManagementPage = () => {
             setSelectedSfd(sfdIds[0]);
             setActiveSfdId(sfdIds[0]);
           }
+          
+          // Ensure account records exist for each client SFD
+          for (const sfdId of sfdIds) {
+            const { data: accountData } = await supabase
+              .from('accounts')
+              .select('id')
+              .eq('user_id', user.id)
+              .eq('sfd_id', sfdId)
+              .maybeSingle();
+              
+            if (!accountData) {
+              console.log('Creating missing account record for SFD:', sfdId);
+              
+              // Create the account
+              await supabase
+                .from('accounts')
+                .insert({
+                  user_id: user.id,
+                  sfd_id: sfdId,
+                  balance: 0,
+                  currency: 'FCFA'
+                });
+                
+              // Force synchronize with edge function
+              try {
+                await supabase.functions.invoke('synchronize-sfd-accounts', {
+                  body: { userId: user.id, sfdId, forceFullSync: true }
+                });
+              } catch (syncErr) {
+                console.error('Failed to synchronize account:', syncErr);
+              }
+            }
+          }
+          
+          // Fetch updated accounts
+          await refetchSfdAccounts();
+        } else {
+          console.log('User is not a client in any SFD');
         }
       } catch (error) {
         console.error('Error fetching client SFDs:', error);
@@ -71,17 +111,17 @@ const FundsManagementPage = () => {
     };
     
     fetchClientSfds();
-  }, [user?.id]);
+  }, [user?.id, selectedSfd, setActiveSfdId, refetchSfdAccounts]);
 
   // Map SfdClientAccount array to SfdAccountDisplay array
   const mapToSfdAccountDisplay = useCallback((accounts) => {
     // Filter accounts to only include those where the user is a client
     const filteredAccounts = clientSfdIds.length > 0 
-      ? accounts.filter(acc => clientSfdIds.includes(acc.id))
+      ? accounts.filter(acc => clientSfdIds.includes(acc.sfd_id || acc.id))
       : accounts;
       
     return filteredAccounts.map(acc => ({
-      id: acc.id,
+      id: acc.id || acc.sfd_id,
       name: acc.name || acc.description || `Account ${acc.account_type || ''}`,
       balance: acc.balance || 0,
       currency: acc.currency || 'FCFA',
@@ -90,7 +130,7 @@ const FundsManagementPage = () => {
       logo_url: acc.logoUrl || acc.logo_url,
       is_default: acc.isDefault || false,
       isVerified: acc.isVerified !== false,
-      isActive: acc.id === selectedSfd,
+      isActive: (acc.id || acc.sfd_id) === selectedSfd,
       status: acc.status || 'active',
       description: acc.description || acc.name
     }));
@@ -138,7 +178,7 @@ const FundsManagementPage = () => {
         if (clientSfdIds.length > 0) {
           // Only sum balances for SFDs where user is a client
           total = sfdAccounts
-            .filter(account => clientSfdIds.includes(account.id))
+            .filter(account => clientSfdIds.includes(account.sfd_id))
             .reduce((sum, account) => sum + (account.balance || 0), 0);
         } else {
           // Fall back to all accounts if no client SFDs found
@@ -153,7 +193,7 @@ const FundsManagementPage = () => {
         setTotalBalance(0);
       }
     } else {
-      const selectedAccount = sfdAccounts.find(account => account.id === selectedSfd);
+      const selectedAccount = sfdAccounts.find(account => account.sfd_id === selectedSfd || account.id === selectedSfd);
       console.log('Selected SFD account balance:', selectedAccount?.balance, selectedAccount);
       setTotalBalance(selectedAccount?.balance || 0);
     }
@@ -225,13 +265,16 @@ const FundsManagementPage = () => {
   };
   
   const selectedSfdAccount = selectedSfd !== 'all' 
-    ? sfdAccounts.find(account => account.id === selectedSfd) 
+    ? sfdAccounts.find(account => account.id === selectedSfd || account.sfd_id === selectedSfd) 
     : undefined;
   
   // Filter the accounts to only show those where user is a client
   const filteredSfdAccounts = React.useMemo(() => {
     if (clientSfdIds.length > 0) {
-      return sfdAccounts.filter(account => clientSfdIds.includes(account.id));
+      return sfdAccounts.filter(account => 
+        clientSfdIds.includes(account.id) || 
+        clientSfdIds.includes(account.sfd_id)
+      );
     }
     return sfdAccounts;
   }, [sfdAccounts, clientSfdIds]);

@@ -38,13 +38,14 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({
     const fetchActiveSfds = async () => {
       if (!user) return;
       setIsLoading(true);
-      console.info('Fetching active SFDs for popup display');
+      console.info('Fetching SFDs where user is a client');
       try {
         // First check if user is a client in any SFD
         const { data: clientData, error: clientError } = await supabase
           .from('sfd_clients')
           .select('sfd_id, sfds:sfd_id(id, name)')
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .eq('status', 'validated'); // Only fetch validated clients
           
         if (clientError) throw clientError;
         
@@ -60,7 +61,11 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({
           // If no active SFD is set but we have SFDs, set the first one
           if (!activeSfdId && clientSfds.length > 0) {
             setActiveSfdId(clientSfds[0].id);
+          } else if (clientSfds.length > 0 && !clientSfds.find(sfd => sfd.id === activeSfdId)) {
+            // If active SFD is not in client SFDs, set first client SFD
+            setActiveSfdId(clientSfds[0].id);
           }
+          
           setIsLoading(false);
           return;
         }

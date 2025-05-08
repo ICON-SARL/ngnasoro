@@ -37,7 +37,49 @@ serve(async (req) => {
 
     console.log(`Synchronizing SFD accounts for user ${userId}${sfdId ? `, focusing on SFD ${sfdId}` : ""}${forceFullSync ? ", forcing full sync" : ""}`);
 
-    // Get all SFDs associated with the user
+    // First, check if user is a client in any SFD
+    const { data: clientAccounts, error: clientError } = await supabaseAdmin
+      .from('sfd_clients')
+      .select('sfd_id, sfds:sfd_id(id, name, code)')
+      .eq('user_id', userId)
+      .eq('status', 'validated');
+
+    if (clientError) {
+      console.error('Error fetching client SFDs:', clientError);
+      // Continue with user_sfds as fallback
+    } else if (clientAccounts && clientAccounts.length > 0) {
+      console.log(`User is a validated client in ${clientAccounts.length} SFDs`);
+      
+      // Ensure user_sfds entries exist for client accounts
+      for (const clientAccount of clientAccounts) {
+        const { data: existingAssociation, error: assocError } = await supabaseAdmin
+          .from('user_sfds')
+          .select('id')
+          .eq('user_id', userId)
+          .eq('sfd_id', clientAccount.sfd_id)
+          .maybeSingle();
+          
+        if (assocError) {
+          console.error(`Error checking user_sfds for ${clientAccount.sfd_id}:`, assocError);
+          continue;
+        }
+        
+        if (!existingAssociation) {
+          // Create association
+          await supabaseAdmin
+            .from('user_sfds')
+            .insert({
+              user_id: userId,
+              sfd_id: clientAccount.sfd_id,
+              is_default: true // Make first one default
+            });
+            
+          console.log(`Created user_sfds association for ${clientAccount.sfd_id}`);
+        }
+      }
+    }
+
+    // Get all SFDs associated with the user (from user_sfds)
     const { data: userSfds, error: sfdError } = await supabaseAdmin
       .from('user_sfds')
       .select('sfd_id, sfds:sfd_id(id, name, code)')
@@ -78,6 +120,17 @@ serve(async (req) => {
       const sfdData = userSfd.sfds as any;
       console.log(`Processing SFD account: ${sfdData.name} (${userSfd.sfd_id})`);
       
+      // Check if user is a validated client in this SFD
+      const { data: clientData, error: clientDataError } = await supabaseAdmin
+        .from('sfd_clients')
+        .select('id, status')
+        .eq('user_id', userId)
+        .eq('sfd_id', userSfd.sfd_id)
+        .eq('status', 'validated')
+        .maybeSingle();
+        
+      const isValidatedClient = clientData && clientData.status === 'validated';
+      
       // Check if account already exists
       const { data: existingAccounts, error: accountError } = await supabaseAdmin
         .from('accounts')
@@ -100,7 +153,8 @@ serve(async (req) => {
         console.log(`Using existing balance for ${sfdData.name}: ${currentBalance}`);
       } else {
         // Generate a synthetic balance for demo purposes or new accounts
-        currentBalance = forceFullSync ? Math.floor(Math.random() * 100000) + 50000 : 0;
+        // Only generate a random balance for valid client accounts
+        currentBalance = (isValidatedClient && forceFullSync) ? Math.floor(Math.random() * 100000) + 50000 : 0;
         console.log(`Generated new balance for ${sfdData.name}: ${currentBalance}`);
       }
 
@@ -110,7 +164,7 @@ serve(async (req) => {
         const { error: updateError } = await supabaseAdmin
           .from('accounts')
           .update({
-            balance: forceFullSync ? currentBalance : existingAccounts[0].balance,
+            balance: isValidatedClient && forceFullSync ? currentBalance : existingAccounts[0].balance,
             last_updated: new Date().toISOString()
           })
           .eq('id', accountId);
@@ -150,7 +204,8 @@ serve(async (req) => {
         sfd_name: sfdData.name,
         sfd_code: sfdData.code,
         balance: currentBalance,
-        currency: 'FCFA'
+        currency: 'FCFA',
+        is_validated_client: isValidatedClient
       });
     }
 
