@@ -31,7 +31,7 @@ export async function processLoanPayment(
         amount: params.amount,
         paymentMethod: params.paymentMethod,
         description: params.description || 'Loan payment',
-        reference: params.reference
+        reference: params.reference || ''
       }
     });
     

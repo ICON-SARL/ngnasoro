@@ -1,64 +1,32 @@
 
 /**
- * Format a currency amount with thousand separators
- * @param amount The amount to format
- * @param currency The currency symbol/code to append (optional)
- * @returns Formatted currency string
+ * Format a number as currency (FCFA by default)
  */
-export const formatCurrency = (amount: number, currency?: string): string => {
-  const formattedAmount = amount.toLocaleString('fr-FR', {
+export function formatCurrency(amount: number, currency: string = 'FCFA'): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'decimal',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 0
-  });
-  
-  return currency ? `${formattedAmount} ${currency}` : formattedAmount;
-};
+    maximumFractionDigits: 0,
+  }).format(Math.abs(amount)) + ' ' + currency;
+}
 
 /**
- * Format a number with thousand separators and specified decimal places
- * @param number The number to format
- * @param decimals Number of decimal places (default: 2)
- * @returns Formatted number string
+ * Format a percentage
  */
-export const formatNumber = (number: number, decimals = 2): string => {
-  return number.toLocaleString('fr-FR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals
-  });
-};
+export function formatPercentage(value: number): string {
+  return new Intl.NumberFormat('fr-FR', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  }).format(value / 100);
+}
 
 /**
- * Format a date to a human-readable string
- * @param date Date object or string
- * @param includeTime Whether to include the time
- * @returns Formatted date string
+ * Format a date in the French format
  */
-export const formatDate = (date: Date | string, includeTime = false): string => {
-  const dateObj = typeof date === 'string' ? new Date(date) : date;
-  
-  if (includeTime) {
-    return dateObj.toLocaleString('fr-FR', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
+export function formatDate(date: Date | string): string {
+  if (typeof date === 'string') {
+    date = new Date(date);
   }
-  
-  return dateObj.toLocaleDateString('fr-FR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric'
-  });
-};
-
-/**
- * Format a monetary amount for display in transactions
- * @param amount The amount to format
- * @returns Formatted amount string
- */
-export const formatMonetaryAmount = (amount: number): string => {
-  const absAmount = Math.abs(amount);
-  return formatCurrency(absAmount);
-};
+  return date.toLocaleDateString('fr-FR');
+}

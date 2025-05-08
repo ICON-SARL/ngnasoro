@@ -43,23 +43,30 @@ export function useSfdAccount(user: any, activeSfdId: string | null): SfdAccount
         
         // If we didn't find the account in cache or we need to add loans, create or enhance it
         if (activeSfdAccount) {
-          return {
+          const accountWithLoans: SfdClientAccount = {
             ...activeSfdAccount,
             loans: enhancedLoans as SfdLoan[]
           };
+          return accountWithLoans;
         } else if (user?.email?.includes('test')) {
           // For test accounts, create a sample account
           return {
             id: activeSfdId,
             name: 'Test SFD Account',
             logoUrl: null,
+            logo_url: null,
+            code: '',
+            region: '',
             balance: 250000,
             currency: 'FCFA',
             isDefault: true,
             isVerified: true,
+            status: 'active',
             loans: enhancedLoans as SfdLoan[],
-            sfd_id: activeSfdId, // Add required sfd_id field
-            account_type: 'main'
+            sfd_id: activeSfdId,
+            account_type: 'main',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
           };
         }
         

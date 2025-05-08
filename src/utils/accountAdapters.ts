@@ -26,7 +26,6 @@ export function adaptSfdAccount(account: any): SfdAccount {
     is_default: account.is_default || account.isDefault || false,
     sfd_id: account.sfd_id || '', // Add sfd_id for components that need it
     account_type: account.account_type || '',
-    loans: account.loans || [],
     created_at: account.created_at || new Date().toISOString(),
     updated_at: account.updated_at || new Date().toISOString()
   };
@@ -69,7 +68,6 @@ export function adaptToSfdAccountDisplay(account: SfdAccount): any {
     logo_url: account.logo_url || account.logoUrl || null,
     currency: account.currency || 'FCFA',
     code: account.code || '',
-    region: account.region || '',
     description: account.description || '',
     status: account.status || 'active',
     isVerified: true,

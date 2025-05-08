@@ -21,13 +21,16 @@ export function useSfdList(user: User | null) {
         code: userSfd.code,
         region: userSfd.region || '',
         logoUrl: userSfd.logo_url,
+        logo_url: userSfd.logo_url,
         balance: 0, // Le solde sera récupéré séparément
         currency: 'FCFA',
         isDefault: false,
         isVerified: true,
         status: userSfd.status || 'active',
         sfd_id: userSfd.id,
-        account_type: 'main'
+        account_type: 'main',
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
       }));
       
       return sfdAccounts;

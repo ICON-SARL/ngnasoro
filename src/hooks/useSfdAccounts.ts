@@ -1,8 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { sfdAccountService } from '@/services/sfdAccountService';
-import { SfdAccount as DbSfdAccount, CreateTransferParams, SfdAccountTransfer } from '@/types/sfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { SfdClientAccount, LoanPaymentParams } from '@/hooks/sfd/types';
@@ -16,7 +14,11 @@ export interface SfdLoanPaymentParams {
   amount: number;
   paymentMethod: string;
   reference?: string;
+  description?: string;
 }
+
+// Import the service right here to avoid circular dependencies
+import { sfdAccountService } from '@/services/sfdAccountService';
 
 export function useSfdAccounts(sfdId?: string) {
   const { activeSfdId, user } = useAuth();
@@ -51,7 +53,7 @@ export function useSfdAccounts(sfdId?: string) {
 
   // Transfer funds between accounts
   const transferFunds = useMutation({
-    mutationFn: (params: CreateTransferParams) => 
+    mutationFn: (params: any) => 
       sfdAccountService.transferBetweenAccounts(params),
     onSuccess: () => {
       // Refresh accounts and transfer history
@@ -106,23 +108,24 @@ export function useSfdAccounts(sfdId?: string) {
   const savingsAccount = accounts.find(account => account.account_type === 'epargne');
 
   // For compatibility with components expecting SfdClientAccount type
-  const transformAccounts = (accounts: DbSfdAccount[]): SfdClientAccount[] => {
+  const transformAccounts = (accounts: any[]): SfdClientAccount[] => {
     return accounts.map(acc => ({
       id: acc.id,
       name: acc.description || `Compte ${acc.account_type}`,
       description: acc.description || `Compte ${acc.account_type}`,
-      logoUrl: null,
-      code: '',
-      region: '',
+      logoUrl: acc.logo_url || null,
+      logo_url: acc.logo_url || null,
+      code: acc.code || '',
+      region: acc.region || '',
       balance: acc.balance,
-      currency: acc.currency,
-      isDefault: false,
+      currency: acc.currency || 'FCFA',
+      isDefault: acc.is_default || false,
       isVerified: true,
       status: acc.status || 'active',
-      sfd_id: acc.sfd_id,
-      account_type: acc.account_type,
-      created_at: acc.created_at,
-      updated_at: acc.updated_at
+      sfd_id: acc.sfd_id || '',
+      account_type: acc.account_type || '',
+      created_at: acc.created_at || new Date().toISOString(),
+      updated_at: acc.updated_at || new Date().toISOString()
     }));
   };
 
@@ -131,21 +134,24 @@ export function useSfdAccounts(sfdId?: string) {
 
   // Compute the active SFD account for UI components that expect it
   const activeSfdAccount = accounts.length > 0 ? {
-    id: effectiveSfdId || accounts[0].sfd_id,
+    id: effectiveSfdId || accounts[0].sfd_id || '',
     name: 'SFD Account',
     description: 'Main SFD Account',
-    logoUrl: null,
+    logoUrl: accounts[0]?.logo_url || null,
+    logo_url: accounts[0]?.logo_url || null,
+    code: '',
+    region: '',
     balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
     currency: accounts[0]?.currency || 'FCFA',
     isDefault: true,
     isVerified: true,
     status: 'active',
     loans: [],
-    sfd_id: effectiveSfdId || accounts[0].sfd_id,
-    account_type: '',
-    created_at: '',
-    updated_at: ''
-  } as SfdClientAccount : null;
+    sfd_id: effectiveSfdId || accounts[0].sfd_id || '',
+    account_type: accounts[0]?.account_type || '',
+    created_at: accounts[0]?.created_at || new Date().toISOString(),
+    updated_at: accounts[0]?.updated_at || new Date().toISOString()
+  } : null;
 
   // Define refetchAccounts for consistency across app
   const refetchAccounts = refetchAccountsQuery;
@@ -171,9 +177,5 @@ export function useSfdAccounts(sfdId?: string) {
   };
 }
 
-// Import the sfdAccountService here to avoid circular dependencies
-import { sfdAccountService } from '@/services/sfdAccountService';
-
 // Also export the types for components that need them
-export type { DbSfdAccount, SfdAccountTransfer, CreateTransferParams };
 export type { SfdClientAccount };

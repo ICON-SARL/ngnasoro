@@ -1,5 +1,5 @@
 
-import { useSfdAccounts as useOriginalSfdAccounts } from './useSfdAccounts';
+import { useSfdAccounts } from './useSfdAccounts';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
 /**
@@ -9,7 +9,7 @@ import { normalizeSfdAccounts } from '@/utils/accountAdapters';
  */
 export function useCompatSfdAccounts(sfdId?: string) {
   // Use the original hook
-  const originalResult = useOriginalSfdAccounts(sfdId);
+  const originalResult = useSfdAccounts(sfdId);
   
   // Create a proxy that automatically handles missing properties
   return new Proxy(originalResult, {
@@ -20,15 +20,13 @@ export function useCompatSfdAccounts(sfdId?: string) {
       }
       
       // Handle special cases for common missing properties
-      if (prop === 'isPending' || prop === 'mutate') {
+      // Check if the property is synchronizeBalances
+      if (prop === 'synchronizeBalances') {
         // Return a simple function for synchronizeBalances.mutate
-        if (prop === 'synchronizeBalances') {
-          const originalFn = target.synchronizeBalances;
-          return {
-            mutate: originalFn,
-            isPending: false
-          };
-        }
+        return {
+          mutate: target.synchronizeBalances,
+          isPending: false
+        };
       }
       
       // For accounts with sfd_id, ensure it exists

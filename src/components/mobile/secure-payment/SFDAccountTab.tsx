@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
 import { Fingerprint, RotateCw, Shield, Lock } from 'lucide-react';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useCompatSfdAccounts } from '@/hooks/useCompatSfdAccounts';
 import { SfdAccount } from '@/hooks/sfd/types';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
@@ -31,7 +31,7 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
 }) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
   const [selected, setSelected] = useState("");
-  const { sfdAccounts, isLoading } = useSfdAccounts();
+  const { sfdAccounts, isLoading } = useCompatSfdAccounts();
   const { activeSfdId } = useAuth();
   
   // Use normalized accounts to ensure consistent property names
@@ -95,24 +95,6 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
           Compte tokenisé conforme PCI DSS Level 1
         </div>
       </div>
-      
-      {!isWithdrawal && effectiveSelectedAccount?.loans?.length > 0 && (
-        <div>
-          <Label>Prêt à rembourser</Label>
-          <Select defaultValue={effectiveSelectedAccount?.loans[0].id}>
-            <SelectTrigger>
-              <SelectValue placeholder="Sélectionner un prêt" />
-            </SelectTrigger>
-            <SelectContent>
-              {effectiveSelectedAccount?.loans.map(loan => (
-                <SelectItem key={loan.id} value={loan.id}>
-                  {accountName} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
       
       <div>
         <Label>{isWithdrawal ? "Montant du retrait" : "Montant du remboursement"}</Label>

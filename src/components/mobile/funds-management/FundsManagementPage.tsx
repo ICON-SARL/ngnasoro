@@ -24,6 +24,7 @@ import FundsBalanceSection from './FundsBalanceSection';
 import TransactionCard from '../transactions/TransactionCard';
 import { Badge } from '@/components/ui/badge';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
+import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 
 const FundsManagementPage: React.FC = () => {
   const navigate = useNavigate();
@@ -36,6 +37,22 @@ const FundsManagementPage: React.FC = () => {
   
   // Ensure we have the normalized accounts data with consistent properties
   const normalizedAccounts = normalizeSfdAccounts(accounts);
+  
+  // Convert to SfdAccountDisplay type
+  const displayAccounts: SfdAccountDisplay[] = normalizedAccounts.map(acc => ({
+    id: acc.id,
+    name: acc.name || '',
+    balance: acc.balance || 0,
+    logo_url: acc.logo_url || null,
+    currency: acc.currency || 'FCFA',
+    code: acc.code || '',
+    region: '',
+    description: acc.description || '',
+    status: acc.status || 'active',
+    isVerified: true,
+    isActive: acc.id === activeSfdId,
+    is_default: acc.is_default || false
+  }));
   
   useEffect(() => {
     if (activeSfdId) {
@@ -106,7 +123,7 @@ const FundsManagementPage: React.FC = () => {
         balance={totalBalance}
         isRefreshing={isSyncing}
         onRefresh={refreshBalances}
-        sfdAccounts={normalizeSfdAccounts(sfdAccounts)}
+        sfdAccounts={displayAccounts}
         onSelectSfd={setSelectedSfd}
         selectedSfd={selectedSfd}
       />

@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { BiRefresh } from 'react-icons/bi';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useCompatSfdAccounts } from '@/hooks/useCompatSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowUpRight } from 'lucide-react';
+import { ArrowUpRight, RefreshCw } from 'lucide-react';
 
 const AccountBalance = () => {
   const { activeSfdAccount, isLoading, synchronizeBalances } = useCompatSfdAccounts();
@@ -20,7 +19,11 @@ const AccountBalance = () => {
 
   const handleRefresh = () => {
     if (synchronizeBalances) {
-      synchronizeBalances.mutate?.();
+      if (typeof synchronizeBalances === 'function') {
+        synchronizeBalances();
+      } else if (synchronizeBalances.mutate && typeof synchronizeBalances.mutate === 'function') {
+        synchronizeBalances.mutate();
+      }
     }
   };
 
@@ -31,10 +34,10 @@ const AccountBalance = () => {
       size="sm" 
       onClick={handleRefresh}
       className="p-1 h-auto hover:bg-transparent text-gray-500 hover:text-gray-700"
-      disabled={synchronizeBalances?.isPending}
+      disabled={synchronizeBalances && 'isPending' in synchronizeBalances ? synchronizeBalances.isPending : false}
     >
-      <BiRefresh 
-        className={`h-5 w-5 ${synchronizeBalances?.isPending ? 'animate-spin' : ''}`} 
+      <RefreshCw 
+        className={`h-5 w-5 ${synchronizeBalances && 'isPending' in synchronizeBalances && synchronizeBalances.isPending ? 'animate-spin' : ''}`} 
       />
     </Button>
   );
@@ -63,6 +66,8 @@ const AccountBalance = () => {
     );
   }
 
+  const isPending = synchronizeBalances && 'isPending' in synchronizeBalances ? synchronizeBalances.isPending : false;
+
   return (
     <div className="space-y-2">
       <h3 className="text-sm text-gray-500 flex items-center justify-between">
@@ -70,14 +75,14 @@ const AccountBalance = () => {
         <RefreshButton />
       </h3>
       <div className="flex items-center gap-2">
-        <p className={`text-2xl font-bold ${synchronizeBalances?.isPending ? 'text-gray-400' : 'text-[#0D6A51]'}`}>
+        <p className={`text-2xl font-bold ${isPending ? 'text-gray-400' : 'text-[#0D6A51]'}`}>
           {formatCurrency(activeSfdAccount.balance)}
         </p>
         <Button 
           variant="ghost" 
           size="sm"
           className="h-6 px-2 rounded-full bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
-          disabled={synchronizeBalances?.isPending}
+          disabled={isPending}
         >
           <ArrowUpRight className="h-3 w-3 mr-1" />
           <span className="text-xs">Recharger</span>
