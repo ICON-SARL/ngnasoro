@@ -10,6 +10,7 @@ import MobileMoneyModal from '../loan/MobileMoneyModal';
 import QRCodePaymentDialog from './QRCodePaymentDialog';
 import { useSecurePayment } from './hooks/useSecurePayment';
 import { SfdAccount } from '@/hooks/sfd/types';
+import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
 export interface SecurePaymentTabProps {
   onBack?: () => void;
@@ -26,12 +27,13 @@ const SecurePaymentTab: React.FC<SecurePaymentTabProps> = ({
   onComplete,
   selectedSfdId
 }) => {
-  const { accounts, sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
+  const { sfdAccounts, isLoading: accountsLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   
   const effectiveSfdId = selectedSfdId || activeSfdId;
-  // Use sfdAccounts (transformed accounts) instead of the raw accounts data
-  const selectedSfdAccount = sfdAccounts.find(acc => acc.id === effectiveSfdId);
+  // Use normalized accounts to ensure consistent property names
+  const normalizedAccounts = normalizeSfdAccounts(sfdAccounts);
+  const selectedSfdAccount = normalizedAccounts.find(acc => acc.id === effectiveSfdId);
   
   const {
     paymentSuccess,

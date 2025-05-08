@@ -1,4 +1,3 @@
-
 export interface SfdData {
   id: string;
   name: string;
@@ -27,29 +26,45 @@ export interface SfdLoan {
 export interface SfdAccount {
   id: string;
   name: string;
-  description?: string;
-  logoUrl?: string | null;
-  logo_url?: string | null;
   code?: string;
-  region?: string;
-  balance?: number;
-  currency?: string;
-  isDefault?: boolean;
-  isVerified?: boolean;
+  description?: string;
+  logo_url?: string | null;
+  logoUrl?: string | null;
+  balance: number;
+  currency: string;
   status?: string;
-  loans?: SfdLoan[];
+  sfds?: {
+    id: string;
+    name: string;
+    logo_url?: string | null;
+  };
+  is_default?: boolean;
   sfd_id?: string;
   account_type?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface SfdClientAccount extends SfdAccount {
+export interface SfdClientAccount {
+  id: string;
+  name: string;
   description?: string;
-  status?: string;
+  logoUrl?: string | null;
+  logo_url?: string | null;
+  code: string;
+  region: string;
+  balance: number;
+  currency: string;
+  isDefault: boolean;
+  isVerified: boolean;
+  status: string;
+  loans?: any[];
+  sfd_id: string;
+  account_type: string;
+  created_at: string;
+  updated_at: string;
 }
 
-// Add missing types
 export interface SyncResult {
   success: boolean;
   message?: string;
@@ -59,8 +74,7 @@ export interface SyncResult {
 
 export interface LoanPaymentParams {
   loanId: string;
-  amount: number;
+  amount: number; 
   paymentMethod: string;
-  description?: string;
   reference?: string;
 }

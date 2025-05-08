@@ -15,6 +15,7 @@ const AccountBalance: React.FC = () => {
   
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [isSyncPending, setIsSyncPending] = useState(false);
   
   // Check if the account is verified and can display balance
   const isAccountVerified = activeSfdAccount ? 
@@ -48,14 +49,19 @@ const AccountBalance: React.FC = () => {
           setIsRefreshing(false);
         });
     } else {
-      // Fall back to synchronizeBalances if no dashboard data
-      synchronizeBalances.mutate(undefined, {
-        onSettled: () => {
+      // Fall back to synchronizeBalances function
+      setIsSyncPending(true);
+      synchronizeBalances()
+        .then(() => {
           refetch();
           setLastUpdated(new Date());
           setIsRefreshing(false);
-        }
-      });
+          setIsSyncPending(false);
+        })
+        .catch(() => {
+          setIsRefreshing(false);
+          setIsSyncPending(false);
+        });
     }
   }, [isRefreshing, synchronizeBalances, refetch, refreshDashboardData, isAccountVerified]);
   
@@ -77,7 +83,7 @@ const AccountBalance: React.FC = () => {
       
       {isAccountVerified ? (
         <p className="text-2xl font-bold">
-          {isLoading || isDashboardLoading || synchronizeBalances.isPending
+          {isLoading || isDashboardLoading || isSyncPending
             ? "Chargement..." 
             : formatCurrency(accountBalance)}
         </p>
@@ -94,11 +100,11 @@ const AccountBalance: React.FC = () => {
         </p>
         <button 
           onClick={refreshBalance}
-          disabled={isRefreshing || synchronizeBalances.isPending || !isAccountVerified}
+          disabled={isRefreshing || isSyncPending || !isAccountVerified}
           className={`text-xs flex items-center ${isAccountVerified ? 'text-blue-500' : 'text-gray-400'}`}
         >
-          <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || synchronizeBalances.isPending ? 'animate-spin' : ''}`} />
-          {isRefreshing || synchronizeBalances.isPending ? 'Actualisation...' : 'Actualiser'}
+          <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || isSyncPending ? 'animate-spin' : ''}`} />
+          {isRefreshing || isSyncPending ? 'Actualisation...' : 'Actualiser'}
         </button>
       </div>
     </div>

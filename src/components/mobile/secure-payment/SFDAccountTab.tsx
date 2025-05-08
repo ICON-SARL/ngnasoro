@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +10,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import { SfdAccount } from '@/hooks/sfd/types';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
+import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
 interface SFDAccountTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
@@ -29,22 +31,27 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
 }) => {
   const [isBiometricEnabled, setIsBiometricEnabled] = useState(true);
   const [selected, setSelected] = useState("");
-  const { sfdAccounts, activeSfdAccount, isLoading } = useSfdAccounts();
+  const { sfdAccounts, isLoading } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   
-  const accountsList = syncedAccountsList.length > 0 ? syncedAccountsList : sfdAccounts;
+  // Use normalized accounts to ensure consistent property names
+  const normalizedAccounts = normalizeSfdAccounts(syncedAccountsList.length > 0 ? syncedAccountsList : sfdAccounts);
+  const displayAccounts = normalizedAccounts;
+  
+  // Get the normalized active account
+  const effectiveSelectedAccount = selectedSfdAccount || displayAccounts.find(acc => acc.id === activeSfdId);
   
   useEffect(() => {
     if (selectedSfdAccount) {
       setSelected(selectedSfdAccount.id);
     } else if (activeSfdId) {
       setSelected(activeSfdId);
-    } else if (accountsList.length > 0) {
-      setSelected(accountsList[0].id);
+    } else if (displayAccounts.length > 0) {
+      setSelected(displayAccounts[0].id);
     }
-  }, [selectedSfdAccount, activeSfdId, accountsList]);
+  }, [selectedSfdAccount, activeSfdId, displayAccounts]);
   
-  if (isLoading && accountsList.length === 0) {
+  if (isLoading && displayAccounts.length === 0) {
     return (
       <div className="flex justify-center items-center py-8">
         <RotateCw className="h-6 w-6 animate-spin text-primary" />
@@ -53,15 +60,11 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
     );
   }
   
-  const displayAccount = selectedSfdAccount || accountsList.find(sfd => sfd.id === selected);
-  
-  const getAccountName = (account?: SfdAccount | null): string => {
-    if (!account) return "Compte SFD";
-    return account.name || account.description || `Compte ${account.account_type || 'SFD'}`;
-  };
-  
-  const accountName = getAccountName(displayAccount);
-  const accountBalance = displayAccount?.balance || 0;
+  const accountName = effectiveSelectedAccount ? 
+    (effectiveSelectedAccount.name || effectiveSelectedAccount.description || "Compte SFD") : 
+    "Compte SFD";
+    
+  const accountBalance = effectiveSelectedAccount?.balance || 0;
   const formattedBalance = `${formatCurrencyAmount(accountBalance)} FCFA`;
   
   return (
@@ -79,9 +82,9 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
               <SelectValue placeholder="Sélectionner un compte" />
             </SelectTrigger>
             <SelectContent>
-              {accountsList.map(sfd => (
+              {displayAccounts.map(sfd => (
                 <SelectItem key={sfd.id} value={sfd.id}>
-                  {getAccountName(sfd)} ({formatCurrencyAmount(sfd.balance)} FCFA)
+                  {sfd.name || sfd.description || "Compte SFD"} ({formatCurrencyAmount(sfd.balance)} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>
@@ -93,17 +96,17 @@ export const SFDAccountTab: React.FC<SFDAccountTabProps> = ({
         </div>
       </div>
       
-      {!isWithdrawal && activeSfdAccount?.loans?.length > 0 && (
+      {!isWithdrawal && effectiveSelectedAccount?.loans?.length > 0 && (
         <div>
           <Label>Prêt à rembourser</Label>
-          <Select defaultValue={activeSfdAccount?.loans[0].id}>
+          <Select defaultValue={effectiveSelectedAccount?.loans[0].id}>
             <SelectTrigger>
               <SelectValue placeholder="Sélectionner un prêt" />
             </SelectTrigger>
             <SelectContent>
-              {activeSfdAccount?.loans.map(loan => (
+              {effectiveSelectedAccount?.loans.map(loan => (
                 <SelectItem key={loan.id} value={loan.id}>
-                  {getAccountName(activeSfdAccount)} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
+                  {accountName} ({Math.floor(loan.remainingAmount / 4).toLocaleString()} FCFA)
                 </SelectItem>
               ))}
             </SelectContent>

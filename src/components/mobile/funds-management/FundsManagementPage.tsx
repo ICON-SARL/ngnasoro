@@ -1,334 +1,286 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { 
+  Coins, 
+  ArrowLeftRight, 
+  AreaChart,
+  CreditCard,
+  Clock,
+  ArrowUp,
+  ArrowDown,
+  Plus,
+  Wallet
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import SecurePaymentTab from '../secure-payment';
-import { useTransactions } from '@/hooks/useTransactions';
-import { useAuth } from '@/hooks/useAuth';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent } from '@/components/ui/card';
+import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '@/utils/formatters';
 import { useSfdAccounts } from '@/hooks/useSfdAccounts';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
+import { useAuth } from '@/hooks/useAuth';
 import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 import { useToast } from '@/hooks/use-toast';
-import FundsHeader from './FundsHeader';
 import FundsBalanceSection from './FundsBalanceSection';
-import TransferOptions from './TransferOptions';
-import AvailableChannels from './AvailableChannels';
-import TransactionList, { TransactionListItem } from '../TransactionList';
-import { formatCurrencyAmount } from '@/utils/transactionUtils';
-import { supabase } from '@/integrations/supabase/client';
-import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
+import TransactionCard from '../transactions/TransactionCard';
+import { Badge } from '@/components/ui/badge';
+import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
-const FundsManagementPage = () => {
+const FundsManagementPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId, setActiveSfdId } = useAuth();
+  const { activeSfdId } = useAuth();
+  const { accounts, sfdAccounts, isLoading, refetch } = useSfdAccounts();
+  const { synchronizeWithSfd, isSyncing } = useRealtimeSynchronization();
   const { toast } = useToast();
-  const [activeView, setActiveView] = useState<'main' | 'withdraw' | 'deposit'>('main');
-  const [totalBalance, setTotalBalance] = useState<number>(0);
-  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
-  const [selectedSfd, setSelectedSfd] = useState<string>('all');
-  const [clientSfdIds, setClientSfdIds] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('accounts');
+  const [selectedSfd, setSelectedSfd] = useState<string>(activeSfdId || 'all');
   
-  const { accounts, sfdAccounts, refetch: refetchSfdAccounts } = useSfdAccounts();
-  
-  const { 
-    transactions, 
-    isLoading: transactionsLoading, 
-    fetchTransactions
-  } = useTransactions(user?.id, selectedSfd !== 'all' ? selectedSfd : undefined);
-  
-  const { isSyncing, synchronizeWithSfd } = useRealtimeSynchronization();
-  
-  const { dashboardData, refreshDashboardData } = useMobileDashboard();
-
-  // Fetch the SFDs where the user has a client account and ensure accounts exist
-  useEffect(() => {
-    const fetchClientSfds = async () => {
-      if (!user?.id) return;
-      
-      try {
-        // Get client accounts from sfd_clients table
-        const { data, error } = await supabase
-          .from('sfd_clients')
-          .select('id, sfd_id, status')
-          .eq('user_id', user.id)
-          .eq('status', 'validated');
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          const sfdIds = data.map(item => item.sfd_id);
-          console.log('User is validated client in SFDs:', sfdIds);
-          setClientSfdIds(sfdIds);
-          
-          // If we have client SFDs but the selected SFD is not one of them,
-          // set the selected SFD to the first client SFD
-          if (selectedSfd === 'all' || !sfdIds.includes(selectedSfd)) {
-            setSelectedSfd(sfdIds[0]);
-            setActiveSfdId(sfdIds[0]);
-          }
-          
-          // Ensure account records exist for each client SFD
-          for (const sfdId of sfdIds) {
-            const { data: accountData } = await supabase
-              .from('accounts')
-              .select('id')
-              .eq('user_id', user.id)
-              .eq('sfd_id', sfdId)
-              .maybeSingle();
-              
-            if (!accountData) {
-              console.log('Creating missing account record for SFD:', sfdId);
-              
-              // Create the account
-              await supabase
-                .from('accounts')
-                .insert({
-                  user_id: user.id,
-                  sfd_id: sfdId,
-                  balance: 0,
-                  currency: 'FCFA'
-                });
-                
-              // Force synchronize with edge function
-              try {
-                await supabase.functions.invoke('synchronize-sfd-accounts', {
-                  body: { userId: user.id, sfdId, forceFullSync: true }
-                });
-              } catch (syncErr) {
-                console.error('Failed to synchronize account:', syncErr);
-              }
-            }
-          }
-          
-          // Fetch updated accounts
-          await refetchSfdAccounts();
-        } else {
-          console.log('User is not a client in any SFD');
-        }
-      } catch (error) {
-        console.error('Error fetching client SFDs:', error);
-      }
-    };
-    
-    fetchClientSfds();
-  }, [user?.id, selectedSfd, setActiveSfdId, refetchSfdAccounts]);
-
-  // Map SfdClientAccount array to SfdAccountDisplay array
-  const mapToSfdAccountDisplay = useCallback((accounts) => {
-    // Filter accounts to only include those where the user is a client
-    const filteredAccounts = clientSfdIds.length > 0 
-      ? accounts.filter(acc => clientSfdIds.includes(acc.sfd_id || acc.id))
-      : accounts;
-      
-    return filteredAccounts.map(acc => ({
-      id: acc.id || acc.sfd_id,
-      name: acc.name || acc.description || `Account ${acc.account_type || ''}`,
-      balance: acc.balance || 0,
-      currency: acc.currency || 'FCFA',
-      code: acc.code || '',
-      region: acc.region || '',
-      logo_url: acc.logoUrl || acc.logo_url,
-      is_default: acc.isDefault || false,
-      isVerified: acc.isVerified !== false,
-      isActive: (acc.id || acc.sfd_id) === selectedSfd,
-      status: acc.status || 'active',
-      description: acc.description || acc.name
-    }));
-  }, [selectedSfd, clientSfdIds]);
-
-  // Subscribe to account changes
-  useEffect(() => {
-    if (!user?.id) return;
-    
-    const channel = supabase
-      .channel('account-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'accounts',
-          filter: `user_id=eq.${user.id}`
-        },
-        () => {
-          console.log('Account changed, refreshing data');
-          calculateBalanceForSelectedSfd();
-          refetchSfdAccounts();
-        }
-      )
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [user?.id, refetchSfdAccounts]);
+  // Ensure we have the normalized accounts data with consistent properties
+  const normalizedAccounts = normalizeSfdAccounts(accounts);
   
   useEffect(() => {
-    fetchTransactions();
-    calculateBalanceForSelectedSfd();
-  }, [selectedSfd, sfdAccounts]);
-
-  const calculateBalanceForSelectedSfd = useCallback(() => {
-    // If clientSfdIds exists and selectedSfd is 'all',
-    // calculate total only for the SFDs where user is a client
-    if (selectedSfd === 'all') {
-      if (sfdAccounts && sfdAccounts.length > 0) {
-        let total = 0;
-        
-        if (clientSfdIds.length > 0) {
-          // Only sum balances for SFDs where user is a client
-          total = sfdAccounts
-            .filter(account => clientSfdIds.includes(account.sfd_id))
-            .reduce((sum, account) => sum + (account.balance || 0), 0);
-        } else {
-          // Fall back to all accounts if no client SFDs found
-          total = sfdAccounts.reduce((sum, account) => sum + (account.balance || 0), 0);
-        }
-        
-        console.log('Calculating total balance across filtered SFDs:', total);
-        setTotalBalance(total);
-      } else if (dashboardData?.account?.balance) {
-        setTotalBalance(dashboardData.account.balance);
-      } else {
-        setTotalBalance(0);
-      }
-    } else {
-      const selectedAccount = sfdAccounts.find(account => account.sfd_id === selectedSfd || account.id === selectedSfd);
-      console.log('Selected SFD account balance:', selectedAccount?.balance, selectedAccount);
-      setTotalBalance(selectedAccount?.balance || 0);
+    if (activeSfdId) {
+      setSelectedSfd(activeSfdId);
     }
-  }, [selectedSfd, sfdAccounts, dashboardData, clientSfdIds]);
+  }, [activeSfdId]);
 
-  const handleSfdSelection = (sfdId: string) => {
-    setSelectedSfd(sfdId);
-    if (sfdId !== 'all') {
-      setActiveSfdId(sfdId);
+  // Mock recent transactions for demonstration
+  const recentTransactions = [
+    {
+      id: '1',
+      name: 'Dépôt',
+      type: 'deposit',
+      amount: 25000,
+      date: new Date(Date.now() - 1000 * 60 * 60 * 24),
+    },
+    {
+      id: '2',
+      name: 'Retrait',
+      type: 'withdrawal',
+      amount: -10000,
+      date: new Date(Date.now() - 1000 * 60 * 60 * 48),
+    },
+    {
+      id: '3',
+      name: 'Remboursement de prêt',
+      type: 'loan_repayment',
+      amount: -15000,
+      date: new Date(Date.now() - 1000 * 60 * 60 * 72),
     }
-  };
+  ];
   
-  const handleBack = () => {
-    if (activeView !== 'main') {
-      setActiveView('main');
-    } else {
-      navigate('/mobile-flow/main');
-    }
-  };
-
-  const refreshData = async () => {
-    setIsRefreshing(true);
-    
+  // Calculate total balance from all accounts
+  const totalBalance = accounts.reduce((sum, account) => sum + account.balance, 0);
+  
+  const refreshBalances = async () => {
     try {
-      // Call the Edge Function to synchronize accounts
-      await synchronizeWithSfd();
-      
-      // Refresh the dashboard data (includes latest balances)
-      if (refreshDashboardData) {
-        await refreshDashboardData();
+      const success = await synchronizeWithSfd(true);
+      if (success) {
+        await refetch();
+        toast({
+          title: 'Synchronisation réussie',
+          description: 'Les soldes de vos comptes ont été mis à jour'
+        });
       }
-      
-      // Refresh SFD accounts
-      await refetchSfdAccounts();
-      
-      // Get latest transactions
-      await fetchTransactions();
-      
-      // Recalculate balance
-      calculateBalanceForSelectedSfd();
-      
-      toast({
-        title: "Données actualisées",
-        description: "Vos soldes et transactions ont été mis à jour",
-      });
     } catch (error) {
-      console.error("Erreur lors de l'actualisation:", error);
+      console.error('Error refreshing balances:', error);
       toast({
-        title: "Erreur d'actualisation",
-        description: "Impossible de mettre à jour vos données",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de synchroniser vos comptes en ce moment',
+        variant: 'destructive',
       });
-    } finally {
-      setIsRefreshing(false);
     }
   };
-  
-  const formatTransactionData = () => {
-    return transactions.map(tx => ({
-      id: tx.id,
-      name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
-      type: tx.type,
-      amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
-        ? `+${formatCurrencyAmount(tx.amount)}` 
-        : `-${formatCurrencyAmount(tx.amount)}`,
-      date: new Date(tx.date || tx.created_at).toLocaleDateString(),
-      avatar: tx.avatar_url
-    })) as TransactionListItem[];
-  };
-  
-  const selectedSfdAccount = selectedSfd !== 'all' 
-    ? sfdAccounts.find(account => account.id === selectedSfd || account.sfd_id === selectedSfd) 
-    : undefined;
-  
-  // Filter the accounts to only show those where user is a client
-  const filteredSfdAccounts = React.useMemo(() => {
-    if (clientSfdIds.length > 0) {
-      return sfdAccounts.filter(account => 
-        clientSfdIds.includes(account.id) || 
-        clientSfdIds.includes(account.sfd_id)
-      );
-    }
-    return sfdAccounts;
-  }, [sfdAccounts, clientSfdIds]);
-  
-  useEffect(() => {
-    // Initial data load
-    refreshData();
-  }, []);
-  
+
+  if (isLoading) {
+    return (
+      <div className="p-4 text-center">
+        <div className="animate-pulse w-full h-32 bg-gray-100 rounded-lg mb-4"></div>
+        <div className="animate-pulse w-full h-64 bg-gray-100 rounded-lg"></div>
+      </div>
+    );
+  }
+
   return (
-    <div className="bg-gray-50 min-h-screen">
-      {activeView === 'main' ? (
-        <>
-          <FundsHeader 
-            onBack={handleBack} 
-            onRefresh={refreshData} 
-            isRefreshing={isRefreshing || isSyncing}
-          />
+    <div className="p-4">
+      <FundsBalanceSection
+        balance={totalBalance}
+        isRefreshing={isSyncing}
+        onRefresh={refreshBalances}
+        sfdAccounts={normalizeSfdAccounts(sfdAccounts)}
+        onSelectSfd={setSelectedSfd}
+        selectedSfd={selectedSfd}
+      />
+      
+      <div className="mt-6">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
+          <TabsList className="grid grid-cols-3 mb-4">
+            <TabsTrigger value="accounts">Comptes</TabsTrigger>
+            <TabsTrigger value="actions">Actions</TabsTrigger>
+            <TabsTrigger value="history">Historique</TabsTrigger>
+          </TabsList>
           
-          <FundsBalanceSection 
-            balance={totalBalance}
-            isRefreshing={isRefreshing || isSyncing}
-            sfdAccounts={mapToSfdAccountDisplay(filteredSfdAccounts)}
-            onSelectSfd={handleSfdSelection}
-            selectedSfd={selectedSfd}
-          />
+          <TabsContent value="accounts" className="space-y-4">
+            {accounts.length > 0 ? (
+              accounts.map((account) => (
+                <Card key={account.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="flex items-center p-4">
+                      <div className={`p-2 rounded-full mr-3 ${account.account_type === 'operation' ? 'bg-blue-100' : account.account_type === 'epargne' ? 'bg-green-100' : 'bg-amber-100'}`}>
+                        {account.account_type === 'operation' ? (
+                          <CreditCard className={`h-5 w-5 text-blue-500`} />
+                        ) : account.account_type === 'epargne' ? (
+                          <Coins className={`h-5 w-5 text-green-500`} />
+                        ) : (
+                          <Clock className={`h-5 w-5 text-amber-500`} />
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="font-medium">
+                          {account.description || `Compte ${account.account_type}`}
+                        </h3>
+                        <p className="text-xs text-gray-500">
+                          {account.account_type === 'operation' ? 'Compte courant' : 
+                           account.account_type === 'epargne' ? 'Compte d\'épargne' : 'Compte de remboursement'}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-bold">{formatCurrency(account.balance)}</p>
+                        <p className="text-xs text-gray-500">{account.currency}</p>
+                      </div>
+                    </div>
+                    <div className="border-t px-4 py-2 flex justify-between">
+                      <Badge variant="outline" className="bg-gray-50">
+                        {account.id}
+                      </Badge>
+                      {account.sfd_id && (
+                        <Button variant="ghost" size="sm" onClick={() => navigate(`/account/${account.sfd_id}`)}>
+                          Détails
+                        </Button>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center p-6">
+                <Wallet className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">Aucun compte</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Vous n'avez pas encore de comptes dans cette SFD.
+                </p>
+                <Button 
+                  variant="outline"
+                  onClick={() => navigate('/account/sfds')}
+                >
+                  Gérer mes SFDs
+                </Button>
+              </div>
+            )}
+          </TabsContent>
           
-          <div className="p-5 space-y-6 mt-2">
-            <h2 className="text-lg font-semibold text-gray-800">Options de transfert</h2>
-            
-            <TransferOptions 
-              onWithdraw={() => setActiveView('withdraw')} 
-              onDeposit={() => setActiveView('deposit')} 
-            />
-            
-            <h2 className="text-lg font-semibold text-gray-800 mt-6">Canaux disponibles</h2>
-            
-            <AvailableChannels />
-            
-            <TransactionList 
-              transactions={formatTransactionData()}
-              isLoading={transactionsLoading}
-              onViewAll={() => navigate('/mobile-flow/transactions')}
-              title="Transactions récentes"
-            />
-          </div>
-        </>
-      ) : (
-        <SecurePaymentTab 
-          onBack={handleBack} 
-          isWithdrawal={activeView === 'withdraw'} 
-          onComplete={refreshData}
-          selectedSfdId={selectedSfd !== 'all' ? selectedSfd : undefined}
-        />
+          <TabsContent value="actions">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-full flex flex-col items-center justify-center p-6"
+                    onClick={() => navigate('/deposit')}
+                  >
+                    <div className="bg-green-100 p-3 rounded-full mb-2">
+                      <ArrowDown className="h-6 w-6 text-green-500" />
+                    </div>
+                    <span>Dépôt</span>
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-full flex flex-col items-center justify-center p-6"
+                    onClick={() => navigate('/withdraw')}
+                  >
+                    <div className="bg-amber-100 p-3 rounded-full mb-2">
+                      <ArrowUp className="h-6 w-6 text-amber-500" />
+                    </div>
+                    <span>Retrait</span>
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-full flex flex-col items-center justify-center p-6"
+                    onClick={() => navigate('/transfer')}
+                  >
+                    <div className="bg-blue-100 p-3 rounded-full mb-2">
+                      <ArrowLeftRight className="h-6 w-6 text-blue-500" />
+                    </div>
+                    <span>Transfert</span>
+                  </Button>
+                </CardContent>
+              </Card>
+              
+              <Card className="overflow-hidden">
+                <CardContent className="p-0">
+                  <Button 
+                    variant="ghost" 
+                    className="w-full h-full flex flex-col items-center justify-center p-6"
+                    onClick={() => navigate('/savings')}
+                  >
+                    <div className="bg-purple-100 p-3 rounded-full mb-2">
+                      <Coins className="h-6 w-6 text-purple-500" />
+                    </div>
+                    <span>Épargne</span>
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </TabsContent>
+          
+          <TabsContent value="history">
+            {recentTransactions.length > 0 ? (
+              <div className="space-y-3">
+                {recentTransactions.map(transaction => (
+                  <TransactionCard 
+                    key={transaction.id}
+                    transaction={transaction}
+                    onClick={() => navigate(`/transaction/${transaction.id}`)}
+                  />
+                ))}
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-4"
+                  onClick={() => navigate('/transactions')}
+                >
+                  Voir tout l'historique
+                </Button>
+              </div>
+            ) : (
+              <div className="text-center p-6">
+                <AreaChart className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                <h3 className="text-lg font-medium mb-2">Aucune transaction</h3>
+                <p className="text-sm text-gray-500 mb-4">
+                  Vous n'avez pas encore effectué de transactions.
+                </p>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+      </div>
+      
+      {selectedSfd !== 'all' && (
+        <Button
+          className="fixed bottom-20 right-4 bg-[#0D6A51] hover:bg-[#0D6A51]/90 rounded-full h-14 w-14 p-0"
+          onClick={() => navigate('/deposit')}
+        >
+          <Plus className="h-6 w-6" />
+        </Button>
       )}
     </div>
   );

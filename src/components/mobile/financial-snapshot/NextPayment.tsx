@@ -14,7 +14,7 @@ const NextPayment: React.FC<NextPaymentProps> = ({
   nextPaymentDate,
   nextPaymentAmount
 }) => {
-  const { activeSfdAccount } = useSfdAccounts();
+  const { activeSfdAccount, sfdAccounts } = useSfdAccounts();
   const { activeSfdId } = useAuth();
   const { dashboardData } = useMobileDashboard();
   
@@ -25,12 +25,17 @@ const NextPayment: React.FC<NextPaymentProps> = ({
     seconds: 0
   });
   
+  // Get the first account's loans if activeSfdAccount is not available
+  const fallbackAccount = sfdAccounts?.length > 0 ? sfdAccounts[0] : null;
+  const loans = (activeSfdAccount?.loans || []);
+  
   // Use dashboard data if available, otherwise fall back to props or active account
-  const nearestLoan = dashboardData?.nearestLoan || activeSfdAccount?.loans?.sort((a, b) => {
-    const dateA = new Date(a.nextDueDate).getTime();
-    const dateB = new Date(b.nextDueDate).getTime();
-    return dateA - dateB;
-  })[0];
+  const nearestLoan = dashboardData?.nearestLoan || (loans.length > 0 ? 
+    loans.sort((a, b) => {
+      const dateA = new Date(a.nextDueDate || a.next_payment_date || '').getTime();
+      const dateB = new Date(b.nextDueDate || b.next_payment_date || '').getTime();
+      return dateA - dateB;
+    })[0] : null);
   
   const actualNextPaymentDate = nextPaymentDate || nearestLoan?.next_payment_date || nearestLoan?.nextDueDate;
   const actualNextPaymentAmount = nextPaymentAmount || nearestLoan?.monthly_payment || (nearestLoan?.remainingAmount || 0) / 4;
@@ -38,7 +43,7 @@ const NextPayment: React.FC<NextPaymentProps> = ({
   // Format currency
   const formatCurrency = (amount: number) => {
     const currency = dashboardData?.account?.currency || 
-                    activeSfdAccount?.currency || 'FCFA';
+                    activeSfdAccount?.currency || fallbackAccount?.currency || 'FCFA';
     return amount.toLocaleString('fr-FR') + ' ' + currency;
   };
   
@@ -69,6 +74,11 @@ const NextPayment: React.FC<NextPaymentProps> = ({
     
     return () => clearInterval(intervalId);
   }, [actualNextPaymentDate]);
+
+  // If there's no payment date or amount, don't render anything
+  if (!actualNextPaymentDate || !actualNextPaymentAmount) {
+    return null;
+  }
 
   return (
     <div className="space-y-2">
