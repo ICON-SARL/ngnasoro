@@ -4,12 +4,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 
 export function useSfdLoanPlans() {
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
 
   return useQuery({
-    queryKey: ['sfd-loan-plans'],
+    queryKey: ['sfd-loan-plans', activeSfdId],
     queryFn: async () => {
-      const { data: plansData, error } = await supabase
+      // If no active SFD ID, get all plans
+      let query = supabase
         .from('sfd_loan_plans')
         .select(`
           *,
@@ -19,7 +20,14 @@ export function useSfdLoanPlans() {
           )
         `)
         .eq('is_active', true)
-        .order('created_at', { ascending: false });
+        .eq('is_published', true);
+      
+      // If there's an active SFD ID, filter by it
+      if (activeSfdId) {
+        query = query.eq('sfd_id', activeSfdId);
+      }
+      
+      const { data: plansData, error } = await query.order('created_at', { ascending: false });
 
       if (error) {
         throw error;

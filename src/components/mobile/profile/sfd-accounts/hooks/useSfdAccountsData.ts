@@ -1,13 +1,13 @@
 
 import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import { useCompatSfdAccounts } from '@/hooks/useCompatSfdAccounts';
 import { SfdAccountDisplay } from '../types/SfdAccountTypes';
-import { sortSfdAccounts } from '../utils/accountSorter';
+import { adaptToSfdAccountDisplay, sortAccounts } from '@/utils/accountAdapters';
 
 export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdId?: string | null) {
   const { activeSfdId: authActiveSfdId } = useAuth();
-  const { sfdAccounts, isLoading, refetch } = useSfdAccounts();
+  const { sfdAccounts, isLoading, refetch } = useCompatSfdAccounts();
   const [displayAccounts, setDisplayAccounts] = useState<SfdAccountDisplay[]>([]);
   
   // Determine effective active SFD ID
@@ -24,7 +24,7 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     }
     
     // Map to SfdAccountDisplay format and sort them
-    const formattedAccounts: SfdAccountDisplay[] = dataSource.map((acc: any) => ({
+    const formattedAccounts: SfdAccountDisplay[] = dataSource.map(acc => ({
       id: acc.id,
       name: acc.name,
       balance: acc.balance || 0,
@@ -40,7 +40,7 @@ export default function useSfdAccountsData(propsSfdData?: any[], propsActiveSfdI
     }));
     
     // Sort accounts with active one first
-    const sortedAccounts = sortSfdAccounts(formattedAccounts, effectiveActiveSfdId);
+    const sortedAccounts = sortAccounts(formattedAccounts, effectiveActiveSfdId);
     setDisplayAccounts(sortedAccounts);
   }, [propsSfdData, sfdAccounts, effectiveActiveSfdId, isLoading]);
   

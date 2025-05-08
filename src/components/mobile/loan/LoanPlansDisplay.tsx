@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,13 +16,13 @@ interface LoanPlansDisplayProps {
 export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: LoanPlansDisplayProps) {
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   
   useEffect(() => {
     const fetchLoanPlans = async () => {
       setIsLoading(true);
       try {
-        // Get only published plans
+        // Get only published and active plans
         let query = supabase
           .from('sfd_loan_plans')
           .select(`
@@ -34,15 +35,17 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
           .eq('is_active', true)
           .eq('is_published', true);
           
-        // Filter by SFD if specified
-        if (sfdId) {
-          query = query.eq('sfd_id', sfdId);
+        // Filter by SFD if specified, otherwise use active SFD ID
+        const effectiveSfdId = sfdId || activeSfdId;
+        if (effectiveSfdId) {
+          query = query.eq('sfd_id', effectiveSfdId);
         }
         
         const { data, error } = await query.order('created_at', { ascending: false });
         
         if (error) throw error;
         
+        console.log("Fetched loan plans:", data);
         const typedData = data as unknown as LoanPlan[];
         setLoanPlans(typedData || []);
       } catch (error) {
@@ -53,7 +56,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
     };
     
     fetchLoanPlans();
-  }, [user, sfdId]);
+  }, [user, sfdId, activeSfdId]);
   
   // Filter plans based on whether they're subsidized
   const filteredPlans = loanPlans.filter(plan => {
@@ -85,6 +88,11 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
           <p className="text-gray-500">
             Aucun plan de prêt {subsidizedOnly ? 'subventionné' : ''} disponible
           </p>
+          {!subsidizedOnly && activeSfdId && (
+            <p className="text-sm text-gray-400 mt-2">
+              La SFD n'a pas encore publié de plans de prêt.
+            </p>
+          )}
         </div>
       )}
     </div>

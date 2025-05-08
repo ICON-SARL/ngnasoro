@@ -24,7 +24,11 @@ export function adaptSfdAccount(account: any): SfdAccount {
       logo_url: account.logo_url || account.logoUrl || null
     },
     is_default: account.is_default || account.isDefault || false,
-    sfd_id: account.sfd_id || '' // Add sfd_id for components that need it
+    sfd_id: account.sfd_id || '', // Add sfd_id for components that need it
+    account_type: account.account_type || '',
+    loans: account.loans || [],
+    created_at: account.created_at || new Date().toISOString(),
+    updated_at: account.updated_at || new Date().toISOString()
   };
 }
 
@@ -52,4 +56,44 @@ export function findOperationAccount(accounts: any[]): any {
   
   // If still not found, return the first account or null
   return accounts[0] || null;
+}
+
+/**
+ * Convert SfdAccount to SfdAccountDisplay format for display components
+ */
+export function adaptToSfdAccountDisplay(account: SfdAccount): any {
+  return {
+    id: account.id,
+    name: account.name || account.description || '',
+    balance: account.balance || 0,
+    logo_url: account.logo_url || account.logoUrl || null,
+    currency: account.currency || 'FCFA',
+    code: account.code || '',
+    region: account.region || '',
+    description: account.description || '',
+    status: account.status || 'active',
+    isVerified: true,
+    isActive: false,
+    is_default: account.is_default || false
+  };
+}
+
+/**
+ * Sort accounts, placing the active one first
+ */
+export function sortAccounts(accounts: any[], activeSfdId?: string | null): any[] {
+  if (!accounts || !accounts.length) return [];
+  
+  return [...accounts].sort((a, b) => {
+    // Active account first
+    if (a.id === activeSfdId) return -1;
+    if (b.id === activeSfdId) return 1;
+    
+    // Then default accounts
+    if (a.is_default && !b.is_default) return -1;
+    if (!a.is_default && b.is_default) return 1;
+    
+    // Then by name
+    return (a.name || '').localeCompare(b.name || '');
+  });
 }

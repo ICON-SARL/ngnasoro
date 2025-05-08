@@ -1,111 +1,87 @@
 
-import React, { useState, useCallback, useEffect } from 'react';
-import { CreditCard, RefreshCw, Lock } from 'lucide-react';
-import { useAccount } from '@/hooks/useAccount';
-import { useSfdAccounts } from '@/hooks/useSfdAccounts';
+import React from 'react';
+import { BiRefresh } from 'react-icons/bi';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useCompatSfdAccounts } from '@/hooks/useCompatSfdAccounts';
 import { useAuth } from '@/hooks/useAuth';
-import { useMobileDashboard } from '@/hooks/useMobileDashboard';
-import { canDisplayBalance } from '@/components/mobile/profile/sfd-accounts/utils/accountSorter';
+import { ArrowUpRight } from 'lucide-react';
 
-const AccountBalance: React.FC = () => {
-  const { account } = useAccount();
+const AccountBalance = () => {
+  const { activeSfdAccount, isLoading, synchronizeBalances } = useCompatSfdAccounts();
   const { activeSfdId } = useAuth();
-  const { activeSfdAccount, isLoading, refetch, synchronizeBalances } = useSfdAccounts();
-  const { dashboardData, isLoading: isDashboardLoading, refreshDashboardData } = useMobileDashboard();
-  
-  const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [isSyncPending, setIsSyncPending] = useState(false);
-  
-  // Check if the account is verified and can display balance
-  const isAccountVerified = activeSfdAccount ? 
-    (activeSfdAccount.isVerified || activeSfdAccount.isDefault) : true;
-  
-  // Get balance from dashboard data if available
-  const accountBalance = dashboardData?.account?.balance || 
-                        (activeSfdId ? (activeSfdAccount?.balance || 0) : (account?.balance || 0));
-  const accountCurrency = dashboardData?.account?.currency || 
-                         activeSfdAccount?.currency || account?.currency || 'FCFA';
-  
-  // Format currency
-  const formatCurrency = (amount: number) => {
-    return amount.toLocaleString('fr-FR') + ' ' + accountCurrency;
+
+  // Function to format currency
+  const formatCurrency = (amount: number | undefined) => {
+    if (amount === undefined) return '0 FCFA';
+    return new Intl.NumberFormat('fr-FR').format(amount) + ' ' + 
+           (activeSfdAccount?.currency || 'FCFA');
   };
-  
-  // Manual refresh function for balance
-  const refreshBalance = useCallback(() => {
-    if (isRefreshing || !isAccountVerified) return;
-    
-    setIsRefreshing(true);
-    
-    // Use the refreshDashboardData function if available
-    if (refreshDashboardData) {
-      refreshDashboardData()
-        .then(() => {
-          setLastUpdated(new Date());
-          setIsRefreshing(false);
-        })
-        .catch(() => {
-          setIsRefreshing(false);
-        });
-    } else {
-      // Fall back to synchronizeBalances function
-      setIsSyncPending(true);
-      synchronizeBalances()
-        .then(() => {
-          refetch();
-          setLastUpdated(new Date());
-          setIsRefreshing(false);
-          setIsSyncPending(false);
-        })
-        .catch(() => {
-          setIsRefreshing(false);
-          setIsSyncPending(false);
-        });
+
+  const handleRefresh = () => {
+    if (synchronizeBalances) {
+      synchronizeBalances.mutate?.();
     }
-  }, [isRefreshing, synchronizeBalances, refetch, refreshDashboardData, isAccountVerified]);
-  
-  // Simulate balance update every 2 hours
-  useEffect(() => {
-    const intervalId = setInterval(() => {
-      setLastUpdated(new Date());
-    }, 2 * 60 * 60 * 1000); // 2 hours
-    
-    return () => clearInterval(intervalId);
-  }, []);
+  };
+
+  // Create a refresh button component
+  const RefreshButton = () => (
+    <Button 
+      variant="ghost" 
+      size="sm" 
+      onClick={handleRefresh}
+      className="p-1 h-auto hover:bg-transparent text-gray-500 hover:text-gray-700"
+      disabled={synchronizeBalances?.isPending}
+    >
+      <BiRefresh 
+        className={`h-5 w-5 ${synchronizeBalances?.isPending ? 'animate-spin' : ''}`} 
+      />
+    </Button>
+  );
+
+  if (isLoading) {
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm text-gray-500 flex items-center">
+          Solde disponible
+          <RefreshButton />
+        </h3>
+        <Skeleton className="h-7 w-32" />
+      </div>
+    );
+  }
+
+  if (!activeSfdAccount || activeSfdId === null) {
+    return (
+      <div className="space-y-2">
+        <h3 className="text-sm text-gray-500 flex items-center">
+          Solde disponible
+          <RefreshButton />
+        </h3>
+        <p className="text-lg font-bold text-gray-400">Non connecté</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-2">
-      <h3 className="text-sm text-gray-500 flex items-center">
-        <CreditCard className="h-4 w-4 mr-1 text-[#0D6A51]" />
-        Solde disponible
+      <h3 className="text-sm text-gray-500 flex items-center justify-between">
+        <span>Solde disponible</span>
+        <RefreshButton />
       </h3>
-      
-      {isAccountVerified ? (
-        <p className="text-2xl font-bold">
-          {isLoading || isDashboardLoading || isSyncPending
-            ? "Chargement..." 
-            : formatCurrency(accountBalance)}
+      <div className="flex items-center gap-2">
+        <p className={`text-2xl font-bold ${synchronizeBalances?.isPending ? 'text-gray-400' : 'text-[#0D6A51]'}`}>
+          {formatCurrency(activeSfdAccount.balance)}
         </p>
-      ) : (
-        <div className="flex items-center space-x-2">
-          <Lock className="h-4 w-4 text-amber-500" />
-          <p className="text-sm text-amber-600">En attente de validation</p>
-        </div>
-      )}
-      
-      <div className="flex items-center justify-between">
-        <p className="text-xs text-gray-400">
-          Mis à jour: {lastUpdated.toLocaleTimeString()}
-        </p>
-        <button 
-          onClick={refreshBalance}
-          disabled={isRefreshing || isSyncPending || !isAccountVerified}
-          className={`text-xs flex items-center ${isAccountVerified ? 'text-blue-500' : 'text-gray-400'}`}
+        <Button 
+          variant="ghost" 
+          size="sm"
+          className="h-6 px-2 rounded-full bg-green-50 text-green-700 hover:bg-green-100 hover:text-green-800"
+          disabled={synchronizeBalances?.isPending}
         >
-          <RefreshCw className={`h-3 w-3 mr-1 ${isRefreshing || isSyncPending ? 'animate-spin' : ''}`} />
-          {isRefreshing || isSyncPending ? 'Actualisation...' : 'Actualiser'}
-        </button>
+          <ArrowUpRight className="h-3 w-3 mr-1" />
+          <span className="text-xs">Recharger</span>
+        </Button>
       </div>
     </div>
   );
