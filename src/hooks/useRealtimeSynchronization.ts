@@ -20,7 +20,7 @@ export function useRealtimeSynchronization() {
     setSyncError(null);
   }, [activeSfdId]);
 
-  const synchronizeWithSfd = useCallback(async () => {
+  const synchronizeWithSfd = useCallback(async (forceFullSync = false) => {
     if (!user) {
       console.log("Cannot synchronize: No authenticated user");
       setSyncError("Vous devez être connecté pour synchroniser vos comptes");
@@ -37,13 +37,13 @@ export function useRealtimeSynchronization() {
     setSyncError(null);
     
     try {
-      console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}`);
+      console.log(`Synchronizing accounts for user ${user.id}${activeSfdId ? ` with active SFD ${activeSfdId}` : ''}, forceFullSync: ${forceFullSync}`);
       
       const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
         body: {
           userId: user.id,
           sfdId: activeSfdId || null,
-          forceSync: true
+          forceFullSync: forceFullSync
         }
       });
       
@@ -51,6 +51,8 @@ export function useRealtimeSynchronization() {
         console.error("Error calling synchronize-sfd-accounts function:", error);
         throw new Error(`Erreur de communication avec le serveur: ${error.message}`);
       }
+      
+      console.log("Synchronization response:", data);
       
       // Check for success from the data object itself
       if (data && data.success === false) {
@@ -60,10 +62,10 @@ export function useRealtimeSynchronization() {
       setLastSynced(new Date());
       setRetryCount(0);
       
-      if (data && data.updates && data.updates.length > 0) {
+      if (data && data.syncedAccounts && data.syncedAccounts.length > 0) {
         toast({
           title: "Synchronisation réussie",
-          description: "Vos comptes SFD ont été mis à jour",
+          description: `Vos comptes SFD ont été mis à jour (${data.syncedAccounts.length} comptes)`,
         });
       }
       

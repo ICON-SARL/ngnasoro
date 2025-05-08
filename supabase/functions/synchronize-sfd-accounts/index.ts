@@ -130,6 +130,7 @@ serve(async (req) => {
         .maybeSingle();
         
       const isValidatedClient = clientData && clientData.status === 'validated';
+      console.log(`User is a validated client in ${sfdData.name}: ${isValidatedClient}`);
       
       // Check if account already exists
       const { data: existingAccounts, error: accountError } = await supabaseAdmin
@@ -173,6 +174,8 @@ serve(async (req) => {
           console.error(`Error updating account: ${updateError.message}`);
           continue;
         }
+        
+        console.log(`Updated account for SFD ${sfdData.name}`);
       } else {
         // Create new account
         const { data: newAccount, error: createError } = await supabaseAdmin
@@ -193,9 +196,8 @@ serve(async (req) => {
         }
 
         accountId = newAccount.id;
+        console.log(`Created new account for SFD ${sfdData.name} with balance ${currentBalance}`);
       }
-
-      console.log(`Updated account for SFD ${sfdData.name}`);
       
       // Add to synced accounts list
       syncedAccounts.push({

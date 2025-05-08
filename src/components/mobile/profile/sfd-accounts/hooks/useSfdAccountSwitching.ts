@@ -1,12 +1,15 @@
+
 import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { useRealtimeSynchronization } from '@/hooks/useRealtimeSynchronization';
 
 export default function useSfdAccountSwitching(onSwitchSfd?: (sfdId: string) => Promise<boolean> | void) {
   const [switchingId, setSwitchingId] = useState<string | null>(null);
   const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
   const { setActiveSfdId } = useAuth();
+  const { synchronizeWithSfd } = useRealtimeSynchronization();
   
   const handleSwitchSfd = async (sfdId: string) => {
     try {
@@ -14,35 +17,46 @@ export default function useSfdAccountSwitching(onSwitchSfd?: (sfdId: string) => 
       setIsVerifying(true);
       
       if (onSwitchSfd) {
-        // If custom handler provided, use it
-        await onSwitchSfd(sfdId);
-      } else if (setActiveSfdId) {
-        // Otherwise use the default auth context handler
-        setActiveSfdId(sfdId);
+        // Use provided callback
+        const result = await onSwitchSfd(sfdId);
         
+        if (result !== false) {
+          setActiveSfdId(sfdId);
+          toast({
+            title: "SFD modifiée",
+            description: "Votre compte SFD principal a été modifié"
+          });
+          
+          // Force sync after switching
+          await synchronizeWithSfd(true);
+        }
+      } else {
+        // Default implementation
+        setActiveSfdId(sfdId);
         toast({
-          title: 'SFD changée avec succès',
-          description: 'Votre SFD active a été mise à jour',
+          title: "SFD modifiée",
+          description: "Votre compte SFD principal a été modifié"
         });
         
-        return true;
+        // Force sync after switching
+        await synchronizeWithSfd(true);
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error('Error switching SFD:', error);
       toast({
-        title: 'Erreur',
-        description: error.message || 'Impossible de changer de SFD',
-        variant: 'destructive',
+        title: "Erreur",
+        description: "Impossible de changer de SFD pour le moment",
+        variant: "destructive"
       });
     } finally {
-      setIsVerifying(false);
       setSwitchingId(null);
+      setIsVerifying(false);
     }
   };
-
+  
   return {
     switchingId,
     isVerifying,
-    handleSwitchSfd,
+    handleSwitchSfd
   };
 }

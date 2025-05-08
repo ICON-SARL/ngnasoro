@@ -1,42 +1,52 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-export const fetchActiveSfds = async () => {
+export async function fetchActiveSfds() {
   try {
+    console.log('Fetching active SFDs from database');
     const { data, error } = await supabase
       .from('sfds')
       .select('*')
       .eq('status', 'active');
-    
-    if (error) throw error;
-    return data || [];
-  } catch (error) {
-    console.error('Error fetching active SFDs:', error);
-    return [];
-  }
-};
 
-export const fetchSfdsFromEdgeFunction = async (userId: string) => {
+    if (error) {
+      console.error('Error fetching SFDs:', error);
+      return null;
+    }
+
+    return data;
+  } catch (error) {
+    console.error('Exception in fetchActiveSfds:', error);
+    return null;
+  }
+}
+
+export async function fetchSfdsFromEdgeFunction(userId?: string) {
   try {
-    // This is a placeholder - in a real app, you would call an edge function
-    console.log('Would call edge function to get SFDs for user:', userId);
-    // For now, return an empty array
-    return [];
-  } catch (error) {
-    console.error('Error fetching SFDs from edge function:', error);
-    return [];
-  }
-};
+    console.log('Fetching SFDs from edge function');
+    const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+      body: { userId, forceFullSync: true }
+    });
 
-export const normalizeSfdData = (sfds: any[]) => {
-  if (!Array.isArray(sfds)) return [];
-  
+    if (error) {
+      console.error('Error invoking edge function:', error);
+      return null;
+    }
+
+    return data?.syncedAccounts || [];
+  } catch (error) {
+    console.error('Exception in fetchSfdsFromEdgeFunction:', error);
+    return null;
+  }
+}
+
+export function normalizeSfdData(sfds: any[]) {
   return sfds.map(sfd => ({
-    id: sfd.id || '',
-    name: sfd.name || 'Unknown SFD',
-    code: sfd.code || '',
-    logo_url: sfd.logo_url || null,
-    region: sfd.region || '',
-    status: sfd.status || 'active'
+    id: sfd.id || sfd.sfd_id,
+    name: sfd.name || sfd.sfd_name,
+    code: sfd.code || sfd.sfd_code,
+    region: sfd.region,
+    status: sfd.status || 'active',
+    logo_url: sfd.logo_url
   }));
-};
+}

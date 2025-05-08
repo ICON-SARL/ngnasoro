@@ -47,7 +47,10 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({
           .eq('user_id', user.id)
           .eq('status', 'validated'); // Only fetch validated clients
           
-        if (clientError) throw clientError;
+        if (clientError) {
+          console.error('Error fetching client SFDs:', clientError);
+          throw clientError;
+        }
         
         // If user is a client in any SFD, only show those SFDs
         if (Array.isArray(clientData) && clientData.length > 0) {
@@ -60,14 +63,18 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({
           
           // If no active SFD is set but we have SFDs, set the first one
           if (!activeSfdId && clientSfds.length > 0) {
+            console.log('Setting active SFD to first client SFD:', clientSfds[0].id);
             setActiveSfdId(clientSfds[0].id);
           } else if (clientSfds.length > 0 && !clientSfds.find(sfd => sfd.id === activeSfdId)) {
             // If active SFD is not in client SFDs, set first client SFD
+            console.log('Active SFD not in client SFDs, setting to:', clientSfds[0].id);
             setActiveSfdId(clientSfds[0].id);
           }
           
           setIsLoading(false);
           return;
+        } else {
+          console.log('No validated client SFDs found, fetching from user_sfds');
         }
         
         // If user is not a client, fall back to user_sfds
@@ -107,6 +114,7 @@ const SfdSelector: React.FC<SfdSelectorProps> = ({
 
   const handleSwitchSfd = (sfdId: string) => {
     if (activeSfdId === sfdId) return;
+    console.log('Switching active SFD to:', sfdId);
     setActiveSfdId(sfdId);
   };
 

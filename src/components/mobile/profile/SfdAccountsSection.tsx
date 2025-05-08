@@ -38,7 +38,8 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     
     const syncOnMount = async () => {
       try {
-        const syncResult = await synchronizeWithSfd();
+        // Force a full sync to ensure we get the latest data
+        const syncResult = await synchronizeWithSfd(true);
         if (syncResult && isMounted) {
           await refetch();
         }
@@ -60,16 +61,17 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
       if (!user?.id) return;
       
       try {
+        console.log('Checking client accounts for user:', user.id);
         // Fetch client accounts from sfd_clients table
         const { data: clientAccounts, error: clientError } = await supabase
           .from('sfd_clients')
-          .select('id, sfd_id, user_id, status')
+          .select('id, sfd_id, user_id, status, full_name')
           .eq('user_id', user.id)
           .eq('status', 'validated'); // Only get validated clients
         
         if (clientError) throw clientError;
         
-        console.log('Found client accounts:', clientAccounts);
+        console.log('Found validated client accounts:', clientAccounts);
         
         // If user is a validated client in any SFD
         if (clientAccounts && clientAccounts.length > 0) {
@@ -107,9 +109,9 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
               .maybeSingle();
               
             if (!existingAccount) {
-              console.log('Creating account record for user:', user.id, 'in SFD:', account.sfd_id);
+              console.log('Creating account record for validated client:', user.id, 'in SFD:', account.sfd_id);
               
-              // Create account with initial balance
+              // Create account with initial balance of 0
               await supabase
                 .from('accounts')
                 .insert({
@@ -121,12 +123,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
                 
               // Force synchronize with the edge function to ensure consistent data
               try {
-                const { data: syncResult, error: syncError } = await supabase.functions.invoke('synchronize-sfd-accounts', {
-                  body: { userId: user.id, sfdId: account.sfd_id, forceFullSync: true }
-                });
-                
-                if (syncError) throw syncError;
-                console.log('Account synchronized:', syncResult);
+                await synchronizeWithSfd(true);
               } catch (err) {
                 console.error('Synchronization error:', err);
               }
@@ -142,10 +139,10 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
     };
     
     ensureClientAccountsLinked();
-  }, [user?.id, refetch]);
+  }, [user?.id, refetch, synchronizeWithSfd]);
 
   const handleRetrySync = () => {
-    synchronizeWithSfd()
+    synchronizeWithSfd(true)
       .then(success => {
         if (success) {
           refetch();
@@ -195,7 +192,7 @@ const SfdAccountsSection: React.FC<SfdAccountsSectionProps> = (props) => {
             {...props} 
             sfdData={sfdAccounts}
             isSyncing={isSyncing}
-            onRefresh={synchronizeWithSfd}
+            onRefresh={() => synchronizeWithSfd(true)}
           />
         )}
       </div>
