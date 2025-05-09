@@ -1,4 +1,2 @@
 
-import MainDashboard from './MainDashboard';
-
-export { MainDashboard };
+export { default as AccountDebugInfo } from './AccountDebugInfo';

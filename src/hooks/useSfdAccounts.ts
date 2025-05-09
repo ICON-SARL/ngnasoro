@@ -6,19 +6,19 @@ import { SfdAccount, SfdAccountType } from '@/types/sfdAccounts';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
 // Define a simplified interface for fetched accounts to avoid deep type recursion
-interface FetchedSfdAccount {
+interface FetchedAccount {
   id: string;
-  user_id?: string;
+  user_id: string;
   sfd_id: string;
-  account_type: SfdAccountType;
-  description?: string | null;
-  name?: string | null;
   balance: number;
   currency: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  last_updated?: string;
+  // Optional fields that might be added by our transformation
+  account_type?: SfdAccountType;
+  name?: string | null;
+  description?: string | null;
   logo_url?: string | null;
+  status?: string;
   code?: string;
   is_default?: boolean;
   region?: string;
@@ -37,14 +37,15 @@ export function useSfdAccounts(sfdId?: string) {
     refetch 
   } = useQuery({
     queryKey: ['sfdAccounts', user?.id, effectiveSfdId],
-    queryFn: async (): Promise<FetchedSfdAccount[]> => {
-      if (!user?.id) return [] as FetchedSfdAccount[];
+    queryFn: async (): Promise<FetchedAccount[]> => {
+      if (!user?.id) return [] as FetchedAccount[];
       
       try {
-        console.log('Fetching SFD accounts for user', user.id, 'and SFD', effectiveSfdId);
+        console.log('Fetching accounts for user', user.id, 'and SFD', effectiveSfdId);
         
+        // Query the accounts table instead of sfd_accounts
         let query = supabase
-          .from('sfd_accounts')
+          .from('accounts')
           .select('*')
           .eq('user_id', user.id);
           
@@ -55,14 +56,15 @@ export function useSfdAccounts(sfdId?: string) {
         const { data, error } = await query;
         
         if (error) {
-          console.error('Error fetching SFD accounts:', error);
-          return [] as FetchedSfdAccount[];
+          console.error('Error fetching accounts:', error);
+          return [] as FetchedAccount[];
         }
         
-        console.log('Fetched accounts:', data);
+        console.log('Fetched accounts from DB:', data);
         
         // If no accounts found, return mock data for testing
         if (!data || data.length === 0) {
+          console.log('No accounts found, returning mock data');
           return [
             {
               id: 'test-account-1',
@@ -74,9 +76,7 @@ export function useSfdAccounts(sfdId?: string) {
               balance: 150000,
               currency: 'FCFA',
               status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              logo_url: null
+              last_updated: new Date().toISOString()
             },
             {
               id: 'test-account-2',
@@ -88,36 +88,39 @@ export function useSfdAccounts(sfdId?: string) {
               balance: 250000,
               currency: 'FCFA',
               status: 'active',
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString(),
-              logo_url: null
+              last_updated: new Date().toISOString()
             }
-          ] as FetchedSfdAccount[];
+          ] as FetchedAccount[];
         }
         
-        // Enhance accounts with description and name if missing
-        return data.map((account: any): FetchedSfdAccount => {
+        // Get SFD info to enhance the accounts with type information
+        const { data: sfdInfo } = await supabase
+          .from('sfds')
+          .select('id, name, code, region, logo_url')
+          .eq('id', effectiveSfdId)
+          .maybeSingle();
+        
+        // Enhance accounts with additional information
+        return data.map((account): FetchedAccount => {
           return {
             id: account.id,
             user_id: account.user_id,
             sfd_id: account.sfd_id,
-            account_type: account.account_type,
-            description: account.description || `Compte ${account.account_type || ''}`,
-            name: account.name || `Compte ${account.account_type || ''}`,
+            account_type: account.account_type || 'operation',
+            description: account.description || `Compte ${account.account_type || 'principal'}`,
+            name: account.name || (sfdInfo?.name ? `${sfdInfo.name}` : 'Compte SFD'),
             balance: account.balance || 0,
             currency: account.currency || 'FCFA',
             status: account.status || 'active',
-            created_at: account.created_at || new Date().toISOString(),
-            updated_at: account.updated_at || new Date().toISOString(),
-            logo_url: account.logo_url || null,
-            code: account.code,
-            is_default: account.is_default,
-            region: account.region
+            last_updated: account.last_updated || new Date().toISOString(),
+            logo_url: sfdInfo?.logo_url || null,
+            code: sfdInfo?.code,
+            region: sfdInfo?.region
           };
         });
       } catch (err) {
-        console.error('Error in SFD accounts query:', err);
-        return [] as FetchedSfdAccount[];
+        console.error('Error in accounts query:', err);
+        return [] as FetchedAccount[];
       }
     },
     enabled: !!user?.id,
@@ -126,20 +129,20 @@ export function useSfdAccounts(sfdId?: string) {
 
   // Convert fetched accounts to SfdAccount type
   // Force TypeScript to treat the result as a plain array instead of allowing it to infer a complex type
-  const rawAccounts = Array.isArray(fetchedAccounts) ? (fetchedAccounts as FetchedSfdAccount[]) : ([] as FetchedSfdAccount[]);
+  const rawAccounts = Array.isArray(fetchedAccounts) ? fetchedAccounts : [];
   
   // Explicitly map to SfdAccount with defined properties to prevent deep type instantiation
-  const sfdAccounts: SfdAccount[] = rawAccounts.map((account) => ({
+  const sfdAccounts: SfdAccount[] = rawAccounts.map((account): SfdAccount => ({
     id: account.id,
     sfd_id: account.sfd_id,
-    account_type: account.account_type,
+    account_type: account.account_type as SfdAccountType || 'operation',
     description: account.description || null,
     name: account.name || null,
     balance: account.balance,
     currency: account.currency,
-    status: account.status,
-    created_at: account.created_at,
-    updated_at: account.updated_at,
+    status: account.status || 'active',
+    created_at: account.last_updated || new Date().toISOString(),
+    updated_at: account.last_updated || new Date().toISOString(),
     logo_url: account.logo_url || null,
     code: account.code,
     is_default: account.is_default,
@@ -157,13 +160,30 @@ export function useSfdAccounts(sfdId?: string) {
         
         console.log('Synchronizing balances for user', user.id, 'and SFD', effectiveSfdId);
         
-        // In a real app, you would make an API call to synchronize balances
-        // For this implementation, we'll simulate a delay and refetch the data
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        // Call the synchronize-sfd-accounts edge function
+        const { data, error } = await supabase.functions.invoke('synchronize-sfd-accounts', {
+          body: {
+            userId: user.id,
+            sfdId: effectiveSfdId,
+            forceFullSync: true
+          }
+        });
         
+        if (error) {
+          console.error('Error synchronizing accounts:', error);
+          throw error;
+        }
+        
+        console.log('Synchronization response:', data);
+        
+        // Refetch accounts after synchronization
         await refetch();
         
-        return { success: true, message: 'Balances synchronized successfully' };
+        return { 
+          success: true, 
+          message: 'Balances synchronized successfully',
+          data 
+        };
       } catch (error) {
         console.error('Error synchronizing balances:', error);
         return { 
