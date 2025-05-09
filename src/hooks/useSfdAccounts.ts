@@ -38,7 +38,7 @@ export function useSfdAccounts(sfdId?: string) {
   } = useQuery({
     queryKey: ['sfdAccounts', user?.id, effectiveSfdId],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return [] as FetchedSfdAccount[];
       
       try {
         console.log('Fetching SFD accounts for user', user.id, 'and SFD', effectiveSfdId);
@@ -56,7 +56,7 @@ export function useSfdAccounts(sfdId?: string) {
         
         if (error) {
           console.error('Error fetching SFD accounts:', error);
-          return [];
+          return [] as FetchedSfdAccount[];
         }
         
         console.log('Fetched accounts:', data);
@@ -92,11 +92,11 @@ export function useSfdAccounts(sfdId?: string) {
               updated_at: new Date().toISOString(),
               logo_url: null
             }
-          ];
+          ] as FetchedSfdAccount[];
         }
         
         // Enhance accounts with description and name if missing
-        return data.map((account: any) => {
+        return data.map((account: any): FetchedSfdAccount => {
           return {
             id: account.id,
             user_id: account.user_id,
@@ -113,11 +113,11 @@ export function useSfdAccounts(sfdId?: string) {
             code: account.code,
             is_default: account.is_default,
             region: account.region
-          } as FetchedSfdAccount;
+          };
         });
       } catch (err) {
         console.error('Error in SFD accounts query:', err);
-        return [];
+        return [] as FetchedSfdAccount[];
       }
     },
     enabled: !!user?.id,
@@ -125,9 +125,11 @@ export function useSfdAccounts(sfdId?: string) {
   });
 
   // Convert fetched accounts to SfdAccount type
-  // Explicitly cast the array type to avoid deep instantiation
-  const rawAccounts: FetchedSfdAccount[] = Array.isArray(fetchedAccounts) ? fetchedAccounts as FetchedSfdAccount[] : [];
-  const sfdAccounts: SfdAccount[] = rawAccounts.map((account): SfdAccount => ({
+  // Force TypeScript to treat the result as a plain array instead of allowing it to infer a complex type
+  const rawAccounts = Array.isArray(fetchedAccounts) ? (fetchedAccounts as FetchedSfdAccount[]) : ([] as FetchedSfdAccount[]);
+  
+  // Explicitly map to SfdAccount with defined properties to prevent deep type instantiation
+  const sfdAccounts: SfdAccount[] = rawAccounts.map((account) => ({
     id: account.id,
     sfd_id: account.sfd_id,
     account_type: account.account_type,
