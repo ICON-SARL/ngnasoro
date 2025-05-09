@@ -1,5 +1,5 @@
-
-import { SfdAccount, SfdClientAccount } from "@/hooks/sfd/types";
+import { SfdAccount } from "@/hooks/sfd/types";
+import { SfdClientAccount } from "@/hooks/sfd/types";
 
 /**
  * Helper to adapt account data to ensure compatibility with components
@@ -18,11 +18,7 @@ export function adaptSfdAccount(account: any): SfdAccount {
     balance: account.balance || 0,
     currency: account.currency || 'FCFA',
     status: account.status || 'active',
-    sfds: account.sfds || {
-      id: account.sfd_id || account.id,
-      name: account.name || '',
-      logo_url: account.logo_url || account.logoUrl || null
-    },
+    isDefault: account.is_default || account.isDefault || false,
     is_default: account.is_default || account.isDefault || false,
     sfd_id: account.sfd_id || '', // Add sfd_id for components that need it
     account_type: account.account_type || '',
@@ -72,7 +68,7 @@ export function adaptToSfdAccountDisplay(account: SfdAccount): any {
     status: account.status || 'active',
     isVerified: true,
     isActive: false,
-    is_default: account.is_default || false
+    is_default: account.is_default || account.isDefault || false
   };
 }
 

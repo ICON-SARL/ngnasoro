@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import NoSfdAccount from './NoSfdAccount';
-import AccountBalance from './AccountBalance';
+import { AccountBalance } from './AccountBalance'; // Fixed import
 import NextPayment from './NextPayment';
 
 interface FinancialSnapshotProps {

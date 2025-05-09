@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { SfdClientAccount, LoanPaymentParams } from '@/hooks/sfd/types';
+import { SfdClientAccount, SfdAccount, LoanPaymentParams } from '@/hooks/sfd/types';
 
 // Import and re-export the SfdAccountDisplay type for components that need it
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
@@ -13,7 +13,6 @@ export interface SfdLoanPaymentParams {
   amount: number;
   paymentMethod: string;
   reference?: string;
-  description?: string;
 }
 
 // Import the service right here to avoid circular dependencies
@@ -132,7 +131,7 @@ export function useSfdAccounts(sfdId?: string) {
   const sfdAccounts = transformAccounts(accounts);
 
   // Compute the active SFD account for UI components that expect it
-  const activeSfdAccount = accounts.length > 0 ? {
+  const activeSfdAccount: SfdClientAccount | null = accounts.length > 0 ? {
     id: effectiveSfdId || accounts[0].sfd_id || '',
     name: 'SFD Account',
     description: 'Main SFD Account',
@@ -140,9 +139,10 @@ export function useSfdAccounts(sfdId?: string) {
     logo_url: accounts[0]?.logo_url || null,
     code: '',
     region: '',
-    balance: accounts.reduce((sum, acc) => sum + acc.balance, 0),
+    balance: accounts.reduce((sum, acc) => sum + (acc.balance || 0), 0),
     currency: accounts[0]?.currency || 'FCFA',
     isDefault: true,
+    is_default: true,
     isVerified: true,
     status: 'active',
     loans: [],
