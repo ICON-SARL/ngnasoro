@@ -1,11 +1,12 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Circle, CircleCheck } from 'lucide-react';
+import { Edit, Circle, CircleCheck, Info } from 'lucide-react';
 import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface SfdLoanPlansTableProps {
   sfdId?: string;
@@ -58,21 +59,32 @@ export function SfdLoanPlansTable({ sfdId }: SfdLoanPlansTableProps) {
     );
   }
 
-  // Filter plans by sfdId if provided
-  const filteredPlans = sfdId 
-    ? plans.filter(plan => plan.sfd_id === sfdId) 
-    : plans;
+  // Filter plans by sfdId if provided and ensure only published plans are shown
+  const filteredPlans = plans.filter(plan => {
+    // Vérifier si le plan est actif et publié
+    if (!plan.is_active || !plan.is_published) {
+      return false;
+    }
+    
+    // Si un sfdId est fourni, filtrer par sfdId
+    if (sfdId) {
+      return plan.sfd_id === sfdId;
+    }
+    
+    // Si pas de sfdId, montrer tous les plans actifs et publiés
+    return true;
+  });
   
   if (filteredPlans.length === 0) {
     return (
       <div className="border rounded-md p-4 text-center text-gray-500">
-        Aucun plan de prêt disponible pour cette SFD
+        Aucun plan de prêt publié disponible
       </div>
     );
   }
 
   return (
-    <div className="border rounded-md overflow-hidden">
+    <div className="border rounded-md overflow-hidden bg-white">
       {/* Header */}
       <div className="grid grid-cols-6 gap-2 bg-gray-50 p-4 text-sm font-medium text-gray-700">
         <div className="col-span-2">Nom</div>
@@ -86,10 +98,17 @@ export function SfdLoanPlansTable({ sfdId }: SfdLoanPlansTableProps) {
       {filteredPlans.map(plan => (
         <div 
           key={plan.id}
-          className="grid grid-cols-6 gap-2 p-4 border-t text-sm items-center"
+          className="grid grid-cols-6 gap-2 p-4 border-t text-sm items-center hover:bg-gray-50"
         >
           <div className="col-span-2">
-            <p className="font-medium">{plan.name}</p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">{plan.name}</p>
+              {plan.is_active && plan.is_published && (
+                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
+                  Actif
+                </Badge>
+              )}
+            </div>
             <p className="text-xs text-gray-500 truncate">{plan.description}</p>
           </div>
           <div className="col-span-1">
@@ -102,24 +121,25 @@ export function SfdLoanPlansTable({ sfdId }: SfdLoanPlansTableProps) {
             {plan.interest_rate}%
           </div>
           <div className="col-span-1 flex space-x-2">
-            {plan.is_active ? (
-              <>
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => handleApplyForLoan(plan.id)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <span className="flex items-center">
-                  <CircleCheck className="h-4 w-4 text-green-500" />
-                </span>
-              </>
-            ) : (
-              <span className="flex items-center">
-                <Circle className="h-4 w-4 text-gray-400" />
-              </span>
-            )}
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => handleApplyForLoan(plan.id)}
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="flex items-center">
+                    <Info className="h-4 w-4 text-gray-400" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p className="w-48">Cliquez sur l'icône d'édition pour faire une demande avec ce plan</p>
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
       ))}
