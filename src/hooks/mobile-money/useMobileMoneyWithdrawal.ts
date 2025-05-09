@@ -9,7 +9,7 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { createTransaction } = useTransactions();
 
   const processWithdrawal = async (
@@ -21,8 +21,10 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
     setError(null);
 
     try {
-      // Using createTransaction properly
+      // Using createTransaction properly with required userId and sfdId
       await createTransaction.mutate({
+        userId: user?.id || '',
+        sfdId: activeSfdId || '',
         amount: -amount, // Negative amount for withdrawal
         type: 'withdrawal',
         description: `Retrait vers ${provider} Money`,

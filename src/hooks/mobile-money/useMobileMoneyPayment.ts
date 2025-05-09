@@ -9,7 +9,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { createTransaction } = useTransactions();
 
   const processPayment = async (
@@ -27,8 +27,10 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
         ? `Remboursement de prêt par Mobile Money` 
         : `Dépôt par Mobile Money`;
 
-      // Using createTransaction properly
+      // Using createTransaction properly with required userId and sfdId
       await createTransaction.mutate({
+        userId: user?.id || '',
+        sfdId: activeSfdId || '',
         amount,
         type: transactionType,
         description: transactionDescription,
