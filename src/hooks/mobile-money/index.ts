@@ -7,5 +7,6 @@ export type {
   MobileMoneyWithdrawalHook,
   QRCodeGenerationHook,
   MobileMoneyResponse,
-  QRCodeResponse
+  QRCodeResponse,
+  MobileMoneyProvider
 } from './types';

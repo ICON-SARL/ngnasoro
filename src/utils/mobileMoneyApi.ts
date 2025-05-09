@@ -1,6 +1,20 @@
-
 import { supabase } from '@/integrations/supabase/client';
-import { MobileMoneyResponse, QRCodeResponse } from '@/hooks/mobile-money/types';
+
+// Define response types locally to fix the import issues
+interface MobileMoneyResponse {
+  success: boolean;
+  transactionId?: string;
+  message?: string;
+  error?: string;
+}
+
+interface QRCodeResponse {
+  success: boolean;
+  qrCodeData?: string;
+  transactionId?: string;
+  expiration?: string;
+  error?: string;
+}
 
 export const mobileMoneyApi = {
   async initiatePayment(

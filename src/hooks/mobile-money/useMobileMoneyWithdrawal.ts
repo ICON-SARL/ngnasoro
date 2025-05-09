@@ -3,33 +3,29 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/transactions';
 import { useAuth } from '@/hooks/useAuth';
+import { MobileMoneyWithdrawalHook } from './types';
 
-export function useMobileMoneyWithdrawal() {
+export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { createTransaction } = useTransactions();
 
-  const processWithdrawal = async ({
-    amount,
-    phoneNumber,
-    provider,
-    description
-  }: {
-    amount: number;
-    phoneNumber: string;
-    provider: string;
-    description?: string;
-  }) => {
+  const processWithdrawal = async (
+    phoneNumber: string,
+    amount: number,
+    provider: string
+  ) => {
     setIsProcessing(true);
     setError(null);
 
     try {
-      await createTransaction({
+      // Using createTransaction properly as an object
+      const result = await createTransaction({
         amount: -amount, // Negative amount for withdrawal
         type: 'withdrawal',
-        description: description || `Retrait vers ${provider} Money`,
+        description: `Retrait vers ${provider} Money`,
         name: 'Retrait Mobile Money',
         paymentMethod: `mobile_money_${provider.toLowerCase()}`
       });

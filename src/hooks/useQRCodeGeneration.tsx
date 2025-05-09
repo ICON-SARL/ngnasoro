@@ -1,4 +1,7 @@
 
 // This file now exports from the new structure
-export { useQRCodeGeneration } from './mobile-money';
-export type { QRCodeGenerationHook } from './mobile-money/types';
+import { useQRCodeGeneration as useQRCodeGenerationInternal } from './mobile-money/useQRCodeGeneration';
+import type { QRCodeGenerationHook } from './mobile-money/types';
+
+export const useQRCodeGeneration = useQRCodeGenerationInternal;
+export type { QRCodeGenerationHook };

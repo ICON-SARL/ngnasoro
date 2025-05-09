@@ -3,36 +3,32 @@ import { useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useTransactions } from '@/hooks/transactions';
 import { useAuth } from '@/hooks/useAuth';
+import { MobileMoneyPaymentHook } from './types';
 
-export function useMobileMoneyPayment() {
+export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
   const { user } = useAuth();
   const { createTransaction } = useTransactions();
 
-  const processPayment = async ({
-    amount,
-    phoneNumber,
-    provider,
-    description,
-    loanId
-  }: {
-    amount: number;
-    phoneNumber: string;
-    provider: string;
-    description?: string;
-    loanId?: string;
-  }) => {
+  const processPayment = async (
+    phoneNumber: string,
+    amount: number,
+    provider: string,
+    loanId?: string
+  ) => {
     setIsProcessing(true);
     setError(null);
 
     try {
       const transactionType = loanId ? 'loan_repayment' : 'deposit';
-      const transactionDescription = description || 
-        (loanId ? `Remboursement de prêt par Mobile Money` : `Dépôt par Mobile Money`);
-      
-      await createTransaction({
+      const transactionDescription = loanId 
+        ? `Remboursement de prêt par Mobile Money` 
+        : `Dépôt par Mobile Money`;
+
+      // Using createTransaction properly as an object
+      const result = await createTransaction({
         amount,
         type: transactionType,
         description: transactionDescription,

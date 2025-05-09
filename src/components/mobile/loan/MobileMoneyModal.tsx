@@ -61,9 +61,20 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
       let success;
       
       if (isWithdrawal) {
-        success = await processWithdrawal(phoneNumber, transactionAmount, provider);
+        success = await processWithdrawal({
+          phoneNumber,
+          amount: transactionAmount,
+          provider,
+          description: 'Retrait Mobile Money'
+        });
       } else {
-        success = await processPayment(phoneNumber, transactionAmount, provider, loanId);
+        success = await processPayment({
+          phoneNumber,
+          amount: transactionAmount,
+          provider,
+          description: loanId ? 'Remboursement de prêt' : 'Dépôt Mobile Money',
+          loanId
+        });
       }
       
       if (success) {

@@ -1,9 +1,9 @@
 
 import { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { QRCodeResponse } from './types';
+import { QRCodeResponse, QRCodeGenerationHook } from './types';
 
-export function useQRCodeGeneration() {
+export function useQRCodeGeneration(): QRCodeGenerationHook {
   const [qrCodeData, setQRCodeData] = useState<string | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [error, setError] = useState<string | null>(null);
