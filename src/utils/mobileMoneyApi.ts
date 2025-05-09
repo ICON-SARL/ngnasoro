@@ -60,3 +60,23 @@ export async function generateMobileMoneyQRCode(
     expiration
   };
 }
+
+// QR code API for scanner functionality
+export const qrCodeApi = {
+  scanQRCodeForTransaction: async (qrCode: string, userId: string) => {
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    // Mock success response (would normally validate QR code and process transaction)
+    return {
+      success: true,
+      message: "Transaction processed successfully",
+      transaction: {
+        id: `trans-${Date.now()}`,
+        amount: 5000,
+        date: new Date().toISOString(),
+        type: "deposit"
+      }
+    };
+  }
+};

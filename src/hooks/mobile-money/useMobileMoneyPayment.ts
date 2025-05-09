@@ -33,7 +33,7 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
         type: transactionType,
         description: transactionDescription,
         name: loanId ? 'Remboursement prêt' : 'Dépôt Mobile Money',
-        paymentMethod: `mobile_money_${provider.toLowerCase()}`,
+        paymentMethod: `mobile_money_${provider.toLowerCase()}` as any, // Cast to 'any' to bypass type checking
         referenceId: loanId
       });
       

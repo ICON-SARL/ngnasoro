@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -100,7 +99,7 @@ export function useSfdAccounts(sfdId?: string) {
           .eq('id', effectiveSfdId)
           .maybeSingle();
         
-        // Enhance accounts with additional information
+        // Ensure all data has the required properties by providing defaults for potentially missing fields
         return data.map((account): FetchedAccount => {
           // Ensure we're using the actual account data and enhancing it with defaults if properties are missing
           return {
