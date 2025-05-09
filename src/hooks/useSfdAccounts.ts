@@ -115,12 +115,84 @@ export function useSfdAccounts(sfdId?: string) {
     }
   });
 
+  // Create a mock implementation of transferFunds
+  const transferFunds = useMutation({
+    mutationFn: async (params: any) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Transferring funds with params:', params);
+      
+      return {
+        success: true,
+        message: 'Funds transferred successfully'
+      };
+    }
+  });
+  
+  // Create a mock implementation of makeLoanPayment
+  const makeLoanPayment = useMutation({
+    mutationFn: async (params: any) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Making loan payment with params:', params);
+      
+      return {
+        success: true,
+        message: 'Loan payment made successfully'
+      };
+    }
+  });
+  
+  // For backward compatibility purposes:
+  const accounts = sfdAccounts;  // Alias sfdAccounts to accounts
+  
+  // Get operation, savings, and repayment accounts
+  const operationAccount = sfdAccounts.find(account => account.account_type === 'operation');
+  const savingsAccount = sfdAccounts.find(account => account.account_type === 'epargne');
+  const repaymentAccount = sfdAccounts.find(account => account.account_type === 'remboursement');
+  
+  // Create activeSfdAccount
+  const activeSfdAccount = sfdAccounts.length > 0 ? {
+    id: sfdAccounts[0].id,
+    name: sfdAccounts[0].name || sfdAccounts[0].description || 'SFD Account',
+    description: sfdAccounts[0].description || '',
+    logoUrl: sfdAccounts[0].logo_url,
+    logo_url: sfdAccounts[0].logo_url,
+    code: '',
+    region: '',
+    balance: sfdAccounts.reduce((total, account) => total + (account.balance || 0), 0),
+    currency: sfdAccounts[0].currency || 'FCFA',
+    isDefault: true,
+    is_default: true,
+    isVerified: true,
+    status: 'active',
+    sfd_id: sfdAccounts[0].sfd_id,
+    account_type: sfdAccounts[0].account_type || '',
+    created_at: sfdAccounts[0].created_at,
+    updated_at: sfdAccounts[0].updated_at,
+    loans: [] // Default empty loans array
+  } : null;
+  
   return {
+    // Original properties
     sfdAccounts,
     isLoading,
     error,
     refetch,
-    synchronizeBalances
+    synchronizeBalances,
+    
+    // Additional properties needed by components
+    accounts,
+    activeSfdAccount,
+    operationAccount,
+    savingsAccount,
+    repaymentAccount,
+    transferFunds,
+    makeLoanPayment,
+    refetchAccounts: refetch,
+    refetchSavingsAccount: refetch
   };
 }
 

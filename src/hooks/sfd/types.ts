@@ -24,6 +24,7 @@ export interface SfdAccount {
   created_at?: string;
   updated_at?: string;
   description?: string; // Added this property
+  user_id?: string;
 }
 
 export interface SfdClientAccount extends SfdAccount {
@@ -65,5 +66,3 @@ export interface SfdData {
   lastFetched?: Date | null;
   logo_url?: string;
 }
-
-// Add any other missing types needed by the application
