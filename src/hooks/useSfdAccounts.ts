@@ -5,7 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { SfdAccount, SfdAccountType } from '@/types/sfdAccounts';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
-// Define a simpler interface for fetched accounts to avoid deep type recursion
+// Define a simplified interface for fetched accounts to avoid deep type recursion
 interface FetchedSfdAccount {
   id: string;
   user_id?: string;
@@ -21,6 +21,7 @@ interface FetchedSfdAccount {
   logo_url?: string | null;
   code?: string;
   is_default?: boolean;
+  region?: string;
 }
 
 // The hook function that gets and manages SFD accounts
@@ -111,7 +112,7 @@ export function useSfdAccounts(sfdId?: string) {
   });
 
   // Convert fetched accounts to SfdAccount type
-  const sfdAccounts = fetchedAccounts.map((account: FetchedSfdAccount): SfdAccount => ({
+  const sfdAccounts: SfdAccount[] = (fetchedAccounts as FetchedSfdAccount[]).map((account: FetchedSfdAccount): SfdAccount => ({
     id: account.id,
     sfd_id: account.sfd_id,
     account_type: account.account_type,
@@ -126,6 +127,7 @@ export function useSfdAccounts(sfdId?: string) {
     code: account.code,
     is_default: account.is_default,
     isDefault: account.is_default,
+    region: account.region
   }));
 
   // Mutation to synchronize balances
