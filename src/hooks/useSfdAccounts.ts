@@ -92,16 +92,29 @@ export function useSfdAccounts(sfdId?: string) {
               updated_at: new Date().toISOString(),
               logo_url: null
             }
-          ] as FetchedSfdAccount[];
+          ];
         }
         
         // Enhance accounts with description and name if missing
-        return data.map((account: any): FetchedSfdAccount => ({
-          ...account,
-          description: account.description || `Compte ${account.account_type || ''}`,
-          name: account.name || `Compte ${account.account_type || ''}`,
-          logo_url: account.logo_url || null
-        }));
+        return data.map((account: any) => {
+          return {
+            id: account.id,
+            user_id: account.user_id,
+            sfd_id: account.sfd_id,
+            account_type: account.account_type,
+            description: account.description || `Compte ${account.account_type || ''}`,
+            name: account.name || `Compte ${account.account_type || ''}`,
+            balance: account.balance || 0,
+            currency: account.currency || 'FCFA',
+            status: account.status || 'active',
+            created_at: account.created_at || new Date().toISOString(),
+            updated_at: account.updated_at || new Date().toISOString(),
+            logo_url: account.logo_url || null,
+            code: account.code,
+            is_default: account.is_default,
+            region: account.region
+          } as FetchedSfdAccount;
+        });
       } catch (err) {
         console.error('Error in SFD accounts query:', err);
         return [];
@@ -112,9 +125,9 @@ export function useSfdAccounts(sfdId?: string) {
   });
 
   // Convert fetched accounts to SfdAccount type
-  // Explicitly handle the array type to prevent deep instantiation
-  const rawAccounts = Array.isArray(fetchedAccounts) ? fetchedAccounts : [];
-  const sfdAccounts: SfdAccount[] = rawAccounts.map((account: FetchedSfdAccount): SfdAccount => ({
+  // Explicitly cast the array type to avoid deep instantiation
+  const rawAccounts: FetchedSfdAccount[] = Array.isArray(fetchedAccounts) ? fetchedAccounts as FetchedSfdAccount[] : [];
+  const sfdAccounts: SfdAccount[] = rawAccounts.map((account): SfdAccount => ({
     id: account.id,
     sfd_id: account.sfd_id,
     account_type: account.account_type,
