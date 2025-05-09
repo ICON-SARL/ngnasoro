@@ -2,7 +2,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction } from '@/types/transactions';
+import { Transaction } from '@/types/transactions'; // Import the Transaction type from shared types
 import { createTransactionManager, TransactionParams } from '@/services/transactions/transactionManager';
 
 export function useTransactions(userId?: string, sfdId?: string) {
@@ -24,7 +24,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
   const fetchTransactions = useCallback(async (limit: number = 10) => {
     if (!transactionManager) {
       setError('Utilisateur ou SFD non défini');
-      return;
+      return [];
     }
 
     setIsLoading(true);
@@ -32,8 +32,15 @@ export function useTransactions(userId?: string, sfdId?: string) {
 
     try {
       const fetchedTransactions = await transactionManager.getTransactionHistory(limit);
-      setTransactions(fetchedTransactions);
-      return fetchedTransactions;
+      // Make sure transactions have the right shape for the Transaction type
+      const typedTransactions = fetchedTransactions.map(tx => ({
+        ...tx,
+        id: String(tx.id), // Convert id to string if it's a number
+        name: tx.name || 'Transaction', // Ensure name is always defined
+      })) as Transaction[];
+      
+      setTransactions(typedTransactions);
+      return typedTransactions;
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la récupération des transactions');
       return [];
@@ -41,6 +48,9 @@ export function useTransactions(userId?: string, sfdId?: string) {
       setIsLoading(false);
     }
   }, [transactionManager]);
+
+  // Add a refetch alias for fetchTransactions for component compatibility
+  const refetch = fetchTransactions;
 
   // Effectuer un dépôt
   const makeDeposit = useCallback(async (amount: number, description?: string, paymentMethod?: string) => {
@@ -207,9 +217,12 @@ export function useTransactions(userId?: string, sfdId?: string) {
     error,
     transactions,
     fetchTransactions,
+    refetch, // Add the refetch alias explicitly
     makeDeposit,
     makeWithdrawal,
     makeLoanRepayment,
     getBalance
   };
 }
+
+export default useTransactions;
