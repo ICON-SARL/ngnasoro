@@ -14,9 +14,9 @@ interface FetchedAccount {
   currency: string;
   updated_at?: string;
   last_updated?: string;
-  account_type?: SfdAccountType;  // Added this missing property
+  account_type?: SfdAccountType;
   name?: string | null;
-  description?: string | null;     // Added this missing property
+  description?: string | null;
   logo_url?: string | null;
   status?: string;
   code?: string;
@@ -100,9 +100,9 @@ export function useSfdAccounts(sfdId?: string) {
           .eq('id', effectiveSfdId)
           .maybeSingle();
         
-        // Ensure all data has the required properties by providing defaults for potentially missing fields
+        // Ensure all data has the required properties by explicitly mapping and providing defaults
         return data.map((account): FetchedAccount => {
-          // Ensure we're using the actual account data and enhancing it with defaults if properties are missing
+          // Create a properly typed object with all necessary fields and defaults
           return {
             id: account.id,
             user_id: account.user_id,
@@ -112,15 +112,15 @@ export function useSfdAccounts(sfdId?: string) {
             last_updated: account.last_updated || new Date().toISOString(),
             updated_at: account.updated_at || new Date().toISOString(),
             
-            // Add additional properties with defaults
-            account_type: account.account_type || 'operation',
+            // Add properties that might be missing with defaults
+            account_type: (account.account_type as SfdAccountType) || 'operation',
             description: account.description || 'Compte principal',
-            name: sfdInfo?.name ? `Compte ${sfdInfo.name}` : 'Compte SFD',
+            name: account.name || (sfdInfo?.name ? `Compte ${sfdInfo.name}` : 'Compte SFD'),
             logo_url: sfdInfo?.logo_url || null,
-            status: 'active',
+            status: account.status || 'active',
             code: sfdInfo?.code,
             region: sfdInfo?.region,
-            is_default: true
+            is_default: !!account.is_default
           };
         });
       } catch (err) {
