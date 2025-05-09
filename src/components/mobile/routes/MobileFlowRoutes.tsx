@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Account } from '@/types/transactions';
@@ -8,6 +9,8 @@ import ProfilePage from '../profile/ProfilePage';
 import SplashScreen from '../SplashScreen';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import SecurePaymentTab from '../secure-payment/SecurePaymentTab';
+import TransferPage from '@/pages/mobile/TransferPage';
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -47,6 +50,8 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="sfd-selector" element={<SfdSelectorPage />} />
       <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
       <Route path="funds-management" element={<FundsManagementView />} />
+      <Route path="secure-payment" element={<SecurePaymentTab />} />
+      <Route path="transfers" element={<TransferPage />} />
       <Route index element={<Navigate to="main" replace />} />
       <Route path="*" element={<Navigate to="main" replace />} />
     </Routes>

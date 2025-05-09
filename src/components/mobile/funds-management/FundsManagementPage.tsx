@@ -8,6 +8,7 @@ import FundsActionButtons from './FundsActionButtons';
 import { useTransactions } from '@/hooks/useTransactions'; 
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
+import { AccountDebugInfo } from '@/components/mobile/dashboard';
 
 const FundsManagementPage: React.FC = () => {
   const { activeSfdId, user } = useAuth();
@@ -15,6 +16,7 @@ const FundsManagementPage: React.FC = () => {
   const [selectedSfd, setSelectedSfd] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
+  const [showDebugInfo, setShowDebugInfo] = useState(false);
   const { 
     transactions, 
     isLoading: transactionsLoading, 
@@ -52,6 +54,11 @@ const FundsManagementPage: React.FC = () => {
     }
   };
   
+  // Toggle debug info display 
+  const toggleDebugInfo = () => {
+    setShowDebugInfo(!showDebugInfo);
+  };
+  
   return (
     <div className="p-4 pb-20">
       <h1 className="text-2xl font-bold mb-4">Gestion des fonds</h1>
@@ -76,6 +83,18 @@ const FundsManagementPage: React.FC = () => {
           filterPeriod={filterPeriod}
           setFilterPeriod={setFilterPeriod}
         />
+        
+        {/* Debug panel for development */}
+        <div className="mt-4">
+          <button 
+            onClick={toggleDebugInfo}
+            className="text-xs text-gray-500 underline"
+          >
+            {showDebugInfo ? "Masquer informations de débogage" : "Afficher informations de débogage"}
+          </button>
+          
+          {showDebugInfo && <AccountDebugInfo />}
+        </div>
       </div>
     </div>
   );

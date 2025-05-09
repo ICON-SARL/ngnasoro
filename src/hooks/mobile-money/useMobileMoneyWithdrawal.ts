@@ -1,67 +1,60 @@
 
 import { useState } from 'react';
-import { useToast } from '../use-toast';
-import { mobileMoneyApi } from '@/utils/mobileMoneyApi';
-import type { MobileMoneyWithdrawalHook, MobileMoneyResponse } from './types';
+import { useToast } from '@/hooks/use-toast';
+import { useTransactions } from '@/hooks/transactions';
+import { useAuth } from '@/hooks/useAuth';
 
-export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
+export function useMobileMoneyWithdrawal() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  const processWithdrawal = async (
-    phoneNumber: string,
-    amount: number, 
-    provider: string
-  ): Promise<boolean> => {
-    if (!amount || amount <= 0) {
-      setError("Amount must be greater than zero");
-      return false;
-    }
-    
-    if (!phoneNumber) {
-      setError("Phone number is required");
-      return false;
-    }
-    
+  const { user } = useAuth();
+  const { createTransaction } = useTransactions();
+
+  const processWithdrawal = async ({
+    amount,
+    phoneNumber,
+    provider,
+    description
+  }: {
+    amount: number;
+    phoneNumber: string;
+    provider: string;
+    description?: string;
+  }) => {
     setIsProcessing(true);
     setError(null);
-    
+
     try {
-      const result = await mobileMoneyApi.initiateWithdrawal(phoneNumber, amount, provider);
+      await createTransaction({
+        amount: -amount, // Negative amount for withdrawal
+        type: 'withdrawal',
+        description: description || `Retrait vers ${provider} Money`,
+        name: 'Retrait Mobile Money',
+        paymentMethod: `mobile_money_${provider.toLowerCase()}`
+      });
       
-      if (result.success) {
-        toast({
-          title: "Withdrawal Initiated",
-          description: "Check your phone to confirm the withdrawal",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Withdrawal Failed",
-          description: result.message || "Unable to process withdrawal",
-          variant: "destructive",
-        });
-        setError(result.message || "Withdrawal failed");
-        return false;
-      }
-    } catch (error: any) {
       toast({
-        title: "Error",
-        description: error.message || "An error occurred while processing withdrawal",
+        title: "Retrait initié",
+        description: "Vous recevrez un SMS pour confirmer votre retrait.",
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Mobile money withdrawal error:', err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors du traitement du retrait");
+      
+      toast({
+        title: "Échec du retrait",
+        description: "Le retrait n'a pas pu être traité. Veuillez réessayer.",
         variant: "destructive",
       });
       
-      setError(error.message || "Withdrawal processing failed");
       return false;
     } finally {
       setIsProcessing(false);
     }
   };
-  
-  return {
-    isProcessing,
-    error,
-    processWithdrawal
-  };
+
+  return { isProcessing, error, processWithdrawal };
 }

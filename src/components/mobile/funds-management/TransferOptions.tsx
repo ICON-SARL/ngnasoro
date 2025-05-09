@@ -1,48 +1,75 @@
+
 import React from 'react';
-import { Wallet, SaveAll, ChevronRight } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { ArrowDown, ArrowUp, Send, CreditCard } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+
 interface TransferOptionsProps {
-  onWithdraw: () => void;
-  onDeposit: () => void;
+  onDeposit?: () => void;
+  onWithdraw?: () => void;
 }
-const TransferOptions: React.FC<TransferOptionsProps> = ({
-  onWithdraw,
-  onDeposit
+
+const TransferOptions: React.FC<TransferOptionsProps> = ({ 
+  onDeposit,
+  onWithdraw
 }) => {
-  return <div className="space-y-4">
-      <Card className="border hover:border-primary cursor-pointer" onClick={onWithdraw}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                <Wallet className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-medium">Retrait</h3>
-                <p className="text-xs text-gray-500">Retirez via votre compte mobile money</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
+  const navigate = useNavigate();
+
+  const handleTransfer = () => {
+    navigate('/mobile-flow/transfers');
+  };
+
+  const handleLoan = () => {
+    navigate('/mobile-flow/loan-application');
+  };
+
+  return (
+    <div className="grid grid-cols-2 gap-4">
+      <Button 
+        variant="outline" 
+        className="flex flex-col items-center justify-center p-6 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        onClick={onDeposit}
+      >
+        <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center mb-2">
+          <ArrowDown className="h-5 w-5 text-green-600" />
+        </div>
+        <span className="mt-2 font-medium">Dépôt</span>
+      </Button>
       
-      <Card className="border hover:border-primary cursor-pointer" onClick={onDeposit}>
-        <CardContent className="p-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center">
-              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center mr-3">
-                <SaveAll className="h-6 w-6 text-primary" />
-              </div>
-              <div>
-                <h3 className="font-medium">Dépôt</h3>
-                <p className="text-xs text-gray-500">Déposez via votre compte mobile money</p>
-              </div>
-            </div>
-            <ChevronRight className="h-5 w-5 text-gray-400" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>;
+      <Button 
+        variant="outline" 
+        className="flex flex-col items-center justify-center p-6 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        onClick={onWithdraw}
+      >
+        <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-2">
+          <ArrowUp className="h-5 w-5 text-red-600" />
+        </div>
+        <span className="mt-2 font-medium">Retrait</span>
+      </Button>
+
+      <Button 
+        variant="outline" 
+        className="flex flex-col items-center justify-center p-6 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        onClick={handleTransfer}
+      >
+        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mb-2">
+          <Send className="h-5 w-5 text-blue-600" />
+        </div>
+        <span className="mt-2 font-medium">Transfert</span>
+      </Button>
+      
+      <Button 
+        variant="outline" 
+        className="flex flex-col items-center justify-center p-6 h-auto border border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+        onClick={handleLoan}
+      >
+        <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center mb-2">
+          <CreditCard className="h-5 w-5 text-purple-600" />
+        </div>
+        <span className="mt-2 font-medium">Prêt</span>
+      </Button>
+    </div>
+  );
 };
+
 export default TransferOptions;

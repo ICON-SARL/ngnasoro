@@ -1,67 +1,67 @@
 
 import { useState } from 'react';
-import { useToast } from '../use-toast';
-import { mobileMoneyApi } from '@/utils/mobileMoneyApi';
-import type { MobileMoneyPaymentHook, MobileMoneyResponse } from './types';
+import { useToast } from '@/hooks/use-toast';
+import { useTransactions } from '@/hooks/transactions';
+import { useAuth } from '@/hooks/useAuth';
 
-export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
+export function useMobileMoneyPayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
-  
-  const processPayment = async (
-    phoneNumber: string,
-    amount: number, 
-    provider: string
-  ): Promise<boolean> => {
-    if (!amount || amount <= 0) {
-      setError("Amount must be greater than zero");
-      return false;
-    }
-    
-    if (!phoneNumber) {
-      setError("Phone number is required");
-      return false;
-    }
-    
+  const { user } = useAuth();
+  const { createTransaction } = useTransactions();
+
+  const processPayment = async ({
+    amount,
+    phoneNumber,
+    provider,
+    description,
+    loanId
+  }: {
+    amount: number;
+    phoneNumber: string;
+    provider: string;
+    description?: string;
+    loanId?: string;
+  }) => {
     setIsProcessing(true);
     setError(null);
-    
+
     try {
-      const result = await mobileMoneyApi.initiatePayment(phoneNumber, amount, provider);
+      const transactionType = loanId ? 'loan_repayment' : 'deposit';
+      const transactionDescription = description || 
+        (loanId ? `Remboursement de prêt par Mobile Money` : `Dépôt par Mobile Money`);
       
-      if (result.success) {
-        toast({
-          title: "Payment Initiated",
-          description: "Check your phone to confirm the payment",
-        });
-        return true;
-      } else {
-        toast({
-          title: "Payment Failed",
-          description: result.message || "Unable to process payment",
-          variant: "destructive",
-        });
-        setError(result.message || "Payment failed");
-        return false;
-      }
-    } catch (error: any) {
+      await createTransaction({
+        amount,
+        type: transactionType,
+        description: transactionDescription,
+        name: loanId ? 'Remboursement prêt' : 'Dépôt Mobile Money',
+        paymentMethod: `mobile_money_${provider.toLowerCase()}`,
+        referenceId: loanId
+      });
+      
       toast({
-        title: "Error",
-        description: error.message || "An error occurred while processing payment",
+        title: "Paiement initié",
+        description: "Vous recevrez un SMS pour confirmer votre transaction.",
+      });
+      
+      return true;
+    } catch (err) {
+      console.error('Mobile money payment error:', err);
+      setError(err instanceof Error ? err.message : "Une erreur est survenue lors du traitement du paiement");
+      
+      toast({
+        title: "Échec du paiement",
+        description: "Le paiement n'a pas pu être traité. Veuillez réessayer.",
         variant: "destructive",
       });
       
-      setError(error.message || "Payment processing failed");
       return false;
     } finally {
       setIsProcessing(false);
     }
   };
-  
-  return {
-    isProcessing,
-    error,
-    processPayment
-  };
+
+  return { isProcessing, error, processPayment };
 }
