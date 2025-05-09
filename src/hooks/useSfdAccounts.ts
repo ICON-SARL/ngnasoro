@@ -37,7 +37,7 @@ export function useSfdAccounts(sfdId?: string) {
     refetch 
   } = useQuery({
     queryKey: ['sfdAccounts', user?.id, effectiveSfdId],
-    queryFn: async () => {
+    queryFn: async (): Promise<FetchedSfdAccount[]> => {
       if (!user?.id) return [] as FetchedSfdAccount[];
       
       try {
