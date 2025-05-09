@@ -96,12 +96,12 @@ export function useSfdAccounts(sfdId?: string) {
         }
         
         // Enhance accounts with description and name if missing
-        return data.map((account: any) => ({
+        return data.map((account: any): FetchedSfdAccount => ({
           ...account,
           description: account.description || `Compte ${account.account_type || ''}`,
           name: account.name || `Compte ${account.account_type || ''}`,
           logo_url: account.logo_url || null
-        })) as FetchedSfdAccount[];
+        }));
       } catch (err) {
         console.error('Error in SFD accounts query:', err);
         return [];
@@ -112,7 +112,9 @@ export function useSfdAccounts(sfdId?: string) {
   });
 
   // Convert fetched accounts to SfdAccount type
-  const sfdAccounts: SfdAccount[] = (fetchedAccounts as FetchedSfdAccount[]).map((account: FetchedSfdAccount): SfdAccount => ({
+  // Explicitly handle the array type to prevent deep instantiation
+  const rawAccounts = Array.isArray(fetchedAccounts) ? fetchedAccounts : [];
+  const sfdAccounts: SfdAccount[] = rawAccounts.map((account: FetchedSfdAccount): SfdAccount => ({
     id: account.id,
     sfd_id: account.sfd_id,
     account_type: account.account_type,
