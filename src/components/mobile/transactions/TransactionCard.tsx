@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
-import { ArrowUp, ArrowDown, CreditCard, Coin } from 'lucide-react';
+import { ArrowUp, ArrowDown, CreditCard, Coins } from 'lucide-react';
 import { formatCurrency } from '@/utils/formatters';
 
 interface TransactionProps {
@@ -26,7 +26,7 @@ const TransactionCard: React.FC<TransactionProps> = ({ transaction, onClick }) =
       case 'loan_repayment':
         return <CreditCard className="h-5 w-5 text-blue-500" />;
       default:
-        return <Coin className="h-5 w-5 text-gray-500" />;
+        return <Coins className="h-5 w-5 text-gray-500" />; // Changed from Coin to Coins
     }
   };
 

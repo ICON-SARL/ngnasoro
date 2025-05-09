@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import type { Transaction } from '@/types/transactions';
-import { ensureValidTransactionType, convertDatabaseRecordsToTransactions } from '@/utils/transactionUtils';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
 export function useTransactions(userId?: string | null, sfdId?: string | null) {
   const { data: transactions = [], isLoading, refetch } = useQuery({
@@ -28,8 +28,22 @@ export function useTransactions(userId?: string | null, sfdId?: string | null) {
         return [];
       }
 
-      // Use the utility function to convert database records to Transaction objects
-      const convertedTransactions = convertDatabaseRecordsToTransactions(data);
+      // Convert database records to Transaction objects
+      const convertedTransactions = data.map((record: any) => ({
+        id: record.id,
+        name: record.name || (record.type === 'deposit' ? 'Dépôt' : 'Retrait'),
+        type: record.type,
+        amount: record.amount,
+        date: record.date || record.created_at,
+        status: record.status || 'success',
+        description: record.description,
+        reference: record.reference || record.reference_id,
+        reference_id: record.reference_id || record.reference,
+        created_at: record.created_at,
+        user_id: record.user_id,
+        sfd_id: record.sfd_id || sfdId,
+        avatar_url: record.avatar_url
+      }));
       
       return convertedTransactions.map(tx => ({
         ...tx,

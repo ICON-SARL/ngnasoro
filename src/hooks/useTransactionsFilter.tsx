@@ -1,36 +1,67 @@
 
 import { useState, useCallback } from 'react';
 import { Transaction } from '@/types/transactions';
-import { UseTransactionsFilterProps } from '@/types/realtimeTransactions';
-import { safeIdToString } from '@/utils/transactionUtils';
 
-export function useTransactionsFilter({ transactions }: UseTransactionsFilterProps) {
+export function useTransactionsFilter({ transactions }: { transactions: Transaction[] }) {
   const [filteredTransactions, setFilteredTransactions] = useState<Transaction[]>(transactions);
+  const [currentFilter, setCurrentFilter] = useState({
+    type: 'all',
+    period: 'all',
+    search: '',
+  });
   
-  const filterTransactions = useCallback((searchTerm: string = '', status: string | null = null) => {
-    let filtered = [...transactions];
+  const filterTransactions = useCallback((filters = currentFilter) => {
+    const { type, period, search } = filters;
     
-    if (searchTerm) {
-      const term = searchTerm.toLowerCase();
-      filtered = filtered.filter(tx => {
-        const id = typeof tx.id === 'number' ? tx.id.toString() : tx.id;
-        return (tx.description && tx.description.toLowerCase().includes(term)) ||
-          id.toLowerCase().includes(term) ||
-          tx.type.toLowerCase().includes(term) ||
-          (tx.payment_method && tx.payment_method.toLowerCase().includes(term)) ||
-          (tx.name && tx.name.toLowerCase().includes(term));
-      });
-    }
-    
-    if (status) {
-      filtered = filtered.filter(tx => tx.status === status);
-    }
+    const filtered = transactions.filter(tx => {
+      // Filter by type
+      const matchesType = type === 'all' || tx.type === type;
+      
+      // Filter by period
+      let matchesPeriod = true;
+      if (period !== 'all') {
+        const txDate = new Date(tx.date || tx.created_at || '');
+        const now = new Date();
+        
+        switch(period) {
+          case 'today':
+            matchesPeriod = txDate.toDateString() === now.toDateString();
+            break;
+          case 'week':
+            const oneWeekAgo = new Date();
+            oneWeekAgo.setDate(now.getDate() - 7);
+            matchesPeriod = txDate >= oneWeekAgo;
+            break;
+          case 'month':
+            const oneMonthAgo = new Date();
+            oneMonthAgo.setMonth(now.getMonth() - 1);
+            matchesPeriod = txDate >= oneMonthAgo;
+            break;
+          case 'year':
+            const oneYearAgo = new Date();
+            oneYearAgo.setFullYear(now.getFullYear() - 1);
+            matchesPeriod = txDate >= oneYearAgo;
+            break;
+        }
+      }
+      
+      // Filter by search
+      const matchesSearch = !search || 
+        tx.name?.toLowerCase().includes(search.toLowerCase()) ||
+        tx.description?.toLowerCase().includes(search.toLowerCase()) ||
+        tx.reference?.toLowerCase().includes(search.toLowerCase()) || 
+        tx.id?.toString().includes(search);
+      
+      return matchesType && matchesPeriod && matchesSearch;
+    });
     
     setFilteredTransactions(filtered);
-  }, [transactions]);
-
+    setCurrentFilter(filters);
+  }, [transactions, currentFilter]);
+  
   return {
     filteredTransactions,
-    filterTransactions
+    filterTransactions,
+    currentFilter,
   };
 }

@@ -1,80 +1,31 @@
-export interface SfdData {
-  id: string;
-  name: string;
-  code: string;
-  region?: string;
-  status: string;
-  logo_url?: string;
-  description?: string;
-  settings?: Record<string, any>;
-  token?: string; // Added token property
-}
 
-export interface SfdBalanceData {
-  balance: number;
-  currency: string;
-}
-
-export interface SfdLoan {
-  id: string;
-  amount: number;
-  remainingAmount: number;
-  nextDueDate: string;
-  isLate: boolean;
+export interface SyncResult {
+  success: boolean;
+  message: string;
+  error?: any;
 }
 
 export interface SfdAccount {
   id: string;
   name: string;
-  code?: string;
-  description?: string;
-  logo_url?: string | null;
-  logoUrl?: string | null;
-  balance: number;
-  currency: string;
+  code: string;
+  region?: string;
+  logo_url?: string;
+  balance?: number;
+  currency?: string;
+  isDefault?: boolean;
+  isVerified?: boolean;
   status?: string;
-  sfds?: {
-    id: string;
-    name: string;
-    logo_url?: string | null;
-  };
-  is_default?: boolean;
   sfd_id?: string;
   account_type?: string;
   created_at?: string;
   updated_at?: string;
 }
 
-export interface SfdClientAccount {
-  id: string;
-  name: string;
-  description?: string;
-  logoUrl?: string | null;
-  logo_url?: string | null;
-  code: string;
-  region: string;
-  balance: number;
-  currency: string;
-  isDefault: boolean;
-  isVerified: boolean;
-  status: string;
-  loans?: any[];
-  sfd_id: string;
-  account_type: string;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface SyncResult {
-  success: boolean;
-  message?: string;
-  syncedAccounts?: SfdAccount[];
-  error?: any;
-}
-
 export interface LoanPaymentParams {
   loanId: string;
-  amount: number; 
+  amount: number;
   paymentMethod: string;
+  description?: string; // Added description field
   reference?: string;
 }

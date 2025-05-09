@@ -30,7 +30,7 @@ export async function processLoanPayment(
         loanId: params.loanId,
         amount: params.amount,
         paymentMethod: params.paymentMethod,
-        description: params.description || 'Loan payment',
+        description: params.description || 'Loan payment', // Added default value
         reference: params.reference || ''
       }
     });

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/hooks/useAuth';
@@ -152,6 +151,15 @@ export function useSfdAccounts(sfdId?: string) {
     created_at: accounts[0]?.created_at || new Date().toISOString(),
     updated_at: accounts[0]?.updated_at || new Date().toISOString()
   } : null;
+
+  // Setup selected SFD info for dropdown
+  const selectedSfdInfo: SfdAccount | null = 
+    sfdId && sfdAccounts.length 
+      ? sfdAccounts.find(account => account.id === sfdId || account.sfd_id === sfdId) || null 
+      : null;
+
+  const selectedSfdName = selectedSfdInfo?.name || 'Sélectionnez une SFD';
+  const selectedSfdLogo = selectedSfdInfo?.logo_url || null;
 
   // Define refetchAccounts for consistency across app
   const refetchAccounts = refetchAccountsQuery;

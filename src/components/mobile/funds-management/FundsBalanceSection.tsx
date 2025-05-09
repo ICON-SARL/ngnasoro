@@ -1,19 +1,16 @@
 
-import React, { useState } from 'react';
-import { useAuth } from '@/hooks/useAuth';
-import { Card } from '@/components/ui/card';
+import React from 'react';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, Lock } from 'lucide-react';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { formatCurrency } from '@/utils/formatters';
-import { useRealtimeBalance } from '@/hooks/useRealtimeBalance';
+import { RefreshCw } from 'lucide-react';
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
+import { formatCurrencyAmount } from '@/utils/transactionUtils';
 
-interface FundsBalanceSectionProps {
+export interface FundsBalanceSectionProps {
   balance: number;
   isRefreshing: boolean;
+  onRefresh?: () => Promise<void>; // Added optional onRefresh prop
   sfdAccounts: SfdAccountDisplay[];
-  onSelectSfd: (sfdId: string) => void;
+  onSelectSfd: React.Dispatch<React.SetStateAction<string>>;
   selectedSfd: string;
 }
 
@@ -22,66 +19,58 @@ const FundsBalanceSection: React.FC<FundsBalanceSectionProps> = ({
   isRefreshing,
   sfdAccounts,
   onSelectSfd,
-  selectedSfd
+  selectedSfd,
+  onRefresh
 }) => {
-  const [isHidden, setIsHidden] = useState(false);
-  const { activeSfdId, setActiveSfdId } = useAuth();
-  const { refreshBalance } = useRealtimeBalance(balance, selectedSfd !== 'all' ? selectedSfd : undefined);
-  
-  const handleSfdChange = (value: string) => {
-    onSelectSfd(value);
-    if (value !== 'all') {
-      setActiveSfdId(value);
+  const handleRefresh = async () => {
+    if (onRefresh) {
+      await onRefresh();
     }
   };
-  
-  const handleRefresh = async () => {
-    if (isRefreshing) return;
-    await refreshBalance();
-  };
-  
+
   return (
-    <Card className="border-0 shadow-md bg-gradient-to-r from-[#0D6A51] to-[#0D6A51]/90 text-white p-5 mx-4 mt-4 rounded-xl">
-      <div className="flex flex-col items-center">
-        <div className="w-full flex justify-between items-center mb-2">
-          <h3 className="text-lg font-medium">Solde Disponible</h3>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10"
-            onClick={handleRefresh}
-            disabled={isRefreshing}
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-          </Button>
-        </div>
-        
-        <div className="text-3xl font-bold mb-4">
-          {isHidden ? '••••••' : formatCurrency(balance)} FCFA
-        </div>
-        
-        {sfdAccounts && sfdAccounts.length > 1 && (
-          <div className="w-full mt-2">
-            <Select 
-              value={selectedSfd} 
-              onValueChange={handleSfdChange}
-            >
-              <SelectTrigger className="bg-white/10 border-white/20 text-white">
-                <SelectValue placeholder="Sélectionner une SFD" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Tous les SFDs</SelectItem>
-                {sfdAccounts.map((sfd) => (
-                  <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name} ({formatCurrency(sfd.balance || 0)} FCFA)
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
+    <div className="bg-white p-4 rounded-lg shadow">
+      <div className="flex justify-between items-center mb-3">
+        <h2 className="text-lg font-medium">Solde disponible</h2>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+        </Button>
       </div>
-    </Card>
+      
+      <div className="text-3xl font-bold mb-4">
+        {formatCurrencyAmount(balance)} FCFA
+      </div>
+      
+      {sfdAccounts.length > 1 && (
+        <div className="flex flex-wrap gap-2 mt-3">
+          <Button
+            variant={selectedSfd === 'all' ? 'default' : 'outline'}
+            size="sm"
+            className="text-xs"
+            onClick={() => onSelectSfd('all')}
+          >
+            Tous les comptes
+          </Button>
+          
+          {sfdAccounts.map(account => (
+            <Button
+              key={account.id}
+              variant={selectedSfd === account.id ? 'default' : 'outline'}
+              size="sm"
+              className="text-xs"
+              onClick={() => onSelectSfd(account.id)}
+            >
+              {account.name}
+            </Button>
+          ))}
+        </div>
+      )}
+    </div>
   );
 };
 
