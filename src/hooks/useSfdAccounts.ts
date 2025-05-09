@@ -100,10 +100,11 @@ export function useSfdAccounts(sfdId?: string) {
           .eq('id', effectiveSfdId)
           .maybeSingle();
         
-        // Ensure all data has the required properties by explicitly mapping and providing defaults
+        // Map the database results to our FetchedAccount interface with safe defaults
         return data.map((account): FetchedAccount => {
-          // Create a properly typed object with all necessary fields and defaults
-          return {
+          // Create a new object with all required properties and safe defaults
+          // This ensures TypeScript won't complain about missing properties
+          const enhancedAccount: FetchedAccount = {
             id: account.id,
             user_id: account.user_id,
             sfd_id: account.sfd_id,
@@ -111,17 +112,36 @@ export function useSfdAccounts(sfdId?: string) {
             currency: account.currency || 'FCFA',
             last_updated: account.last_updated || new Date().toISOString(),
             updated_at: account.updated_at || new Date().toISOString(),
-            
-            // Add properties that might be missing with defaults
-            account_type: (account.account_type as SfdAccountType) || 'operation',
-            description: account.description || 'Compte principal',
-            name: account.name || (sfdInfo?.name ? `Compte ${sfdInfo.name}` : 'Compte SFD'),
+            // The following properties might be missing from the database
+            // so we provide defaults
+            account_type: 'operation', // Default to 'operation'
+            description: 'Compte principal',
+            name: sfdInfo?.name ? `Compte ${sfdInfo.name}` : 'Compte SFD',
             logo_url: sfdInfo?.logo_url || null,
-            status: account.status || 'active',
+            status: 'active',
             code: sfdInfo?.code,
             region: sfdInfo?.region,
-            is_default: !!account.is_default
+            is_default: false
           };
+
+          // Only if the account object has these properties, override the defaults
+          if ('account_type' in account && account.account_type) {
+            enhancedAccount.account_type = account.account_type as SfdAccountType;
+          }
+          if ('description' in account && account.description) {
+            enhancedAccount.description = account.description;
+          }
+          if ('name' in account && account.name) {
+            enhancedAccount.name = account.name;
+          }
+          if ('status' in account && account.status) {
+            enhancedAccount.status = account.status;
+          }
+          if ('is_default' in account && account.is_default) {
+            enhancedAccount.is_default = !!account.is_default;
+          }
+
+          return enhancedAccount;
         });
       } catch (err) {
         console.error('Error in accounts query:', err);
