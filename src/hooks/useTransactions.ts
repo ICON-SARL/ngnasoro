@@ -1,23 +1,8 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
-import { Transaction as TransactionType } from '@/types/transactions'; // Import the Transaction type from shared types
+import { Transaction } from '@/types/transactions'; // Import the Transaction type from shared types
 import { createTransactionManager, TransactionParams } from '@/services/transactions/transactionManager';
-
-// Update the Transaction interface to be compatible with the one in types/transactions.ts
-export interface Transaction {
-  id: string; // Changed from string | number to just string for compatibility
-  name: string; // Changed from optional to required for compatibility
-  type: 'deposit' | 'withdrawal' | 'transfer' | 'loan_payment' | 'loan_disbursement' | string;
-  amount: number;
-  date: string;
-  description?: string;
-  status?: string;
-  avatar_url?: string;
-  created_at?: string;
-  user_id?: string;
-  sfd_id?: string;
-}
 
 export function useTransactions(userId?: string, sfdId?: string) {
   const { user, activeSfdId } = useAuth();
@@ -46,13 +31,15 @@ export function useTransactions(userId?: string, sfdId?: string) {
 
     try {
       const fetchedTransactions = await transactionManager.getTransactionHistory(limit);
-      // Convert to compatible transaction type before setting state
-      const compatibleTransactions = fetchedTransactions.map(tx => ({
+      // Make sure transactions have the right shape for the Transaction type
+      const typedTransactions = fetchedTransactions.map(tx => ({
         ...tx,
-        id: String(tx.id) // Ensure id is always a string
-      }));
-      setTransactions(compatibleTransactions as Transaction[]);
-      return fetchedTransactions;
+        id: String(tx.id), // Convert id to string if it's a number
+        name: tx.name || 'Transaction', // Ensure name is always defined
+      })) as Transaction[];
+      
+      setTransactions(typedTransactions);
+      return typedTransactions;
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la récupération des transactions');
       return [];
@@ -61,7 +48,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
     }
   }, [transactionManager]);
 
-  // Add a refetch alias for fetchTransactions for compatibility with components expecting this function name
+  // Add a refetch alias for fetchTransactions for component compatibility
   const refetch = fetchTransactions;
 
   // Effectuer un dépôt
@@ -229,7 +216,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
     error,
     transactions,
     fetchTransactions,
-    refetch, // Add the refetch alias here
+    refetch, // Add the refetch alias explicitly
     makeDeposit,
     makeWithdrawal,
     makeLoanRepayment,

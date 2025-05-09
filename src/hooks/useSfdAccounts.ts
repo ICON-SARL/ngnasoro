@@ -2,7 +2,7 @@
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
-import { SfdAccount } from '@/hooks/sfd/types';
+import { SfdAccount, SfdAccountType } from '@/types/sfdAccounts';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
 // Define a simpler interface for fetched accounts to avoid deep type recursion
@@ -10,15 +10,15 @@ interface FetchedSfdAccount {
   id: string;
   user_id?: string;
   sfd_id: string;
-  account_type: string;
-  description?: string;
-  name?: string;
+  account_type: SfdAccountType;
+  description?: string | null;
+  name?: string | null;
   balance: number;
   currency: string;
   status: string;
   created_at: string;
   updated_at: string;
-  logo_url?: string;
+  logo_url?: string | null;
   code?: string;
   is_default?: boolean;
 }
@@ -95,7 +95,7 @@ export function useSfdAccounts(sfdId?: string) {
         }
         
         // Enhance accounts with description and name if missing
-        return data.map(account => ({
+        return data.map((account: any) => ({
           ...account,
           description: account.description || `Compte ${account.account_type || ''}`,
           name: account.name || `Compte ${account.account_type || ''}`,
@@ -110,8 +110,23 @@ export function useSfdAccounts(sfdId?: string) {
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
 
-  // Enhanced accounts with all required properties
-  const sfdAccounts = fetchedAccounts as SfdAccount[];
+  // Convert fetched accounts to SfdAccount type
+  const sfdAccounts = fetchedAccounts.map((account: FetchedSfdAccount): SfdAccount => ({
+    id: account.id,
+    sfd_id: account.sfd_id,
+    account_type: account.account_type,
+    description: account.description || null,
+    name: account.name || null,
+    balance: account.balance,
+    currency: account.currency,
+    status: account.status,
+    created_at: account.created_at,
+    updated_at: account.updated_at,
+    logo_url: account.logo_url || null,
+    code: account.code,
+    is_default: account.is_default,
+    isDefault: account.is_default,
+  }));
 
   // Mutation to synchronize balances
   const synchronizeBalances = useMutation({

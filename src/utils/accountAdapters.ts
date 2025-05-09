@@ -1,10 +1,10 @@
-import { SfdAccount } from "@/hooks/sfd/types";
+import { SfdAccount } from "@/types/sfdAccounts";
 
 /**
  * Helper to adapt account data to ensure compatibility with components
  * that expect different property names or structures
  */
-export function adaptSfdAccount(account: any): SfdAccount {
+export function adaptSfdAccount(account: any): SfdAccount | null {
   if (!account) return null;
   
   return {
@@ -22,7 +22,8 @@ export function adaptSfdAccount(account: any): SfdAccount {
     sfd_id: account.sfd_id || '', // Add sfd_id for components that need it
     account_type: account.account_type || '',
     created_at: account.created_at || new Date().toISOString(),
-    updated_at: account.updated_at || new Date().toISOString()
+    updated_at: account.updated_at || new Date().toISOString(),
+    region: account.region || '',
   };
 }
 
@@ -31,7 +32,10 @@ export function adaptSfdAccount(account: any): SfdAccount {
  */
 export function normalizeSfdAccounts(accounts: any[]): SfdAccount[] {
   if (!accounts || !Array.isArray(accounts)) return [];
+  
   return accounts.map(account => {
+    if (!account) return null;
+    
     // Add missing properties if they don't exist
     const enhancedAccount = {
       ...account,
@@ -39,8 +43,9 @@ export function normalizeSfdAccounts(accounts: any[]): SfdAccount[] {
       description: account.description || `Compte ${account.account_type || ''}`,
       logo_url: account.logo_url || account.logoUrl || null,
     };
+    
     return adaptSfdAccount(enhancedAccount);
-  }).filter(Boolean);
+  }).filter(Boolean) as SfdAccount[];
 }
 
 /**
