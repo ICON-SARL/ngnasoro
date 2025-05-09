@@ -4,8 +4,8 @@ import MobileNavigation from '@/components/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import LoanPlansDisplay from '@/components/mobile/loan/LoanPlansDisplay';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, CreditCard } from 'lucide-react';
+import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
 
 const MobileLoansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -32,15 +32,16 @@ const MobileLoansPage: React.FC = () => {
               Tout voir <ArrowRight className="h-4 w-4 ml-1" />
             </Button>
           </div>
-          <LoanPlansDisplay sfdId={activeSfdId} />
+          <SfdLoanPlansTable sfdId={activeSfdId} />
         </div>
         
         <div className="mt-8 mb-4 flex justify-center">
           <Button 
-            onClick={() => navigate('/mobile-flow/my-loans')}
+            onClick={() => navigate('/mobile-flow/loan-application')}
             className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
           >
-            Voir mes prêts
+            <CreditCard className="h-4 w-4" />
+            Faire une demande de prêt
           </Button>
         </div>
       </div>

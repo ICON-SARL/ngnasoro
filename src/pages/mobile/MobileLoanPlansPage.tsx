@@ -4,8 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, CreditCard } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import LoanPlansDisplay from '@/components/mobile/loan/LoanPlansDisplay';
 import { useAuth } from '@/hooks/useAuth';
+import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,7 +37,7 @@ const MobileLoanPlansPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="standard" className="mt-0">
-            <LoanPlansDisplay sfdId={activeSfdId} />
+            <SfdLoanPlansTable sfdId={activeSfdId} />
           </TabsContent>
 
           <TabsContent value="subsidized" className="mt-0">
@@ -47,7 +47,7 @@ const MobileLoanPlansPage: React.FC = () => {
                 Les prêts subventionnés bénéficient d'un taux d'intérêt réduit grâce à une subvention de l'État ou d'un partenaire.
               </p>
             </div>
-            <LoanPlansDisplay subsidizedOnly={true} sfdId={activeSfdId} />
+            <SfdLoanPlansTable sfdId={activeSfdId} />
           </TabsContent>
         </Tabs>
         
