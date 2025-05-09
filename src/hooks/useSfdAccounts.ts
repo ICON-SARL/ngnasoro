@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -13,9 +14,9 @@ interface FetchedAccount {
   currency: string;
   updated_at?: string;
   last_updated?: string;
-  account_type?: SfdAccountType;
+  account_type?: SfdAccountType;  // Added this missing property
   name?: string | null;
-  description?: string | null;
+  description?: string | null;     // Added this missing property
   logo_url?: string | null;
   status?: string;
   code?: string;
