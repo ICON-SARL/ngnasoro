@@ -1,5 +1,6 @@
 
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen, fireEvent, waitFor } from '@testing-library/dom';
 import { SfdManagement } from '@/components/admin/SfdManagement';
 import { supabase } from '@/integrations/supabase/client';
 import { createTestQueryClient } from '../../utils/testQueryClient';
