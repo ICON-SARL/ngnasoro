@@ -1,5 +1,5 @@
+
 import { SfdAccount } from "@/hooks/sfd/types";
-import { SfdClientAccount } from "@/hooks/sfd/types";
 
 /**
  * Helper to adapt account data to ensure compatibility with components

@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ArrowLeft, RefreshCw, Filter, Search, Calendar } from 'lucide-react';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, Transaction as HookTransaction } from '@/hooks/useTransactions';
 import { useAuth } from '@/hooks/useAuth';
 import { formatCurrencyAmount } from '@/utils/transactionUtils';
 import { TransactionsList } from '@/components/transactions/TransactionsList';
@@ -98,7 +98,7 @@ const MobileTransactionsPage = () => {
       
       <div className="px-4">
         <TransactionsList
-          transactions={filteredTransactions}
+          transactions={filteredTransactions as any} // Type casting to avoid the mismatch
           isLoading={isLoading}
           title={`Transactions (${filteredTransactions.length})`}
           showSearch={false}

@@ -12,7 +12,7 @@ export function useSfdAccounts(sfdId?: string) {
 
   // Fetch SFD accounts
   const { 
-    data: sfdAccounts = [], 
+    data: fetchedAccounts = [], 
     isLoading, 
     error, 
     refetch 
@@ -42,7 +42,7 @@ export function useSfdAccounts(sfdId?: string) {
         
         console.log('Fetched accounts:', data);
         
-        // If no accounts found, return empty array
+        // If no accounts found, return empty array or mock data for testing
         if (!data || data.length === 0) {
           // For testing, create some dummy accounts if none exist
           return [
@@ -52,12 +52,12 @@ export function useSfdAccounts(sfdId?: string) {
               sfd_id: effectiveSfdId || 'test-sfd-1',
               account_type: 'operation',
               description: 'Compte courant',
+              name: 'Compte courant',
               balance: 150000,
               currency: 'FCFA',
               status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              name: 'Compte courant',
               logo_url: null
             },
             {
@@ -66,18 +66,24 @@ export function useSfdAccounts(sfdId?: string) {
               sfd_id: effectiveSfdId || 'test-sfd-1',
               account_type: 'epargne',
               description: 'Compte épargne',
+              name: 'Compte épargne',
               balance: 250000,
               currency: 'FCFA',
               status: 'active',
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-              name: 'Compte épargne',
               logo_url: null
             }
           ];
         }
         
-        return data;
+        // Enhance accounts with description and name if missing
+        return data.map(account => ({
+          ...account,
+          description: account.description || `Compte ${account.account_type || ''}`,
+          name: account.name || `Compte ${account.account_type || ''}`,
+          logo_url: account.logo_url || null
+        }));
       } catch (err) {
         console.error('Error in SFD accounts query:', err);
         return [];
@@ -86,6 +92,9 @@ export function useSfdAccounts(sfdId?: string) {
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000 // 5 minutes
   });
+
+  // Enhanced accounts with all required properties
+  const sfdAccounts = fetchedAccounts as SfdAccount[];
 
   // Mutation to synchronize balances
   const synchronizeBalances = useMutation({
@@ -160,14 +169,14 @@ export function useSfdAccounts(sfdId?: string) {
     description: sfdAccounts[0].description || '',
     logoUrl: sfdAccounts[0].logo_url,
     logo_url: sfdAccounts[0].logo_url,
-    code: '',
-    region: '',
+    code: sfdAccounts[0].code || '',
+    region: sfdAccounts[0].region || '',
     balance: sfdAccounts.reduce((total, account) => total + (account.balance || 0), 0),
     currency: sfdAccounts[0].currency || 'FCFA',
-    isDefault: true,
-    is_default: true,
+    isDefault: sfdAccounts[0].isDefault || sfdAccounts[0].is_default || true,
+    is_default: sfdAccounts[0].isDefault || sfdAccounts[0].is_default || true,
     isVerified: true,
-    status: 'active',
+    status: sfdAccounts[0].status || 'active',
     sfd_id: sfdAccounts[0].sfd_id,
     account_type: sfdAccounts[0].account_type || '',
     created_at: sfdAccounts[0].created_at,

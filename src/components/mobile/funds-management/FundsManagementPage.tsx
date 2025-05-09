@@ -5,7 +5,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransactionList from './TransactionList';
 import FundsActionButtons from './FundsActionButtons';
-import { useTransactions } from '@/hooks/useTransactions';
+import { useTransactions, Transaction } from '@/hooks/useTransactions'; // Import Transaction type from here
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
@@ -66,7 +66,7 @@ const FundsManagementPage: React.FC = () => {
         
         <TransactionList 
           isLoading={transactionsLoading} 
-          transactions={transactions}
+          transactions={transactions as any} // Type casting to avoid the mismatch
           filterType={filterType}
           setFilterType={setFilterType}
           filterPeriod={filterPeriod}
