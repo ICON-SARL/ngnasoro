@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -125,19 +124,20 @@ export function useSfdAccounts(sfdId?: string) {
           };
 
           // Only if the account object has these properties, override the defaults
+          // Use type checking and casting to fix the TypeScript errors
           if ('account_type' in account && account.account_type) {
             enhancedAccount.account_type = account.account_type as SfdAccountType;
           }
           if ('description' in account && account.description) {
-            enhancedAccount.description = account.description;
+            enhancedAccount.description = typeof account.description === 'string' ? account.description : 'Compte principal';
           }
           if ('name' in account && account.name) {
-            enhancedAccount.name = account.name;
+            enhancedAccount.name = typeof account.name === 'string' ? account.name : null;
           }
           if ('status' in account && account.status) {
-            enhancedAccount.status = account.status;
+            enhancedAccount.status = typeof account.status === 'string' ? account.status : 'active';
           }
-          if ('is_default' in account && account.is_default) {
+          if ('is_default' in account && account.is_default !== undefined) {
             enhancedAccount.is_default = !!account.is_default;
           }
 
