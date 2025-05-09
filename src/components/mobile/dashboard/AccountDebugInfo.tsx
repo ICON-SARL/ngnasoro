@@ -21,20 +21,12 @@ export const AccountDebugInfo: React.FC = () => {
   const handleSyncBalances = async () => {
     setIsRefreshing(true);
     try {
-      const result = await synchronizeBalances.mutateAsync();
-      if (result.success) {
-        toast({
-          title: "Synchronisation réussie",
-          description: "Les soldes ont été mis à jour avec succès",
-        });
-        await refetch();
-      } else {
-        toast({
-          title: "Echec de la synchronisation",
-          description: result.message || "Impossible de synchroniser les soldes",
-          variant: "destructive",
-        });
-      }
+      await synchronizeBalances.mutate();
+      toast({
+        title: "Synchronisation réussie",
+        description: "Les soldes ont été mis à jour avec succès",
+      });
+      await refetch();
     } catch (error) {
       console.error("Error syncing balances:", error);
       toast({

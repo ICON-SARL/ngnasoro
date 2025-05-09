@@ -5,7 +5,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransactionList from './TransactionList';
 import FundsActionButtons from './FundsActionButtons';
-import { useTransactions } from '@/hooks/useTransactions'; 
+import { useTransactions } from '@/hooks/transactions'; 
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 import { AccountDebugInfo } from '@/components/mobile/dashboard';
@@ -46,7 +46,7 @@ const FundsManagementPage: React.FC = () => {
     try {
       await Promise.all([
         refetch(), 
-        synchronizeBalances.mutateAsync(), 
+        synchronizeBalances.mutate(), 
         refetchTransactions()
       ]);
     } catch (error) {

@@ -27,8 +27,8 @@ export function useMobileMoneyPayment(): MobileMoneyPaymentHook {
         ? `Remboursement de prêt par Mobile Money` 
         : `Dépôt par Mobile Money`;
 
-      // Using createTransaction properly as an object
-      const result = await createTransaction({
+      // Using createTransaction properly
+      await createTransaction.mutate({
         amount,
         type: transactionType,
         description: transactionDescription,

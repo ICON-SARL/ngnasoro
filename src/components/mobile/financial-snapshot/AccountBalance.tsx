@@ -23,8 +23,8 @@ export const AccountBalance: React.FC = () => {
     
     setIsRefreshing(true);
     try {
-      // Fixed: properly call the mutate function on synchronizeBalances
-      await synchronizeBalances.mutateAsync();
+      // Using proper mutation method
+      await synchronizeBalances.mutate();
       toast({
         title: "Compte mis à jour",
         description: "Le solde de votre compte a été actualisé",

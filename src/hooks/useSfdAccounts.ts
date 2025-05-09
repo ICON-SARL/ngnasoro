@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { useAuth } from './useAuth';
 import { supabase } from '@/integrations/supabase/client';
@@ -112,7 +113,7 @@ export function useSfdAccounts(sfdId?: string) {
             updated_at: account.updated_at || new Date().toISOString(),
             
             // Add additional properties with defaults
-            account_type: 'operation', // Default account type
+            account_type: account.account_type || 'operation',
             description: account.description || 'Compte principal',
             name: sfdInfo?.name ? `Compte ${sfdInfo.name}` : 'Compte SFD',
             logo_url: sfdInfo?.logo_url || null,
@@ -154,7 +155,7 @@ export function useSfdAccounts(sfdId?: string) {
     region: account.region
   }));
 
-  // Mutation to synchronize balances
+  // Mutation to synchronize balances - Updated to match React Query's mutation pattern
   const synchronizeBalances = useMutation({
     mutationFn: async () => {
       try {
@@ -229,7 +230,7 @@ export function useSfdAccounts(sfdId?: string) {
     loans: [] // Default empty loans array
   } : null;
 
-  // Create a mock implementation of transferFunds
+  // Create a mock implementation of transferFunds - updated to match React Query's mutation pattern
   const transferFunds = useMutation({
     mutationFn: async (params: any) => {
       // Simulate API call
@@ -244,7 +245,7 @@ export function useSfdAccounts(sfdId?: string) {
     }
   });
   
-  // Create a mock implementation of makeLoanPayment
+  // Create a mock implementation of makeLoanPayment - updated to match React Query's mutation pattern
   const makeLoanPayment = useMutation({
     mutationFn: async (params: any) => {
       // Simulate API call
@@ -265,7 +266,7 @@ export function useSfdAccounts(sfdId?: string) {
     isLoading,
     error,
     refetch,
-    synchronizeBalances: { mutate: async () => { await refetch(); return true; } },
+    synchronizeBalances,
     
     // Additional properties needed by components
     accounts,
@@ -273,18 +274,8 @@ export function useSfdAccounts(sfdId?: string) {
     operationAccount,
     savingsAccount,
     repaymentAccount,
-    transferFunds: {
-      mutate: async (params: any) => {
-        console.log('Transferring funds with params:', params);
-        return { success: true, message: 'Funds transferred successfully' };
-      }
-    },
-    makeLoanPayment: {
-      mutate: async (params: any) => {
-        console.log('Making loan payment with params:', params);
-        return { success: true, message: 'Loan payment made successfully' };
-      }
-    },
+    transferFunds,
+    makeLoanPayment,
     refetchAccounts: refetch,
     refetchSavingsAccount: refetch
   };

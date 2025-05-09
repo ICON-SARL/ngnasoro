@@ -48,7 +48,7 @@ export function SfdAccountTransfers() {
     }
 
     try {
-      await transferFunds.mutateAsync({
+      await transferFunds.mutate({
         sfdId: accounts[0]?.sfd_id || '', // Assuming all accounts belong to same SFD
         fromAccountId,
         toAccountId,

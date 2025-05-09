@@ -21,8 +21,8 @@ export function useMobileMoneyWithdrawal(): MobileMoneyWithdrawalHook {
     setError(null);
 
     try {
-      // Using createTransaction properly as an object
-      const result = await createTransaction({
+      // Using createTransaction properly
+      await createTransaction.mutate({
         amount: -amount, // Negative amount for withdrawal
         type: 'withdrawal',
         description: `Retrait vers ${provider} Money`,
