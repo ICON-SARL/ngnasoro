@@ -8,8 +8,8 @@ export interface SyncResult {
 
 export interface SfdAccount {
   id: string;
-  name: string;
-  code: string;
+  name?: string;
+  code?: string;
   region?: string;
   logo_url?: string;
   logoUrl?: string; // Added for compatibility

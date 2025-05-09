@@ -81,4 +81,4 @@ export const AccountBalance: React.FC = () => {
   );
 };
 
-export default AccountBalance; // Added default export
+export default AccountBalance;
