@@ -5,7 +5,7 @@ import { useSfdAccounts } from '@/hooks/useSfdAccounts';
 import FundsBalanceSection from './FundsBalanceSection';
 import TransactionList from './TransactionList';
 import FundsActionButtons from './FundsActionButtons';
-import { useTransactions, Transaction } from '@/hooks/useTransactions'; // Import Transaction type from here
+import { useTransactions } from '@/hooks/useTransactions'; 
 import { SfdAccountDisplay } from '@/components/mobile/profile/sfd-accounts/types/SfdAccountTypes';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
@@ -15,7 +15,11 @@ const FundsManagementPage: React.FC = () => {
   const [selectedSfd, setSelectedSfd] = useState('all');
   const [filterType, setFilterType] = useState('all');
   const [filterPeriod, setFilterPeriod] = useState('all');
-  const { transactions, isLoading: transactionsLoading, refetch: refetchTransactions } = useTransactions();
+  const { 
+    transactions, 
+    isLoading: transactionsLoading, 
+    refetch: refetchTransactions 
+  } = useTransactions();
   
   // Use normalized accounts to ensure consistent property access
   const normalizedAccounts = normalizeSfdAccounts(sfdAccounts);
@@ -66,7 +70,7 @@ const FundsManagementPage: React.FC = () => {
         
         <TransactionList 
           isLoading={transactionsLoading} 
-          transactions={transactions as any} // Type casting to avoid the mismatch
+          transactions={transactions as any} // Type cast to avoid the mismatch
           filterType={filterType}
           setFilterType={setFilterType}
           filterPeriod={filterPeriod}

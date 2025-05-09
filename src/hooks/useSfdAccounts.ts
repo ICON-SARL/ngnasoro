@@ -5,6 +5,24 @@ import { supabase } from '@/integrations/supabase/client';
 import { SfdAccount } from '@/hooks/sfd/types';
 import { normalizeSfdAccounts } from '@/utils/accountAdapters';
 
+// Define a simpler interface for fetched accounts to avoid deep type recursion
+interface FetchedSfdAccount {
+  id: string;
+  user_id?: string;
+  sfd_id: string;
+  account_type: string;
+  description?: string;
+  name?: string;
+  balance: number;
+  currency: string;
+  status: string;
+  created_at: string;
+  updated_at: string;
+  logo_url?: string;
+  code?: string;
+  is_default?: boolean;
+}
+
 // The hook function that gets and manages SFD accounts
 export function useSfdAccounts(sfdId?: string) {
   const { user, activeSfdId } = useAuth();
@@ -42,9 +60,8 @@ export function useSfdAccounts(sfdId?: string) {
         
         console.log('Fetched accounts:', data);
         
-        // If no accounts found, return empty array or mock data for testing
+        // If no accounts found, return mock data for testing
         if (!data || data.length === 0) {
-          // For testing, create some dummy accounts if none exist
           return [
             {
               id: 'test-account-1',
@@ -74,7 +91,7 @@ export function useSfdAccounts(sfdId?: string) {
               updated_at: new Date().toISOString(),
               logo_url: null
             }
-          ];
+          ] as FetchedSfdAccount[];
         }
         
         // Enhance accounts with description and name if missing
@@ -83,7 +100,7 @@ export function useSfdAccounts(sfdId?: string) {
           description: account.description || `Compte ${account.account_type || ''}`,
           name: account.name || `Compte ${account.account_type || ''}`,
           logo_url: account.logo_url || null
-        }));
+        })) as FetchedSfdAccount[];
       } catch (err) {
         console.error('Error in SFD accounts query:', err);
         return [];
@@ -124,36 +141,6 @@ export function useSfdAccounts(sfdId?: string) {
     }
   });
 
-  // Create a mock implementation of transferFunds
-  const transferFunds = useMutation({
-    mutationFn: async (params: any) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Transferring funds with params:', params);
-      
-      return {
-        success: true,
-        message: 'Funds transferred successfully'
-      };
-    }
-  });
-  
-  // Create a mock implementation of makeLoanPayment
-  const makeLoanPayment = useMutation({
-    mutationFn: async (params: any) => {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      console.log('Making loan payment with params:', params);
-      
-      return {
-        success: true,
-        message: 'Loan payment made successfully'
-      };
-    }
-  });
-  
   // For backward compatibility purposes:
   const accounts = sfdAccounts;  // Alias sfdAccounts to accounts
   
@@ -183,6 +170,36 @@ export function useSfdAccounts(sfdId?: string) {
     updated_at: sfdAccounts[0].updated_at,
     loans: [] // Default empty loans array
   } : null;
+
+  // Create a mock implementation of transferFunds
+  const transferFunds = useMutation({
+    mutationFn: async (params: any) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Transferring funds with params:', params);
+      
+      return {
+        success: true,
+        message: 'Funds transferred successfully'
+      };
+    }
+  });
+  
+  // Create a mock implementation of makeLoanPayment
+  const makeLoanPayment = useMutation({
+    mutationFn: async (params: any) => {
+      // Simulate API call
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      console.log('Making loan payment with params:', params);
+      
+      return {
+        success: true,
+        message: 'Loan payment made successfully'
+      };
+    }
+  });
   
   return {
     // Original properties

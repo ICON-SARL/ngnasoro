@@ -6,7 +6,7 @@ import { createTransactionManager, TransactionParams } from '@/services/transact
 
 // Update the Transaction interface to be compatible with the one in types/transactions.ts
 export interface Transaction {
-  id: string;
+  id: string; // Changed from string | number to just string for compatibility
   name: string; // Changed from optional to required for compatibility
   type: 'deposit' | 'withdrawal' | 'transfer' | 'loan_payment' | 'loan_disbursement' | string;
   amount: number;
@@ -38,7 +38,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
   const fetchTransactions = useCallback(async (limit: number = 10) => {
     if (!transactionManager) {
       setError('Utilisateur ou SFD non défini');
-      return;
+      return [];
     }
 
     setIsLoading(true);
@@ -46,7 +46,12 @@ export function useTransactions(userId?: string, sfdId?: string) {
 
     try {
       const fetchedTransactions = await transactionManager.getTransactionHistory(limit);
-      setTransactions(fetchedTransactions);
+      // Convert to compatible transaction type before setting state
+      const compatibleTransactions = fetchedTransactions.map(tx => ({
+        ...tx,
+        id: String(tx.id) // Ensure id is always a string
+      }));
+      setTransactions(compatibleTransactions as Transaction[]);
       return fetchedTransactions;
     } catch (err: any) {
       setError(err.message || 'Erreur lors de la récupération des transactions');
@@ -55,6 +60,9 @@ export function useTransactions(userId?: string, sfdId?: string) {
       setIsLoading(false);
     }
   }, [transactionManager]);
+
+  // Add a refetch alias for fetchTransactions for compatibility with components expecting this function name
+  const refetch = fetchTransactions;
 
   // Effectuer un dépôt
   const makeDeposit = useCallback(async (amount: number, description?: string, paymentMethod?: string) => {
@@ -221,6 +229,7 @@ export function useTransactions(userId?: string, sfdId?: string) {
     error,
     transactions,
     fetchTransactions,
+    refetch, // Add the refetch alias here
     makeDeposit,
     makeWithdrawal,
     makeLoanRepayment,

@@ -1,4 +1,3 @@
-
 import { SfdAccount } from "@/hooks/sfd/types";
 
 /**
@@ -32,7 +31,16 @@ export function adaptSfdAccount(account: any): SfdAccount {
  */
 export function normalizeSfdAccounts(accounts: any[]): SfdAccount[] {
   if (!accounts || !Array.isArray(accounts)) return [];
-  return accounts.map(adaptSfdAccount).filter(Boolean);
+  return accounts.map(account => {
+    // Add missing properties if they don't exist
+    const enhancedAccount = {
+      ...account,
+      name: account.name || account.description || `Compte ${account.account_type || ''}`,
+      description: account.description || `Compte ${account.account_type || ''}`,
+      logo_url: account.logo_url || account.logoUrl || null,
+    };
+    return adaptSfdAccount(enhancedAccount);
+  }).filter(Boolean);
 }
 
 /**
