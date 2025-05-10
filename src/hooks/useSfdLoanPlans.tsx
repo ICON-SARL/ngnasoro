@@ -12,7 +12,7 @@ export function useSfdLoanPlans() {
     queryFn: async () => {
       console.log('Fetching loan plans for SFD ID:', activeSfdId);
       
-      // Construire la requête de base
+      // Build the base query
       let query = supabase
         .from('sfd_loan_plans')
         .select(`
@@ -22,11 +22,11 @@ export function useSfdLoanPlans() {
             logo_url
           )
         `)
-        .eq('is_active', true)
-        .eq('is_published', true); // Assurons-nous de ne montrer que les plans publiés
+        .eq('is_active', true);
       
-      // Si un SFD actif est sélectionné, filtrer par ce SFD
+      // If an active SFD is selected, filter by this SFD
       if (activeSfdId) {
+        console.log('Filtering by active SFD:', activeSfdId);
         query = query.eq('sfd_id', activeSfdId);
       }
       
@@ -37,13 +37,13 @@ export function useSfdLoanPlans() {
         throw error;
       }
 
-      console.log('Fetched loan plans:', plansData);
+      console.log('Fetched raw loan plans:', plansData);
       
-      // Make sure we only return published plans
+      // Filter published plans only at this stage
       const publishedPlans = plansData?.filter(plan => plan.is_published === true) || [];
-      console.log('Published plans:', publishedPlans);
+      console.log('Published plans after filtering:', publishedPlans);
       
-      return publishedPlans as LoanPlan[] || [];
+      return publishedPlans as LoanPlan[];
     },
     meta: {
       errorMessage: "Impossible de charger les plans de prêt"

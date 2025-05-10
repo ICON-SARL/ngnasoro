@@ -13,7 +13,7 @@ import { LoanActivityPage } from '@/pages/mobile/LoanActivityPage';
 import ProfilePage from '@/components/mobile/profile/ProfilePage';
 import SfdConnectionPage from '@/pages/mobile/SfdConnectionPage';
 import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
-import LoanPlansPage from '@/pages/mobile/LoanPlansPage';
+import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
@@ -21,8 +21,8 @@ import RoleGuard from '@/components/RoleGuard';
 import KycVerificationHistoryPage from '@/pages/KycVerificationHistoryPage';
 import KYCVerification from '@/pages/KYCVerification';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
-import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
+import HomeLoanPage from '@/components/mobile/loan/HomeLoanPage';
 
 export const MobileRouter = () => {
   return (
@@ -36,24 +36,16 @@ export const MobileRouter = () => {
       <Route path="/sfd-connection" element={<SfdConnectionPage />} />
       <Route path="/funds-management" element={<FundsManagementPage />} />
       <Route path="/loan-plans" element={<MobileLoanPlansPage />} />
-      <Route path="/loans" element={<MobileLoansPage />} />
+      <Route path="/loans" element={<HomeLoanPage />} />
       <Route path="/kyc" element={<KycVerificationHistoryPage />} />
       <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
       <Route 
         path="/my-loans" 
-        element={
-          <RoleGuard requiredRole={UserRole.CLIENT}>
-            <MobileMyLoansPage />
-          </RoleGuard>
-        } 
+        element={<MobileMyLoansPage />} 
       />
       <Route 
         path="/loan-details/:loanId" 
-        element={
-          <RoleGuard requiredRole={UserRole.CLIENT}>
-            <LoanDetailsPage />
-          </RoleGuard>
-        } 
+        element={<LoanDetailsPage />} 
       />
       <Route path="*" element={<div>Mobile Page Not Found</div>} />
     </Routes>

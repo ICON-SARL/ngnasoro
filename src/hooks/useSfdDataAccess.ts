@@ -24,12 +24,68 @@ export function useSfdDataAccess() {
       
       try {
         setIsLoading(true);
+        console.log('Loading SFDs for user:', user.id);
+        
+        // First try to get SFDs from user_sfds table
+        let { data: userSfdAssociations, error: userSfdsError } = await supabase
+          .from('user_sfds')
+          .select(`
+            sfd_id,
+            is_default,
+            sfds:sfd_id (
+              id,
+              name,
+              code,
+              region,
+              status,
+              logo_url
+            )
+          `)
+          .eq('user_id', user.id);
+          
+        if (userSfdsError) {
+          console.error('Error fetching user SFDs associations:', userSfdsError);
+        }
+        
+        // If we have associations, format them
+        if (userSfdAssociations && userSfdAssociations.length > 0) {
+          console.log('Found user SFD associations:', userSfdAssociations.length);
+          
+          // Transform the data structure to match expected format
+          const formattedSfds = userSfdAssociations
+            .filter(item => item.sfds) // Ensure SFD exists
+            .map(item => ({
+              id: item.sfds.id,
+              name: item.sfds.name,
+              code: item.sfds.code,
+              region: item.sfds.region || '',
+              status: item.sfds.status,
+              logo_url: item.sfds.logo_url,
+              is_default: item.is_default
+            }));
+            
+          setSfds(formattedSfds);
+          
+          // If no active SFD is set but we have SFDs available, set the default one as active
+          if (!activeSfdId && formattedSfds.length > 0) {
+            const defaultSfd = formattedSfds.find(sfd => sfd.is_default) || formattedSfds[0];
+            console.log('Setting default SFD as active:', defaultSfd.name);
+            authSetActiveSfdId(defaultSfd.id);
+          }
+          
+          setIsLoading(false);
+          return;
+        }
+        
+        // Fallback to fetchUserSfds if no associations found
+        console.log('No associations found, using fetchUserSfds');
         const userSfds = await fetchUserSfds(user.id);
         setSfds(userSfds);
         
         // If no active SFD is set but we have SFDs available, set the first one as active
         if (!activeSfdId && userSfds.length > 0) {
           const defaultSfd = userSfds.find(sfd => sfd.is_default) || userSfds[0];
+          console.log('Setting first SFD as active:', defaultSfd.name);
           authSetActiveSfdId(defaultSfd.id);
         }
       } catch (error) {
@@ -56,6 +112,7 @@ export function useSfdDataAccess() {
     if (sfdId === activeSfdId) return true;
     
     try {
+      console.log('Switching active SFD to:', sfdId);
       authSetActiveSfdId(sfdId);
       
       toast({
@@ -79,6 +136,7 @@ export function useSfdDataAccess() {
     if (!user) return false;
     
     try {
+      console.log('Associating user with SFD:', { userId: user.id, sfdId, isDefault });
       const { error } = await supabase
         .from('user_sfds')
         .insert({
@@ -88,6 +146,15 @@ export function useSfdDataAccess() {
         });
       
       if (error) throw error;
+      
+      // If it's the default SFD, update other associations to not be default
+      if (isDefault) {
+        await supabase
+          .from('user_sfds')
+          .update({ is_default: false })
+          .eq('user_id', user.id)
+          .neq('sfd_id', sfdId);
+      }
       
       // Reload SFDs
       const userSfds = await fetchUserSfds(user.id);

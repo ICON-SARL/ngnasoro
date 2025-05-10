@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { BadgePercent } from 'lucide-react';
 import { LoanPlanCard } from './LoanPlanCard';
 import { LoanPlan } from '@/types/sfdClients';
+import { useToast } from '@/hooks/use-toast';
 
 interface LoanPlansDisplayProps {
   subsidizedOnly?: boolean;
@@ -17,13 +18,25 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user, activeSfdId } = useAuth();
+  const { toast } = useToast();
   
   useEffect(() => {
     const fetchLoanPlans = async () => {
       setIsLoading(true);
       try {
-        // Get only published and active plans
-        let query = supabase
+        // Determine which SFD ID to use
+        const effectiveSfdId = sfdId || activeSfdId;
+        console.log('LoanPlansDisplay - Fetching plans for SFD:', effectiveSfdId);
+        
+        if (!effectiveSfdId) {
+          console.log('No SFD ID available, cannot fetch plans');
+          setLoanPlans([]);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Get only published and active plans for the specific SFD
+        const { data, error } = await supabase
           .from('sfd_loan_plans')
           .select(`
             *,
@@ -32,41 +45,43 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
               logo_url
             )
           `)
+          .eq('sfd_id', effectiveSfdId)
           .eq('is_active', true)
-          .eq('is_published', true);
-          
-        // Filter by SFD if specified, otherwise use active SFD ID
-        const effectiveSfdId = sfdId || activeSfdId;
-        if (effectiveSfdId) {
-          query = query.eq('sfd_id', effectiveSfdId);
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('Error fetching loan plans:', error);
+          toast({
+            title: "Erreur",
+            description: "Impossible de récupérer les plans de prêt",
+            variant: "destructive",
+          });
+          throw error;
         }
         
-        const { data, error } = await query.order('created_at', { ascending: false });
+        console.log('LoanPlansDisplay - Fetched raw plans:', data?.length);
         
-        if (error) throw error;
+        // Filter to show only published plans
+        const publishedPlans = data?.filter(plan => plan.is_published === true) || [];
+        console.log('LoanPlansDisplay - Published plans:', publishedPlans.length);
         
-        console.log("Fetched loan plans:", data);
-        const typedData = data as unknown as LoanPlan[];
-        setLoanPlans(typedData || []);
+        setLoanPlans(publishedPlans as LoanPlan[]);
       } catch (error) {
-        console.error('Erreur lors du chargement des plans de prêt:', error);
+        console.error('Error in fetchLoanPlans:', error);
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchLoanPlans();
-  }, [user, sfdId, activeSfdId]);
+  }, [user, sfdId, activeSfdId, toast]);
   
   // Filter plans based on whether they're subsidized
   const filteredPlans = loanPlans.filter(plan => {
-    if (subsidizedOnly) {
-      return plan.name.toLowerCase().includes('subvention') || 
-             plan.description?.toLowerCase().includes('subvention');
-    } else {
-      return !plan.name.toLowerCase().includes('subvention') && 
-             !plan.description?.toLowerCase().includes('subvention');
-    }
+    const isSubsidized = plan.name.toLowerCase().includes('subvention') || 
+                        plan.description?.toLowerCase().includes('subvention');
+                        
+    return subsidizedOnly ? isSubsidized : !isSubsidized;
   });
 
   return (
@@ -90,7 +105,7 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
           </p>
           {!subsidizedOnly && activeSfdId && (
             <p className="text-sm text-gray-400 mt-2">
-              La SFD n'a pas encore publié de plans de prêt.
+              Votre SFD n'a pas encore publié de plans de prêt.
             </p>
           )}
         </div>

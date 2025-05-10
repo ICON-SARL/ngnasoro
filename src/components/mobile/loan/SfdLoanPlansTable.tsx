@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Edit, Circle, CircleCheck, Info } from 'lucide-react';
+import { Edit, Circle, CircleCheck, Info, AlertTriangle } from 'lucide-react';
 import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,6 +9,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Card, CardContent } from '@/components/ui/card';
 import { LoanPlan } from '@/types/sfdClients';
+import { useAuth } from '@/hooks/useAuth';
+import { useToast } from '@/hooks/use-toast';
 
 interface SfdLoanPlansTableProps {
   sfdId?: string;
@@ -18,8 +20,27 @@ interface SfdLoanPlansTableProps {
 export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlansTableProps) {
   const navigate = useNavigate();
   const { data: plans = [], isLoading, error } = useSfdLoanPlans();
+  const { activeSfdId } = useAuth();
+  const { toast } = useToast();
+
+  // Log current state for debugging
+  console.log('SfdLoanPlansTable rendering with:', { 
+    sfdId, 
+    activeSfdId, 
+    providedPlans: plans?.length,
+    subsidizedOnly
+  });
 
   const handleApplyForLoan = (planId: string) => {
+    if (!activeSfdId) {
+      toast({
+        title: "Erreur",
+        description: "Vous devez être connecté à une SFD pour faire une demande de prêt",
+        variant: "destructive"
+      });
+      return;
+    }
+    
     navigate('/mobile-flow/loan-application', { 
       state: { planId }
     });
@@ -56,38 +77,56 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
   
   if (error) {
     return (
-      <div className="border rounded-md p-4 text-center text-red-500">
-        Erreur lors du chargement des plans de prêt
+      <div className="flex flex-col items-center py-6 text-center border rounded-md">
+        <AlertTriangle className="h-10 w-10 text-amber-500 mb-2" />
+        <p className="text-red-500 font-medium">Erreur lors du chargement des plans de prêt</p>
+        <p className="text-sm text-gray-500 mt-2">Veuillez réessayer ultérieurement</p>
       </div>
     );
   }
 
-  // Filter plans by sfdId if provided and ensure only published plans are shown
+  // Filter plans based on subsidized status and SFD ID
   const filteredPlans = plans.filter(plan => {
-    // Vérifier si le plan est actif et publié
-    const isValid = plan.is_active && plan.is_published;
+    // Check for valid plan (active and published)
+    const isValid = plan.is_active && (plan.is_published !== false);
     
-    // Si un sfdId est fourni, filtrer par sfdId
-    const matchesSfd = sfdId ? plan.sfd_id === sfdId : true;
+    // Check if it matches the SFD filter (if provided, otherwise use activeSfdId)
+    const effectiveSfdId = sfdId || activeSfdId;
+    const matchesSfd = effectiveSfdId ? plan.sfd_id === effectiveSfdId : true;
     
-    // Filter by subsidized status if requested
+    // Check if it matches the subsidy filter
     const isSubsidized = plan.name.toLowerCase().includes('subvention') || 
-                         plan.description?.toLowerCase().includes('subvention');
+                        plan.description?.toLowerCase().includes('subvention');
     
     const matchesSubsidyFilter = subsidizedOnly ? isSubsidized : !isSubsidized;
+    
+    console.log(`Plan ${plan.name} [${plan.id}]:`, { 
+      isValid, 
+      matchesSfd, 
+      matchesSubsidyFilter, 
+      sfd_id: plan.sfd_id
+    });
     
     return isValid && matchesSfd && matchesSubsidyFilter;
   });
   
+  console.log('Filtered plans:', filteredPlans.length);
+  
   if (filteredPlans.length === 0) {
     return (
-      <div className="border rounded-md p-4 text-center text-gray-500">
-        Aucun plan de prêt {subsidizedOnly ? "subventionné" : ""} publié disponible
+      <div className="border rounded-md p-6 text-center">
+        <Info className="h-10 w-10 text-gray-400 mx-auto mb-2" />
+        <p className="text-gray-500">
+          Aucun plan de prêt {subsidizedOnly ? "subventionné" : ""} disponible
+        </p>
+        <p className="text-sm text-gray-400 mt-2">
+          Veuillez contacter votre SFD pour plus d'informations
+        </p>
       </div>
     );
   }
 
-  // Modern card-based display for loan plans
+  // Display cards for loan plans
   return (
     <div className="space-y-4">
       {filteredPlans.map(plan => (

@@ -1,11 +1,28 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Plus, ExternalLink, Percent, Calendar, Clock } from 'lucide-react';
+import { ArrowLeft, Plus, ExternalLink, Percent, Calendar, Clock, AlertCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
 const HomeLoanPage: React.FC = () => {
   const navigate = useNavigate();
+  const { activeSfdId, user } = useAuth();
+  const { sfds, isLoading } = useSfdDataAccess();
+  
+  const activeSfd = sfds.find(sfd => sfd.id === activeSfdId);
+  
+  useEffect(() => {
+    // Log debug information
+    console.log('HomeLoanPage - Current state:', {
+      userId: user?.id,
+      userEmail: user?.email,
+      activeSfdId,
+      activeSfdName: activeSfd?.name,
+      allSfds: sfds.map(s => ({ id: s.id, name: s.name }))
+    });
+  }, [user, activeSfdId, activeSfd, sfds]);
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -17,14 +34,38 @@ const HomeLoanPage: React.FC = () => {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <h1 className="text-xl font-semibold">Prêts</h1>
+        <div>
+          <h1 className="text-xl font-semibold">Prêts</h1>
+          {activeSfd && (
+            <p className="text-sm text-gray-600">{activeSfd.name}</p>
+          )}
+        </div>
       </div>
       
       <div className="p-4">
+        {!activeSfdId && (
+          <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md flex items-start">
+            <AlertCircle className="text-amber-500 h-5 w-5 mr-2 mt-0.5" />
+            <div>
+              <p className="text-amber-800 font-medium">Aucune SFD active</p>
+              <p className="text-sm text-amber-700">Veuillez accéder à votre profil pour associer votre compte à une SFD.</p>
+              <Button 
+                variant="outline"
+                className="mt-2 border-amber-300 text-amber-700 hover:bg-amber-100"
+                size="sm"
+                onClick={() => navigate('/mobile-flow/profile')}
+              >
+                Gérer mes SFDs
+              </Button>
+            </div>
+          </div>
+        )}
+      
         <div className="mb-6">
           <Button 
             className="w-full bg-lime-600 hover:bg-lime-700"
             onClick={() => navigate('/mobile-flow/loan-plans')}
+            disabled={!activeSfdId}
           >
             <Plus className="h-4 w-4 mr-2" />
             Nouvelle demande de prêt
@@ -71,6 +112,7 @@ const HomeLoanPage: React.FC = () => {
                 variant="ghost" 
                 className="text-lime-600"
                 onClick={() => navigate('/mobile-flow/loan-plans')}
+                disabled={!activeSfdId}
               >
                 Demander
                 <ExternalLink className="h-4 w-4 ml-1" />
@@ -115,6 +157,7 @@ const HomeLoanPage: React.FC = () => {
                 variant="ghost" 
                 className="text-blue-600"
                 onClick={() => navigate('/mobile-flow/loan-plans')}
+                disabled={!activeSfdId}
               >
                 Demander
                 <ExternalLink className="h-4 w-4 ml-1" />
