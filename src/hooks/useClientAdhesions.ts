@@ -2,8 +2,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from './useAuth';
-import { AdhesionRequestInput, ClientAdhesionRequest } from '@/types/adhesionTypes';
+import { useAuth } from './auth/AuthContext';
+import { AdhesionRequestInput } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
 // Re-export the type for components that import from this file
@@ -14,6 +14,24 @@ export function useClientAdhesions() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isCreatingRequest, setIsCreatingRequest] = useState(false);
+
+  // Récupérer toutes les demandes d'adhésion pour l'utilisateur actuel
+  const { data: userAdhesionRequests, isLoading: isLoadingRequests } = useQuery({
+    queryKey: ['user-adhesion-requests', user?.id],
+    queryFn: async () => {
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('client_adhesion_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user
+  });
 
   const submitAdhesionRequest = async (sfdId: string, data: AdhesionRequestInput) => {
     if (!user) {
@@ -44,11 +62,14 @@ export function useClientAdhesions() {
         reference_number: `ADH-${Date.now().toString().substring(6)}`
       };
       
-      // Use RPC function to create an adhesion request
-      const { data: result, error } = await supabase
-        .rpc('create_client_adhesion_request', { 
-          adhesion_data: adhesionData
-        });
+      // Utiliser la fonction Edge pour créer une demande d'adhésion
+      const { data: result, error } = await supabase.functions.invoke('process-client-adhesion', {
+        body: JSON.stringify({
+          userId: user.id,
+          sfdId: sfdId,
+          adhesionData
+        })
+      });
       
       if (error) throw error;
       
@@ -57,10 +78,10 @@ export function useClientAdhesions() {
         description: "Votre demande d'adhésion a été envoyée avec succès",
       });
       
-      // Invalidate and refetch queries
+      // Invalider et refetch les requêtes
       queryClient.invalidateQueries({ queryKey: ['user-adhesion-requests'] });
       
-      return { success: true, requestId: result };
+      return { success: true, requestId: result?.requestId };
     } catch (error: any) {
       console.error('Error creating adhesion request:', error);
       
@@ -76,36 +97,53 @@ export function useClientAdhesions() {
     }
   };
 
-  // Fetch adhesion requests
-  const { 
-    data: adhesionRequests, 
-    refetch, 
-    isLoading 
-  } = useQuery<ClientAdhesionRequest[]>({
-    queryKey: ['user-adhesion-requests', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return [];
-      
+  // Vérifier le statut d'une demande d'adhésion
+  const checkAdhesionStatus = async () => {
+    if (!user) return null;
+    
+    try {
+      // Vérifier d'abord si l'utilisateur a déjà le rôle client
+      const { data: userRoles, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', user.id)
+        .eq('role', 'client');
+        
+      if (!rolesError && userRoles && userRoles.length > 0) {
+        return { isClient: true, status: 'approved' };
+      }
+
+      // Sinon, vérifier les demandes d'adhésion
       const { data, error } = await supabase
-        .rpc('get_adhesion_request_by_user', { 
-          user_id_param: user.id 
-        });
+        .from('client_adhesion_requests')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false })
+        .limit(1);
+        
+      if (error) throw error;
       
-      if (error) {
-        console.error('Error fetching adhesion requests:', error);
-        return [];
+      if (data && data.length > 0) {
+        return { 
+          isClient: data[0].status === 'approved',
+          status: data[0].status,
+          requestId: data[0].id,
+          sfdId: data[0].sfd_id
+        };
       }
       
-      return data as ClientAdhesionRequest[];
-    },
-    enabled: !!user?.id,
-  });
+      return { isClient: false, status: 'none' };
+    } catch (error) {
+      console.error('Error checking adhesion status:', error);
+      return { isClient: false, status: 'error', error };
+    }
+  };
 
   return {
-    adhesionRequests: adhesionRequests || [],
     submitAdhesionRequest,
     isCreatingRequest,
-    isLoading,
-    refetchAdhesionRequests: refetch
+    userAdhesionRequests,
+    isLoadingRequests,
+    checkAdhesionStatus
   };
 }

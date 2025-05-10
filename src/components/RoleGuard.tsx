@@ -10,7 +10,7 @@ interface RoleGuardProps {
 }
 
 const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
-  const { user, userRole, loading } = useAuth();
+  const { user, userRole, loading, isAdmin, isClient, isSfdAdmin } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -26,8 +26,33 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ children, requiredRole }) => {
     return <Navigate to="/auth" state={{ from: location }} replace />;
   }
 
-  // Compare the actual role with the required role (case-insensitive)
-  const hasRequiredRole = userRole?.toLowerCase() === requiredRole.toLowerCase();
+  // Vérification avancée des rôles
+  let hasRequiredRole = false;
+  
+  // Les admins ont accès à tout
+  if (isAdmin) {
+    hasRequiredRole = true;
+  }
+  // Vérification spécifique par type de rôle
+  else if (requiredRole === 'client' && isClient) {
+    hasRequiredRole = true;
+  }
+  else if (requiredRole === 'sfd_admin' && isSfdAdmin) {
+    hasRequiredRole = true;
+  }
+  // Vérification basique (insensible à la casse)
+  else if (userRole?.toLowerCase() === requiredRole.toLowerCase()) {
+    hasRequiredRole = true;
+  }
+
+  console.log('RoleGuard check:', {
+    requiredRole,
+    userRole,
+    isAdmin,
+    isClient, 
+    isSfdAdmin,
+    hasAccess: hasRequiredRole
+  });
 
   if (!hasRequiredRole) {
     return <Navigate to="/access-denied" state={{ from: location, requiredRole }} replace />;
