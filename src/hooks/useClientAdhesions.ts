@@ -116,7 +116,7 @@ export function useClientAdhesions() {
         .from('user_roles')
         .select('role')
         .eq('user_id', user.id)
-        .eq('role', 'client');
+        .eq('role', 'client' as any); // Type assertion to bypass type checking
         
       if (!rolesError && userRoles && userRoles.length > 0) {
         return { isClient: true, status: 'approved' };
@@ -125,7 +125,10 @@ export function useClientAdhesions() {
       // Sinon, vérifier les demandes d'adhésion
       const { data, error } = await supabase
         .from('client_adhesion_requests')
-        .select('*')
+        .select(`
+          *,
+          sfds:sfd_id(name, logo_url)
+        `)
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
         .limit(1);

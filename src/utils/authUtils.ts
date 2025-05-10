@@ -64,11 +64,13 @@ export const resetSessionAndReconnect = async (email: string, password: string) 
  */
 export const checkUserHasRole = async (userId: string, role: string): Promise<boolean> => {
   try {
+    // Use a type assertion to bypass the strict type check
+    // This allows us to query for any role value from the database
     const { data, error } = await supabase
       .from('user_roles')
       .select('*')
       .eq('user_id', userId)
-      .eq('role', role)
+      .eq('role', role as any)
       .maybeSingle();
       
     if (error) {
@@ -93,11 +95,12 @@ export const ensureClientRole = async (userId: string): Promise<boolean> => {
     if (hasRole) return true;
     
     // Ajouter le rôle client
+    // Use a type assertion to bypass the strict type check
     const { error } = await supabase
       .from('user_roles')
       .insert({ 
         user_id: userId, 
-        role: 'client' 
+        role: 'client' as any
       });
       
     if (error) {
