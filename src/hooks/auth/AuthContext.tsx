@@ -4,8 +4,10 @@ import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { User, UserRole, AuthContextProps } from './types';
 
+// Create the auth context
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
+// Custom hook for using the auth context
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -14,6 +16,7 @@ export const useAuth = () => {
   return context;
 };
 
+// Auth provider component
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
