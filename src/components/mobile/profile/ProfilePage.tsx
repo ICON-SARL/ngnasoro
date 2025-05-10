@@ -8,11 +8,15 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import ClientCodeSync from './ClientCodeSync';
-import { useAuth } from '@/hooks/useAuth';
+import { useAuth } from '@/hooks/auth/AuthContext';
+import { User } from '@/hooks/auth/types';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
   const { user } = useAuth();
+  
+  // Cast the user to our custom User type to avoid TypeScript errors
+  const typedUser = user as User | null;
 
   return (
     <div className="pb-20">
@@ -41,7 +45,7 @@ const ProfilePage = () => {
         
         <TabsContent value="profile" className="px-4">
           <ClientCodeSync />
-          {user && <PersonalInfoSection user={user} />}
+          {typedUser && <PersonalInfoSection user={typedUser} />}
         </TabsContent>
       </Tabs>
     </div>

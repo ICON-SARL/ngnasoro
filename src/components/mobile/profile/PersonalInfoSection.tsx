@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Phone, Mail, Home, Save } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { User } from '@supabase/supabase-js';
+import { User } from '@/hooks/auth/types';
 import { supabase } from '@/integrations/supabase/client';
 import PhoneNumberInput from './sfd-accounts/PhoneNumberInput';
 import { validateMaliPhoneNumber } from '@/lib/constants';

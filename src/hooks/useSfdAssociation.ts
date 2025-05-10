@@ -1,8 +1,7 @@
-
 import { useState } from 'react';
 import { adminApi } from '@/utils/api/modules/adminApi';
 import { useToast } from '@/hooks/use-toast';
-import { AssociateSfdParams } from '@/hooks/auth/types';
+import { AssociateSfdParams, AssociateSfdResult } from '@/hooks/auth/types';
 
 export function useSfdAssociation() {
   const [isLoading, setIsLoading] = useState(false);

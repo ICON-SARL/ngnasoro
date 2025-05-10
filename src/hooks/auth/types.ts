@@ -11,7 +11,7 @@ export enum UserRole {
 
 export interface User {
   id: string;
-  app_metadata?: {
+  app_metadata: {
     role?: string;
     [key: string]: any;
   };
@@ -41,4 +41,18 @@ export interface AuthContextProps {
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Add the missing types for SFD association
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  userSfd?: any;
+  error?: string;
 }
