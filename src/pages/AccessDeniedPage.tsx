@@ -1,9 +1,8 @@
-
 import React from 'react';
 import { useLocation, useNavigate, Link } from 'react-router-dom';
 import { Shield, ArrowLeft, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { UserRole } from '@/hooks/auth/types';
 
 const AccessDeniedPage = () => {
@@ -22,7 +21,7 @@ const AccessDeniedPage = () => {
   
   const handleSignOut = async () => {
     await signOut();
-    navigate('/auth');
+    navigate('/login');
   };
   
   const getDashboardLink = () => {

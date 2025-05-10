@@ -23,7 +23,6 @@ import KYCVerification from '@/pages/KYCVerification';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
-import { AuthProvider } from '@/hooks/auth/AuthContext';
 
 export const MobileRouter = () => {
   return (
@@ -64,18 +63,16 @@ export const MobileRouter = () => {
 const Router = () => {
   return (
     <BrowserRouter>
-      <AuthProvider>
-        <Routes>
-          <Route path="/" element={<SplashScreen />} />
-          <Route path="/auth" element={<LoginPage />} />
-          <Route path="/register" element={<RegisterPage />} />
-          <Route path="/access-denied" element={<AccessDeniedPage />} />
-          <Route path="/permission-test" element={<PermissionTestPage />} />
-          <Route path="/kyc" element={<KYCVerification />} />
-          <Route path="/mobile-flow/*" element={<MobileRouter />} />
-          <Route path="*" element={<div>Page Not Found</div>} />
-        </Routes>
-      </AuthProvider>
+      <Routes>
+        <Route path="/" element={<SplashScreen />} />
+        <Route path="/auth" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
+        <Route path="/access-denied" element={<AccessDeniedPage />} />
+        <Route path="/permission-test" element={<PermissionTestPage />} />
+        <Route path="/kyc" element={<KYCVerification />} />
+        <Route path="/mobile-flow/*" element={<MobileRouter />} />
+        <Route path="*" element={<div>Page Not Found</div>} />
+      </Routes>
     </BrowserRouter>
   );
 };

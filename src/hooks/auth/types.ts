@@ -1,50 +1,41 @@
 
-import { Session } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 
-export enum UserRole {
-  User = 'user',
-  Admin = 'admin',
-  SuperAdmin = 'super_admin',
-  SfdAdmin = 'sfd_admin',
-  Client = 'client',
-  MerefAdmin = 'meref_admin'
+// Extended User type that includes our custom properties
+export interface User extends SupabaseUser {
+  full_name?: string;
+  avatar_url?: string;
+  phone?: string;
+  sfd_id?: string;
 }
 
-export interface User {
-  id: string;
-  app_metadata: {
-    role?: string;
-    [key: string]: any;
-  };
-  user_metadata?: {
-    [key: string]: any;
-  };
-  email?: string;
-  phone?: string;
-  aud?: string;
-  created_at?: string;
-  [key: string]: any;
+export enum UserRole {
+  SuperAdmin = 'admin',
+  Admin = 'admin',
+  SfdAdmin = 'sfd_admin',
+  Client = 'client',
+  User = 'user'
 }
 
 export interface AuthContextProps {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  userRole: string;
+  userRole: UserRole | string;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isClient: boolean;
   activeSfdId: string | null;
-  setActiveSfdId: (id: string | null) => void;
-  signIn: (email: string, password: string) => Promise<{ data?: any; error?: any }>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ data?: any; error?: any }>;
-  signOut: () => Promise<{ error?: any }>;
+  setActiveSfdId: (sfdId: string) => void;
+  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any; data?: any }>;
+  signOut: () => Promise<{ error: any }>;
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
 }
 
-// Add the missing types for SFD association
+// Define the SFD Association types
 export interface AssociateSfdParams {
   userId: string;
   sfdId: string;
@@ -54,6 +45,6 @@ export interface AssociateSfdParams {
 
 export interface AssociateSfdResult {
   success: boolean;
-  userSfd?: any;
   error?: string;
+  userSfd?: any;
 }

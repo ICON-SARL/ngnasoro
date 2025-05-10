@@ -1,232 +1,150 @@
 
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { UserRole, AuthContextProps, User as CustomUser } from './types';
-import { useToast } from '@/hooks/use-toast';
+import { User, UserRole, AuthContextProps } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<CustomUser | null>(null);
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string>('user');
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSfdAdmin, setIsSfdAdmin] = useState(false);
-  const [isClient, setIsClient] = useState(false);
+  const [userRole, setUserRole] = useState<string>(UserRole.User);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
-  const { toast } = useToast();
+
+  // Derived state for role checks - fixed logic
+  const isAdmin = userRole === UserRole.SuperAdmin || userRole === UserRole.Admin || userRole === 'admin';
+  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
+  const isClient = userRole === UserRole.Client || userRole === 'client';
 
   useEffect(() => {
-    // Check for existing session first
-    const checkSession = async () => {
-      try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        
-        if (currentSession) {
-          setSession(currentSession);
-          const userData = currentSession.user as CustomUser;
-          setUser(userData);
-
-          // Déterminer le rôle de l'utilisateur
-          const role = userData.app_metadata?.role || 'user';
-          setUserRole(role);
-          
-          // Définir les booléens de rôle
-          setIsAdmin(role === 'admin' || role === 'super_admin');
-          setIsSfdAdmin(role === 'sfd_admin');
-          setIsClient(role === 'client');
-          
-          // Rechercher les informations de rôle dans user_roles si nécessaire
-          fetchUserRoles(userData.id);
-        }
-      } catch (error) {
-        console.error('Error checking session:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Fetch additional user roles from the database
-    const fetchUserRoles = async (userId: string) => {
-      try {
-        // Vérifier dans la table user_roles
-        const { data: userRoles, error } = await supabase
-          .from('user_roles')
-          .select('role')
-          .eq('user_id', userId);
-
-        if (error) {
-          console.error('Error fetching user roles:', error);
-          return;
-        }
-
-        if (userRoles && userRoles.length > 0) {
-          // Si nous avons des rôles dans la base de données, ils ont priorité
-          const dbRoles = userRoles.map(r => r.role as string);
-          
-          // Mettre à jour les drapeaux de rôle
-          const isAdminRole = dbRoles.includes('admin') || dbRoles.includes('super_admin');
-          const isSfdAdminRole = dbRoles.includes('sfd_admin');
-          const isClientRole = dbRoles.includes('client');
-          
-          setIsAdmin(isAdminRole);
-          setIsSfdAdmin(isSfdAdminRole);
-          setIsClient(isClientRole);
-          
-          // Mettre à jour le rôle principal (pour la compatibilité)
-          if (isClientRole) setUserRole('client');
-          else if (isSfdAdminRole) setUserRole('sfd_admin');
-          else if (isAdminRole) setUserRole('admin');
-        }
-      } catch (error) {
-        console.error('Error in fetchUserRoles:', error);
-      }
-    };
-
     // Set up auth state change listener
-    const { data: authListener } = supabase.auth.onAuthStateChange((event, newSession) => {
-      console.log('Auth state changed:', event);
-      setSession(newSession);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, newSession) => {
+        console.log('Auth state changed:', event, newSession?.user?.app_metadata);
+        setSession(newSession);
+        setUser(newSession?.user as User || null);
+        setLoading(false);
 
-      if (event === 'SIGNED_IN' && newSession) {
-        const userData = newSession.user as CustomUser;
-        setUser(userData);
-        
-        // Determine user role from metadata
-        const role = userData.app_metadata?.role || 'user';
-        setUserRole(role);
-        
-        // Set role boolean flags
-        setIsAdmin(role === 'admin' || role === 'super_admin');
-        setIsSfdAdmin(role === 'sfd_admin');
-        setIsClient(role === 'client');
-        
-        // Check database for additional role info
-        setTimeout(() => {
-          fetchUserRoles(userData.id);
-        }, 0);
-      } else if (event === 'SIGNED_OUT') {
-        setUser(null);
-        setUserRole('user');
-        setIsAdmin(false);
-        setIsSfdAdmin(false);
-        setIsClient(false);
-        setActiveSfdId(null);
+        // Extract role from user metadata if available
+        if (newSession?.user) {
+          const role = newSession.user.app_metadata?.role || UserRole.User;
+          console.log('Setting role from auth change:', role);
+          setUserRole(role);
+        } else {
+          setUserRole(UserRole.User);
+        }
       }
+    );
+
+    // Check for existing session on load
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log('Initial session check:', currentSession?.user?.app_metadata);
+      setSession(currentSession);
+      setUser(currentSession?.user as User || null);
+      
+      if (currentSession?.user) {
+        const role = currentSession.user.app_metadata?.role || UserRole.User;
+        console.log('Setting initial role:', role);
+        setUserRole(role);
+      }
+      
+      setLoading(false);
     });
 
-    // Initial session check
-    checkSession();
+    // Load stored SFD ID
+    const storedSfdId = localStorage.getItem('activeSfdId');
+    if (storedSfdId) {
+      setActiveSfdId(storedSfdId);
+    }
+
+    // Check if biometric auth is enabled
+    const bioEnabled = localStorage.getItem('biometricEnabled') === 'true';
+    setBiometricEnabled(bioEnabled);
 
     return () => {
-      authListener.subscription.unsubscribe();
+      subscription.unsubscribe();
     };
   }, []);
 
-  // Sign in with email and password
+  // Save active SFD ID to local storage whenever it changes
+  useEffect(() => {
+    if (activeSfdId) {
+      localStorage.setItem('activeSfdId', activeSfdId);
+    }
+  }, [activeSfdId]);
+
+  // Authentication methods
   const signIn = async (email: string, password: string) => {
     try {
-      // Nettoyer tout état d'authentification précédent
-      cleanupAuthState();
-      
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password });
-      
-      if (error) throw error;
-      return { data };
-    } catch (error: any) {
-      console.error('Error signing in:', error);
-      toast({
-        title: "Erreur de connexion",
-        description: error.message || "Impossible de se connecter",
-        variant: "destructive",
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
       });
+      return { data, error };
+    } catch (error) {
+      console.error('Error signing in:', error);
       return { error };
     }
   };
 
-  // Sign up with email and password
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
-      // Nettoyer tout état d'authentification précédent
-      cleanupAuthState();
-      
-      const { data, error } = await supabase.auth.signUp({ 
-        email, 
+      const { data, error } = await supabase.auth.signUp({
+        email,
         password,
         options: {
-          data: metadata
-        }
+          data: metadata || {},
+        },
       });
-      
-      if (error) throw error;
-      return { data };
-    } catch (error: any) {
+      return { data, error };
+    } catch (error) {
       console.error('Error signing up:', error);
-      toast({
-        title: "Erreur d'inscription",
-        description: error.message || "Impossible de créer un compte",
-        variant: "destructive",
-      });
       return { error };
     }
   };
 
-  // Sign out
   const signOut = async () => {
     try {
+      // Clear any local state before signing out
+      setUser(null);
+      setSession(null);
+      
+      // Sign out from Supabase
       const { error } = await supabase.auth.signOut();
       
-      // Clean up local storage auth state
-      cleanupAuthState();
-      
-      if (error) throw error;
-      return { error: null };
+      return { error };
     } catch (error) {
       console.error('Error signing out:', error);
       return { error };
     }
   };
 
-  // Refresh session
   const refreshSession = async () => {
     try {
-      const { data, error } = await supabase.auth.refreshSession();
-      if (error) {
-        throw error;
-      }
-      
+      const { data } = await supabase.auth.refreshSession();
       setSession(data.session);
-      if (data.session) {
-        setUser(data.session.user as CustomUser);
-      }
+      setUser(data.session?.user as User || null);
     } catch (error) {
       console.error('Error refreshing session:', error);
     }
   };
 
-  // Toggle biometric authentication
   const toggleBiometricAuth = async () => {
-    setBiometricEnabled(!biometricEnabled);
+    const newState = !biometricEnabled;
+    setBiometricEnabled(newState);
+    localStorage.setItem('biometricEnabled', String(newState));
     return Promise.resolve();
-  };
-
-  // Clean up auth state in storage
-  const cleanupAuthState = () => {
-    // Remove all Supabase auth keys from localStorage
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    // Remove from sessionStorage if in use
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
   };
 
   const value = {
@@ -247,17 +165,5 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     toggleBiometricAuth,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
-}
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

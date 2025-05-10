@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '@/hooks/auth/AuthContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from './login/LoginForm';
@@ -8,23 +8,13 @@ import RegisterForm from './RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { cleanupAuthState } from '@/utils/authUtils';
 
 const ClientAuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
-  const { user, loading, userRole, signOut } = useAuth();
+  const { user, loading, userRole } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
-  
-  useEffect(() => {
-    // Nettoyer l'état d'authentification au montage du composant
-    const cleanup = async () => {
-      await cleanupAuthState();
-    };
-    
-    cleanup();
-  }, []);
   
   useEffect(() => {
     const hash = location.hash;
@@ -44,11 +34,11 @@ const ClientAuthUI = () => {
       console.log('Authenticated user from ClientAuthUI:', user);
       console.log('User role from auth context:', userRole);
       
-      // Obtenir le rôle de l'utilisateur depuis app_metadata
+      // Get user role from app_metadata
       const role = user.app_metadata?.role;
       console.log('User role from metadata:', role);
       
-      // Rediriger en fonction du rôle
+      // Redirect based on role
       if (role === 'admin') {
         navigate('/super-admin-dashboard');
       } else if (role === 'sfd_admin') {
@@ -60,20 +50,13 @@ const ClientAuthUI = () => {
   }, [user, userRole, loading, navigate, location.pathname]);
   
   useEffect(() => {
-    // Définir l'onglet actif (connexion ou inscription)
+    // Set active tab (login or register)
     if (location.pathname.includes('register')) {
       setActiveTab('register');
     } else {
       setActiveTab('login');
     }
   }, [location.pathname]);
-
-  // Déconnexion et nettoyage complet
-  const handleLogout = async () => {
-    await signOut();
-    await cleanupAuthState();
-    window.location.href = '/auth';
-  };
 
   if (authSuccess) {
     return (
@@ -125,7 +108,7 @@ const ClientAuthUI = () => {
               <TabsTrigger value="register">Inscription</TabsTrigger>
             </TabsList>
             <TabsContent value="login">
-              <LoginForm adminMode={false} isSfdAdmin={false} useCleanupBeforeLogin={true} />
+              <LoginForm adminMode={false} isSfdAdmin={false} />
             </TabsContent>
             <TabsContent value="register">
               <RegisterForm />
