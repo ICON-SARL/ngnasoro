@@ -95,7 +95,10 @@ export const ensureClientRole = async (userId: string): Promise<boolean> => {
     // Ajouter le rôle client
     const { error } = await supabase
       .from('user_roles')
-      .insert({ user_id: userId, role: 'client' });
+      .insert({ 
+        user_id: userId, 
+        role: 'client' 
+      });
       
     if (error) {
       console.error('Error adding client role:', error);
