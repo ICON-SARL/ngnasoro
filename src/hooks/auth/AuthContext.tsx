@@ -65,7 +65,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (userRoles && userRoles.length > 0) {
           // Si nous avons des rôles dans la base de données, ils ont priorité
-          const dbRoles = userRoles.map(r => r.role);
+          const dbRoles = userRoles.map(r => r.role as string);
           
           // Mettre à jour les drapeaux de rôle
           const isAdminRole = dbRoles.includes('admin') || dbRoles.includes('super_admin');
