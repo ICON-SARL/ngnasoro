@@ -6,7 +6,8 @@ export enum UserRole {
   Admin = 'admin',
   SuperAdmin = 'super_admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client'
+  Client = 'client',
+  MerefAdmin = 'meref_admin'
 }
 
 export interface User {

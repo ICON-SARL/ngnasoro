@@ -35,9 +35,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUserRole(role);
           
           // Définir les booléens de rôle
-          setIsAdmin(role === UserRole.Admin || role === UserRole.SuperAdmin);
-          setIsSfdAdmin(role === UserRole.SfdAdmin);
-          setIsClient(role === UserRole.Client);
+          setIsAdmin(role === 'admin' || role === 'super_admin');
+          setIsSfdAdmin(role === 'sfd_admin');
+          setIsClient(role === 'client');
           
           // Rechercher les informations de rôle dans user_roles si nécessaire
           fetchUserRoles(userData.id);
@@ -68,18 +68,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const dbRoles = userRoles.map(r => r.role);
           
           // Mettre à jour les drapeaux de rôle
-          const isAdminRole = dbRoles.includes(UserRole.Admin) || dbRoles.includes(UserRole.SuperAdmin);
-          const isSfdAdminRole = dbRoles.includes(UserRole.SfdAdmin);
-          const isClientRole = dbRoles.includes(UserRole.Client);
+          const isAdminRole = dbRoles.includes('admin') || dbRoles.includes('super_admin');
+          const isSfdAdminRole = dbRoles.includes('sfd_admin');
+          const isClientRole = dbRoles.includes('client');
           
           setIsAdmin(isAdminRole);
           setIsSfdAdmin(isSfdAdminRole);
           setIsClient(isClientRole);
           
           // Mettre à jour le rôle principal (pour la compatibilité)
-          if (isClientRole) setUserRole(UserRole.Client);
-          else if (isSfdAdminRole) setUserRole(UserRole.SfdAdmin);
-          else if (isAdminRole) setUserRole(UserRole.Admin);
+          if (isClientRole) setUserRole('client');
+          else if (isSfdAdminRole) setUserRole('sfd_admin');
+          else if (isAdminRole) setUserRole('admin');
         }
       } catch (error) {
         console.error('Error in fetchUserRoles:', error);
@@ -100,9 +100,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUserRole(role);
         
         // Set role boolean flags
-        setIsAdmin(role === UserRole.Admin || role === UserRole.SuperAdmin);
-        setIsSfdAdmin(role === UserRole.SfdAdmin);
-        setIsClient(role === UserRole.Client);
+        setIsAdmin(role === 'admin' || role === 'super_admin');
+        setIsSfdAdmin(role === 'sfd_admin');
+        setIsClient(role === 'client');
         
         // Check database for additional role info
         setTimeout(() => {

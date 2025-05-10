@@ -31,12 +31,14 @@ interface LoginFormProps {
   adminMode?: boolean;
   isSfdAdmin?: boolean;
   useCleanupBeforeLogin?: boolean;
+  onError?: (error: string) => void;
 }
 
 const LoginForm: React.FC<LoginFormProps> = ({ 
   adminMode = false,
   isSfdAdmin = false,
-  useCleanupBeforeLogin = false
+  useCleanupBeforeLogin = false,
+  onError
 }) => {
   const { signIn } = useAuth();
   const { toast } = useToast();
@@ -68,6 +70,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
           title: "Échec de connexion",
           description: error.message || "Impossible de se connecter. Veuillez vérifier vos identifiants.",
         });
+        if (onError) {
+          onError(error.message || "Échec de connexion");
+        }
         return;
       }
 
@@ -84,6 +89,9 @@ const LoginForm: React.FC<LoginFormProps> = ({
         title: "Erreur",
         description: error.message || "Une erreur est survenue lors de la connexion.",
       });
+      if (onError) {
+        onError(error.message || "Une erreur est survenue lors de la connexion");
+      }
     } finally {
       setIsLoading(false);
     }

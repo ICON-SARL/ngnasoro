@@ -3,11 +3,20 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from './auth/AuthContext';
-import { AdhesionRequestInput } from '@/types/adhesionTypes';
 import { useState } from 'react';
 
 // Re-export the type for components that import from this file
-export type { AdhesionRequestInput };
+export type AdhesionRequestInput = {
+  full_name: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+  id_number?: string;
+  id_type?: string;
+  profession?: string;
+  monthly_income?: string;
+  source_of_income?: string;
+};
 
 export function useClientAdhesions() {
   const { user } = useAuth();
