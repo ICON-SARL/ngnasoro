@@ -23,7 +23,7 @@ export function useSfdLoanPlans() {
           )
         `)
         .eq('is_active', true)
-        .eq('is_published', true); // Toujours filtrer pour n'afficher que les plans publiés
+        .eq('is_published', true); // Assurons-nous de ne montrer que les plans publiés
       
       // Si un SFD actif est sélectionné, filtrer par ce SFD
       if (activeSfdId) {
@@ -38,7 +38,12 @@ export function useSfdLoanPlans() {
       }
 
       console.log('Fetched loan plans:', plansData);
-      return plansData as LoanPlan[] || [];
+      
+      // Make sure we only return published plans
+      const publishedPlans = plansData?.filter(plan => plan.is_published === true) || [];
+      console.log('Published plans:', publishedPlans);
+      
+      return publishedPlans as LoanPlan[] || [];
     },
     meta: {
       errorMessage: "Impossible de charger les plans de prêt"

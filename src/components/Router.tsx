@@ -20,6 +20,9 @@ import SplashScreen from '@/components/mobile/SplashScreen';
 import RoleGuard from '@/components/RoleGuard';
 import KycVerificationHistoryPage from '@/pages/KycVerificationHistoryPage';
 import KYCVerification from '@/pages/KYCVerification';
+import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
+import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
+import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 
 export const MobileRouter = () => {
   return (
@@ -32,8 +35,10 @@ export const MobileRouter = () => {
       <Route path="/sfd-selector" element={<SfdSelectorPage />} />
       <Route path="/sfd-connection" element={<SfdConnectionPage />} />
       <Route path="/funds-management" element={<FundsManagementPage />} />
-      <Route path="/loan-plans" element={<LoanPlansPage />} />
+      <Route path="/loan-plans" element={<MobileLoanPlansPage />} />
+      <Route path="/loans" element={<MobileLoansPage />} />
       <Route path="/kyc" element={<KycVerificationHistoryPage />} />
+      <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
       <Route 
         path="/my-loans" 
         element={

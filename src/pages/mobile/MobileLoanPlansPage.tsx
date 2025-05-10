@@ -1,18 +1,20 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, Loader2 } from 'lucide-react';
+import { ArrowLeft, CreditCard, Loader2, AlertTriangle } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
 import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
+import { useToast } from '@/hooks/use-toast';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeSfdId } = useAuth();
   const [activeTab, setActiveTab] = useState('standard');
   const { data: plans = [], isLoading, error } = useSfdLoanPlans();
+  const { toast } = useToast();
   
   // Compter les plans standards et subventionnés
   const standardPlans = plans.filter(plan => 
@@ -24,6 +26,16 @@ const MobileLoanPlansPage: React.FC = () => {
     plan.name.toLowerCase().includes('subvention') || 
     plan.description?.toLowerCase().includes('subvention')
   ).length;
+  
+  useEffect(() => {
+    if (plans.length === 0 && !isLoading && !error) {
+      toast({
+        title: "Aucun plan disponible",
+        description: "Aucun plan de prêt n'est publié actuellement.",
+        variant: "default",
+      });
+    }
+  }, [plans, isLoading, error, toast]);
   
   return (
     <div className="min-h-screen bg-gray-50">
@@ -44,13 +56,22 @@ const MobileLoanPlansPage: React.FC = () => {
       
       <div className="p-4">
         {isLoading ? (
-          <div className="flex justify-center items-center h-40">
-            <Loader2 className="h-8 w-8 text-[#0D6A51] animate-spin" />
-            <span className="ml-2 text-gray-600">Chargement des plans...</span>
+          <div className="flex justify-center items-center h-40 flex-col">
+            <Loader2 className="h-8 w-8 text-[#0D6A51] animate-spin mb-2" />
+            <span className="text-gray-600">Chargement des plans...</span>
           </div>
         ) : error ? (
-          <div className="p-4 my-4 bg-red-50 border border-red-200 rounded-md text-center">
+          <div className="p-4 my-4 bg-red-50 border border-red-200 rounded-md text-center flex flex-col items-center">
+            <AlertTriangle className="h-6 w-6 text-red-500 mb-2" />
             <p className="text-red-600">Impossible de charger les plans de prêt</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-2" 
+              onClick={() => window.location.reload()}
+            >
+              Réessayer
+            </Button>
           </div>
         ) : (
           <Tabs defaultValue="standard" value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -64,7 +85,14 @@ const MobileLoanPlansPage: React.FC = () => {
             </TabsList>
 
             <TabsContent value="standard" className="mt-0">
-              <SfdLoanPlansTable sfdId={activeSfdId} />
+              {plans.length === 0 ? (
+                <div className="text-center p-6 bg-white rounded-md border">
+                  <p className="text-gray-500">Aucun plan de prêt standard n'est disponible actuellement.</p>
+                  <p className="text-sm text-gray-400 mt-2">Veuillez vérifier ultérieurement pour de nouvelles offres.</p>
+                </div>
+              ) : (
+                <SfdLoanPlansTable sfdId={activeSfdId} />
+              )}
             </TabsContent>
 
             <TabsContent value="subsidized" className="mt-0">
@@ -74,7 +102,17 @@ const MobileLoanPlansPage: React.FC = () => {
                   Les prêts subventionnés bénéficient d'un taux d'intérêt réduit grâce à une subvention de l'État ou d'un partenaire.
                 </p>
               </div>
-              <SfdLoanPlansTable sfdId={activeSfdId} />
+              {plans.filter(plan => 
+                plan.name.toLowerCase().includes('subvention') || 
+                plan.description?.toLowerCase().includes('subvention')
+              ).length === 0 ? (
+                <div className="text-center p-6 bg-white rounded-md border">
+                  <p className="text-gray-500">Aucun plan de prêt subventionné n'est disponible actuellement.</p>
+                  <p className="text-sm text-gray-400 mt-2">Veuillez vérifier ultérieurement pour de nouvelles offres.</p>
+                </div>
+              ) : (
+                <SfdLoanPlansTable sfdId={activeSfdId} />
+              )}
             </TabsContent>
           </Tabs>
         )}
@@ -83,6 +121,7 @@ const MobileLoanPlansPage: React.FC = () => {
           <Button 
             onClick={() => navigate('/mobile-flow/loan-application')}
             className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+            disabled={isLoading || plans.length === 0}
           >
             <CreditCard className="h-4 w-4 mr-2" />
             Faire une demande de prêt

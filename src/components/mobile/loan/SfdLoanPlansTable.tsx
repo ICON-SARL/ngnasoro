@@ -7,12 +7,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Card, CardContent } from '@/components/ui/card';
+import { LoanPlan } from '@/types/sfdClients';
 
 interface SfdLoanPlansTableProps {
   sfdId?: string;
+  subsidizedOnly?: boolean;
 }
 
-export function SfdLoanPlansTable({ sfdId }: SfdLoanPlansTableProps) {
+export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlansTableProps) {
   const navigate = useNavigate();
   const { data: plans = [], isLoading, error } = useSfdLoanPlans();
 
@@ -62,86 +65,82 @@ export function SfdLoanPlansTable({ sfdId }: SfdLoanPlansTableProps) {
   // Filter plans by sfdId if provided and ensure only published plans are shown
   const filteredPlans = plans.filter(plan => {
     // Vérifier si le plan est actif et publié
-    if (!plan.is_active || !plan.is_published) {
-      return false;
-    }
+    const isValid = plan.is_active && plan.is_published;
     
     // Si un sfdId est fourni, filtrer par sfdId
-    if (sfdId) {
-      return plan.sfd_id === sfdId;
-    }
+    const matchesSfd = sfdId ? plan.sfd_id === sfdId : true;
     
-    // Si pas de sfdId, montrer tous les plans actifs et publiés
-    return true;
+    // Filter by subsidized status if requested
+    const isSubsidized = plan.name.toLowerCase().includes('subvention') || 
+                         plan.description?.toLowerCase().includes('subvention');
+    
+    const matchesSubsidyFilter = subsidizedOnly ? isSubsidized : !isSubsidized;
+    
+    return isValid && matchesSfd && matchesSubsidyFilter;
   });
   
   if (filteredPlans.length === 0) {
     return (
       <div className="border rounded-md p-4 text-center text-gray-500">
-        Aucun plan de prêt publié disponible
+        Aucun plan de prêt {subsidizedOnly ? "subventionné" : ""} publié disponible
       </div>
     );
   }
 
+  // Modern card-based display for loan plans
   return (
-    <div className="border rounded-md overflow-hidden bg-white">
-      {/* Header */}
-      <div className="grid grid-cols-6 gap-2 bg-gray-50 p-4 text-sm font-medium text-gray-700">
-        <div className="col-span-2">Nom</div>
-        <div className="col-span-1">Montant</div>
-        <div className="col-span-1">Durée</div>
-        <div className="col-span-1">Taux</div>
-        <div className="col-span-1">Actions</div>
-      </div>
-      
-      {/* Loan Plans */}
+    <div className="space-y-4">
       {filteredPlans.map(plan => (
-        <div 
-          key={plan.id}
-          className="grid grid-cols-6 gap-2 p-4 border-t text-sm items-center hover:bg-gray-50"
+        <Card 
+          key={plan.id} 
+          className="overflow-hidden hover:shadow-md transition-shadow"
         >
-          <div className="col-span-2">
-            <div className="flex items-center gap-2">
-              <p className="font-medium">{plan.name}</p>
-              {plan.is_active && plan.is_published && (
-                <Badge variant="outline" className="bg-green-50 text-green-600 border-green-200">
-                  Actif
-                </Badge>
-              )}
+          <CardContent className="p-4">
+            <div className="flex justify-between items-start mb-2">
+              <div>
+                <h3 className="font-medium">{plan.name}</h3>
+                <p className="text-xs text-gray-600">{plan.description}</p>
+                {plan.sfds && (
+                  <p className="text-xs text-[#0D6A51] mt-1">
+                    {plan.sfds.name}
+                  </p>
+                )}
+              </div>
+              <Badge className="bg-green-100 text-green-800 border-0">
+                {plan.interest_rate}%
+              </Badge>
             </div>
-            <p className="text-xs text-gray-500 truncate">{plan.description}</p>
-          </div>
-          <div className="col-span-1">
-            {plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA
-          </div>
-          <div className="col-span-1">
-            {plan.min_duration} - {plan.max_duration} mois
-          </div>
-          <div className="col-span-1">
-            {plan.interest_rate}%
-          </div>
-          <div className="col-span-1 flex space-x-2">
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => handleApplyForLoan(plan.id)}
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <TooltipProvider>
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <div className="flex items-center">
-                    <Info className="h-4 w-4 text-gray-400" />
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="w-48">Cliquez sur l'icône d'édition pour faire une demande avec ce plan</p>
-                </TooltipContent>
-              </Tooltip>
-            </TooltipProvider>
-          </div>
-        </div>
+            
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
+              <div>
+                <p className="text-gray-500 text-xs">Montant:</p>
+                <p>{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA</p>
+              </div>
+              <div>
+                <p className="text-gray-500 text-xs">Durée:</p>
+                <p>{plan.min_duration} - {plan.max_duration} mois</p>
+              </div>
+            </div>
+            
+            <div className="mt-4 flex justify-end">
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button 
+                      onClick={() => handleApplyForLoan(plan.id)}
+                      className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                    >
+                      Faire une demande
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Cliquez pour soumettre une demande de prêt</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

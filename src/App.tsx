@@ -38,6 +38,8 @@ import SplashScreen from '@/components/mobile/SplashScreen';
 import SfdClientDetailPage from '@/pages/SfdClientDetailPage';
 import { NotificationsOverlay } from '@/components/mobile/NotificationsOverlay';
 import MobileDepositPage from '@/pages/mobile/MobileDepositPage';
+import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
+import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -171,6 +173,20 @@ function App() {
                     <ProtectedRoute>
                       <RoleGuard requiredRole={UserRole.Client}>
                         <MobileLoansPage />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mobile-flow/loan-plans" element={
+                    <ProtectedRoute>
+                      <RoleGuard requiredRole={UserRole.Client}>
+                        <MobileLoanPlansPage />
+                      </RoleGuard>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mobile-flow/loan-application" element={
+                    <ProtectedRoute>
+                      <RoleGuard requiredRole={UserRole.Client}>
+                        <MobileLoanApplicationPage />
                       </RoleGuard>
                     </ProtectedRoute>
                   } />

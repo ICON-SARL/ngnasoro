@@ -4,17 +4,26 @@ import MobileNavigation from '@/components/MobileNavigation';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
-import { ArrowRight, CreditCard, Loader2 } from 'lucide-react';
+import { ArrowRight, CreditCard, Loader2, List, Search } from 'lucide-react';
 import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
 import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Card, CardContent } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
 
 const MobileLoansPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
   const [sfdName, setSfdName] = useState<string>('votre SFD');
   const { data: plans = [], isLoading, error } = useSfdLoanPlans();
+  const [searchTerm, setSearchTerm] = useState('');
+
+  // Filtered plans based on search term
+  const filteredPlans = plans.filter(plan => 
+    plan.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    plan.description?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   useEffect(() => {
     // Si des plans sont disponibles, récupérer le nom de la SFD du premier plan
@@ -30,6 +39,19 @@ const MobileLoansPage: React.FC = () => {
         <p className="text-gray-500 text-sm">Découvrez nos offres de financement</p>
       </div>
       
+      <div className="p-4">
+        <div className="relative mb-4">
+          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Input 
+            type="text"
+            placeholder="Rechercher un plan de prêt..." 
+            className="pl-10"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+      </div>
+      
       {isLoading ? (
         <div className="flex justify-center items-center h-40">
           <Loader2 className="h-8 w-8 text-[#0D6A51] animate-spin" />
@@ -38,6 +60,14 @@ const MobileLoansPage: React.FC = () => {
       ) : error ? (
         <div className="p-4 my-4 bg-red-50 border border-red-200 rounded-md text-center">
           <p className="text-red-600">Impossible de charger les plans de prêt</p>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => window.location.reload()}
+            className="mt-2"
+          >
+            Réessayer
+          </Button>
         </div>
       ) : (
         <div className="p-4">
@@ -55,17 +85,34 @@ const MobileLoansPage: React.FC = () => {
               </Button>
             </div>
             
-            {plans.length === 0 ? (
-              <div className="border rounded-md p-6 bg-white text-center">
-                <p className="text-gray-500 mb-2">Aucun plan de prêt disponible pour le moment</p>
-                <p className="text-sm text-gray-400">Les plans de prêt apparaîtront ici une fois publiés par {sfdName}</p>
-              </div>
+            {filteredPlans.length === 0 ? (
+              <Card className="border rounded-md shadow-sm">
+                <CardContent className="p-6 text-center">
+                  <p className="text-gray-500 mb-2">Aucun plan de prêt disponible{searchTerm ? " pour cette recherche" : ""}</p>
+                  <p className="text-sm text-gray-400 mt-2">
+                    {searchTerm ? 
+                      "Essayez avec d'autres termes de recherche" : 
+                      `Les plans de prêt apparaîtront ici une fois publiés par ${sfdName}`
+                    }
+                  </p>
+                  {searchTerm && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => setSearchTerm('')}
+                      className="mt-4"
+                    >
+                      Effacer la recherche
+                    </Button>
+                  )}
+                </CardContent>
+              </Card>
             ) : (
               <>
                 <div className="bg-blue-50 p-4 rounded-lg mb-4 border border-blue-100">
                   <h3 className="font-medium text-blue-800">Plans de {sfdName}</h3>
                   <p className="text-sm text-blue-600 mt-1">
-                    {plans.length} plan{plans.length > 1 ? 's' : ''} de prêt disponible{plans.length > 1 ? 's' : ''}
+                    {filteredPlans.length} plan{filteredPlans.length > 1 ? 's' : ''} de prêt disponible{filteredPlans.length > 1 ? 's' : ''}
                   </p>
                 </div>
                 <SfdLoanPlansTable sfdId={activeSfdId} />
@@ -75,13 +122,22 @@ const MobileLoansPage: React.FC = () => {
           
           <Separator className="my-6" />
           
-          <div className="mt-8 mb-4 flex justify-center">
+          <div className="mt-8 mb-4 flex gap-3 justify-center">
+            <Button 
+              variant="outline"
+              onClick={() => navigate('/mobile-flow/my-loans')}
+              className="flex items-center gap-2"
+            >
+              <List className="h-4 w-4" />
+              Mes prêts
+            </Button>
+            
             <Button 
               onClick={() => navigate('/mobile-flow/loan-application')}
               className="bg-[#0D6A51] hover:bg-[#0D6A51]/90 flex items-center gap-2"
             >
               <CreditCard className="h-4 w-4" />
-              Faire une demande de prêt
+              Faire une demande
             </Button>
           </div>
         </div>
