@@ -1,3 +1,4 @@
+
 export interface SfdClient {
   id: string;
   full_name: string;
@@ -89,6 +90,7 @@ export interface LoanPlan {
   fees: number;
   sfd_id: string;
   is_active: boolean;
+  is_published: boolean; // Added this property
   requirements?: string[];
   sfds?: {
     name: string;
