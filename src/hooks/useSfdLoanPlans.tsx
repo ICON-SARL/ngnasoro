@@ -22,8 +22,7 @@ export function useSfdLoanPlans() {
             logo_url
           )
         `)
-        .eq('is_active', true)
-        .eq('is_published', true);  // Only retrieve published plans
+        .eq('is_active', true);
       
       // If an active SFD is selected, filter by this SFD
       if (activeSfdId) {

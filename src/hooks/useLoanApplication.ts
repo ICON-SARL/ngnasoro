@@ -62,6 +62,86 @@ export const useLoanApplication = (sfdId?: string) => {
     return publicUrl;
   };
 
+  // Check loan status and update account if approved
+  const checkLoanStatus = async (loanId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('sfd_loans')
+        .select('*')
+        .eq('id', loanId)
+        .single();
+        
+      if (error) throw error;
+      
+      // If the loan is approved, credit the account
+      if (data && data.status === 'approved') {
+        await creditClientAccount(data.client_id, data.sfd_id, data.amount, data.id);
+      }
+      
+      return data;
+    } catch (error) {
+      console.error('Error checking loan status:', error);
+      throw error;
+    }
+  };
+
+  // Credit client account when loan is approved
+  const creditClientAccount = async (clientId: string, sfdId: string, amount: number, loanId: string) => {
+    try {
+      // Fetch the user_id of the client
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', clientId)
+        .single();
+        
+      if (clientError) throw clientError;
+      
+      // Create a transaction for the loan disbursement
+      const { data: transactionData, error: transactionError } = await supabase
+        .from('transactions')
+        .insert({
+          user_id: clientData.user_id,
+          sfd_id: sfdId,
+          type: 'loan_disbursement',
+          amount: amount,
+          status: 'success',
+          name: 'Décaissement de prêt',
+          description: `Prêt approuvé et montant crédité sur votre compte`,
+          reference_id: loanId
+        })
+        .select();
+        
+      if (transactionError) throw transactionError;
+      
+      // Update loan status to indicate disbursement
+      const { error: updateError } = await supabase
+        .from('sfd_loans')
+        .update({
+          disbursement_status: 'completed',
+          disbursed_at: new Date().toISOString(),
+          status: 'active'
+        })
+        .eq('id', loanId);
+        
+      if (updateError) throw updateError;
+      
+      // Create a loan activity record
+      await supabase
+        .from('loan_activities')
+        .insert({
+          loan_id: loanId,
+          activity_type: 'disbursement',
+          description: `Prêt disbursé pour un montant de ${amount.toLocaleString()} FCFA`
+        });
+        
+      return true;
+    } catch (error) {
+      console.error('Error crediting client account:', error);
+      throw error;
+    }
+  };
+
   // Submit loan application
   const submitApplication = useMutation({
     mutationFn: async (application: LoanApplication) => {
@@ -157,5 +237,7 @@ export const useLoanApplication = (sfdId?: string) => {
     isLoadingPlans: loanPlansQuery.isLoading,
     isUploading,
     submitApplication,
+    checkLoanStatus,
+    creditClientAccount
   };
 };
