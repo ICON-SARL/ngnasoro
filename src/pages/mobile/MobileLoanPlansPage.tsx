@@ -9,6 +9,7 @@ import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
 import { useSfdLoanPlans } from '@/hooks/useSfdLoanPlans';
 import { useToast } from '@/hooks/use-toast';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
@@ -37,7 +38,8 @@ const MobileLoanPlansPage: React.FC = () => {
       toast({
         title: "Attention",
         description: "Aucune SFD active n'a été sélectionnée. Certains contenus peuvent être limités.",
-        variant: "warning",
+        // Changed from "warning" to "default" as only "default" and "destructive" are allowed
+        variant: "default",
       });
     }
   }, [activeSfdId, plans, sfds]);
@@ -95,6 +97,15 @@ const MobileLoanPlansPage: React.FC = () => {
       )}
       
       <div className="p-4">
+        {/* Display warning when no active SFD is selected */}
+        {!activeSfdId && sfds.length > 0 && (
+          <Alert className="mb-4 border-amber-200 bg-amber-50 text-amber-800">
+            <AlertDescription>
+              Aucune SFD active n'a été sélectionnée. Veuillez sélectionner une SFD pour voir ses plans de prêt.
+            </AlertDescription>
+          </Alert>
+        )}
+      
         {isLoading ? (
           <div className="flex justify-center items-center h-40 flex-col">
             <Loader2 className="h-8 w-8 text-[#0D6A51] animate-spin mb-2" />

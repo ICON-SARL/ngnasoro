@@ -1,3 +1,4 @@
+
 "use client";
 
 import * as React from "react";
@@ -7,6 +8,7 @@ const TOAST_LIMIT = 5;
 const TOAST_REMOVE_DELAY = 1000;
 const DEFAULT_TOAST_DURATION = 3000; // 3 seconds for normal toasts
 const ERROR_TOAST_DURATION = 5000;   // 5 seconds for error toasts
+const WARNING_TOAST_DURATION = 4000; // 4 seconds for warning toasts
 
 type ToasterToast = ToastProps & {
   id: string;
@@ -132,7 +134,14 @@ type Toast = Omit<ToasterToast, "id">;
 
 function toast({ ...props }: Toast) {
   const id = genId();
-  const duration = props.variant === 'destructive' ? ERROR_TOAST_DURATION : DEFAULT_TOAST_DURATION;
+  
+  // Set duration based on variant type
+  let duration = DEFAULT_TOAST_DURATION;
+  if (props.variant === 'destructive') {
+    duration = ERROR_TOAST_DURATION;
+  } else if (props.variant === 'warning') {
+    duration = WARNING_TOAST_DURATION;
+  }
 
   const update = (props: ToasterToast) =>
     dispatch({
