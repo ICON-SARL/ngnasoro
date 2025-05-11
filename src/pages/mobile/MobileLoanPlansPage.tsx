@@ -38,7 +38,6 @@ const MobileLoanPlansPage: React.FC = () => {
       toast({
         title: "Attention",
         description: "Aucune SFD active n'a été sélectionnée. Certains contenus peuvent être limités.",
-        // Changed from "warning" to "default" as only "default" and "destructive" are allowed
         variant: "default",
       });
     }
