@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, Loader2, AlertTriangle, Info } from 'lucide-react';
+import { ArrowLeft, CreditCard, Loader2, AlertTriangle, Info, RefreshCw } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
@@ -15,7 +15,7 @@ const MobileLoanPlansPage: React.FC = () => {
   const navigate = useNavigate();
   const { activeSfdId, user } = useAuth();
   const [activeTab, setActiveTab] = useState('standard');
-  const { data: plans = [], isLoading, error } = useSfdLoanPlans();
+  const { data: plans = [], isLoading, error, refetch } = useSfdLoanPlans();
   const { sfds } = useSfdDataAccess();
   const { toast } = useToast();
   
@@ -57,6 +57,14 @@ const MobileLoanPlansPage: React.FC = () => {
   const toggleDebug = () => {
     setShowDebug(!showDebug);
   };
+
+  const handleRefresh = () => {
+    refetch();
+    toast({
+      title: "Actualisation",
+      description: "Les plans de prêt sont en cours d'actualisation...",
+    });
+  };
   
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
@@ -78,6 +86,15 @@ const MobileLoanPlansPage: React.FC = () => {
           </div>
         </div>
         
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={handleRefresh}
+          className="mr-2"
+        >
+          <RefreshCw className="h-4 w-4" />
+        </Button>
+
         {/* Secret debug toggle */}
         <div onClick={toggleDebug} className="p-2"></div>
       </div>
@@ -118,7 +135,7 @@ const MobileLoanPlansPage: React.FC = () => {
               variant="outline" 
               size="sm" 
               className="mt-2" 
-              onClick={() => window.location.reload()}
+              onClick={() => refetch()}
             >
               Réessayer
             </Button>
@@ -135,6 +152,22 @@ const MobileLoanPlansPage: React.FC = () => {
               onClick={() => navigate('/mobile-flow/profile')}
             >
               Gérer mes SFDs
+            </Button>
+          </div>
+        ) : plans.length === 0 ? (
+          <div className="p-4 my-4 bg-blue-50 border border-blue-200 rounded-md text-center flex flex-col items-center">
+            <Info className="h-6 w-6 text-blue-500 mb-2" />
+            <p className="text-blue-800 font-medium">Aucun plan de prêt disponible</p>
+            <p className="text-blue-700 text-sm mt-1">
+              Les plans de prêt pour {activeSfd?.name || 'cette SFD'} ne sont pas encore disponibles ou sont en cours de chargement.
+            </p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="mt-3 border-blue-400 text-blue-700" 
+              onClick={() => refetch()}
+            >
+              Actualiser
             </Button>
           </div>
         ) : (

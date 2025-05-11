@@ -87,9 +87,6 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
 
   // Filter plans based on subsidized status and SFD ID
   const filteredPlans = plans.filter(plan => {
-    // Check for valid plan (active and published)
-    const isValid = plan.is_active && (plan.is_published !== false);
-    
     // Check if it matches the SFD filter (if provided, otherwise use activeSfdId)
     const effectiveSfdId = sfdId || activeSfdId;
     const matchesSfd = effectiveSfdId ? plan.sfd_id === effectiveSfdId : true;
@@ -101,13 +98,12 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
     const matchesSubsidyFilter = subsidizedOnly ? isSubsidized : !isSubsidized;
     
     console.log(`Plan ${plan.name} [${plan.id}]:`, { 
-      isValid, 
       matchesSfd, 
       matchesSubsidyFilter, 
       sfd_id: plan.sfd_id
     });
     
-    return isValid && matchesSfd && matchesSubsidyFilter;
+    return matchesSfd && matchesSubsidyFilter;
   });
   
   console.log('Filtered plans:', filteredPlans.length);

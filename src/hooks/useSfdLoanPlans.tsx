@@ -22,7 +22,8 @@ export function useSfdLoanPlans() {
             logo_url
           )
         `)
-        .eq('is_active', true);
+        .eq('is_active', true)
+        .eq('is_published', true);  // Only retrieve published plans
       
       // If an active SFD is selected, filter by this SFD
       if (activeSfdId) {
@@ -37,16 +38,15 @@ export function useSfdLoanPlans() {
         throw error;
       }
 
-      console.log('Fetched raw loan plans:', plansData);
+      console.log('Fetched loan plans:', plansData?.length);
       
-      // Filter published plans only at this stage
-      const publishedPlans = plansData?.filter(plan => plan.is_published === true) || [];
-      console.log('Published plans after filtering:', publishedPlans);
-      
-      return publishedPlans as LoanPlan[];
+      return plansData as LoanPlan[];
     },
     meta: {
       errorMessage: "Impossible de charger les plans de prêt"
-    }
+    },
+    refetchOnMount: true,
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000, // 5 minutes
   });
 }
