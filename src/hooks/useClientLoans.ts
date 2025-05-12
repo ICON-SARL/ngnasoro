@@ -100,7 +100,7 @@ export function useClientLoans() {
     queryFn: async () => {
       // In a real implementation, this would fetch notifications from Supabase
       // For now, we'll return mock data based on the loans
-      if (!loans || loans.length === 0) return [];
+      if (!loans || !Array.isArray(loans) || loans.length === 0) return [];
 
       return loans.map(loan => ({
         id: `notification-${loan.id}`,
@@ -112,7 +112,7 @@ export function useClientLoans() {
         action_link: `/mobile-flow/loan-details/${loan.id}`
       })) as LoanNotification[];
     },
-    enabled: !!user?.id && loans.length > 0,
+    enabled: !!user?.id && Array.isArray(loans) && loans.length > 0,
   });
   
   // Mark notification as read

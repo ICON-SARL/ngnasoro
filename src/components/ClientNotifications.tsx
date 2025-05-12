@@ -61,7 +61,10 @@ const NotificationItem = ({ notification, markAsRead }: { notification: any, mar
 const ClientNotifications = () => {
   const { notifications = [], notificationsLoading, markNotificationAsRead, refetchNotifications } = useClientLoans();
   
-  const unreadNotifications = notifications.filter(notification => !notification.read);
+  // Ensure notifications is an array before filtering
+  const unreadNotifications = Array.isArray(notifications) 
+    ? notifications.filter(notification => !notification.read)
+    : [];
   
   return (
     <Card>
@@ -86,7 +89,7 @@ const ClientNotifications = () => {
           </TabsList>
           
           <TabsContent value="all" className="mt-6">
-            {notifications.length === 0 ? (
+            {!Array.isArray(notifications) || notifications.length === 0 ? (
               <div className="text-center py-12">
                 <Bell className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="text-lg font-medium mb-2">Aucune notification</h3>

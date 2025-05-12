@@ -63,6 +63,11 @@ export const LoanApplicationForm: React.FC = () => {
   });
 
   const onSubmit = async (values: FormValues) => {
+    if (!sfdId) {
+      console.error('SFD ID is required to submit a loan application');
+      return;
+    }
+
     const documents = Object.entries(selectedFiles)
       .filter(([_, file]) => file !== null)
       .map(([type, file]) => ({
@@ -75,6 +80,7 @@ export const LoanApplicationForm: React.FC = () => {
       duration_months: values.duration_months,
       purpose: values.purpose,
       loan_plan_id: values.loan_plan_id,
+      sfd_id: sfdId, // Add the sfd_id from params
       documents,
     });
 

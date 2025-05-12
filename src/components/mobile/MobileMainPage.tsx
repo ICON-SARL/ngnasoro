@@ -24,9 +24,10 @@ const MobileMainPage: React.FC = () => {
   
   const { transactions, isLoading: transactionsLoading, fetchTransactions } = useTransactions(user?.id);
   
-  const activeLoans = loans.filter(loan => 
+  // Add a null check and provide an empty array as fallback if loans is undefined
+  const activeLoans = Array.isArray(loans) ? loans.filter(loan => 
     loan.status === 'active' || loan.status === 'approved' || loan.status === 'disbursed'
-  );
+  ) : [];
 
   const handleMenuToggle = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -41,16 +42,19 @@ const MobileMainPage: React.FC = () => {
     handleMenuClose();
   };
 
-  const formattedTransactions: TransactionListItem[] = transactions.slice(0, 5).map(tx => ({
-    id: tx.id,
-    name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
-    type: tx.type,
-    amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
-      ? `+${formatCurrencyAmount(tx.amount)}` 
-      : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
-    date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
-    avatar: tx.avatar_url,
-  }));
+  // Add a null check for transactions as well
+  const formattedTransactions: TransactionListItem[] = Array.isArray(transactions) 
+    ? transactions.slice(0, 5).map(tx => ({
+        id: tx.id,
+        name: tx.name || (tx.type === 'deposit' ? 'Dépôt' : tx.type === 'withdrawal' ? 'Retrait' : 'Transaction'),
+        type: tx.type,
+        amount: tx.type === 'deposit' || tx.type === 'loan_disbursement' 
+          ? `+${formatCurrencyAmount(tx.amount)}` 
+          : `-${formatCurrencyAmount(Math.abs(tx.amount))}`,
+        date: new Date(tx.date || tx.created_at || '').toLocaleDateString('fr-FR'),
+        avatar: tx.avatar_url,
+      }))
+    : [];
   
   return (
     <div className="pb-16">

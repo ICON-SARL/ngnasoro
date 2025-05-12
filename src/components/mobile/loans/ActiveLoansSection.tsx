@@ -15,7 +15,7 @@ interface ActiveLoansSectionProps {
 }
 
 const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({ 
-  activeLoans, 
+  activeLoans = [], // Provide default empty array
   isLoading, 
   onViewAll, 
   onNewLoan 
@@ -23,23 +23,28 @@ const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({
   const navigate = useNavigate();
   
   const calculateLoanMetrics = (loan: Loan) => {
-    const totalAmount = loan.amount * (1 + loan.interest_rate/100);
-    const monthlyPayment = loan.monthly_payment || (totalAmount / loan.duration_months);
-    
-    // Calculate paid amount based on monthly payment schedule
-    let paidAmount = 0;
-    if (loan.disbursed_at) {
-      const monthsSinceDisbursement = Math.floor(
-        (new Date().getTime() - new Date(loan.disbursed_at).getTime()) / 
-        (1000 * 60 * 60 * 24 * 30)
-      );
-      paidAmount = Math.min(totalAmount, monthlyPayment * monthsSinceDisbursement);
+    try {
+      const totalAmount = loan.amount * (1 + loan.interest_rate/100);
+      const monthlyPayment = loan.monthly_payment || (totalAmount / loan.duration_months);
+      
+      // Calculate paid amount based on monthly payment schedule
+      let paidAmount = 0;
+      if (loan.disbursed_at) {
+        const monthsSinceDisbursement = Math.floor(
+          (new Date().getTime() - new Date(loan.disbursed_at).getTime()) / 
+          (1000 * 60 * 60 * 24 * 30)
+        );
+        paidAmount = Math.min(totalAmount, monthlyPayment * monthsSinceDisbursement);
+      }
+      
+      const remainingAmount = Math.max(0, totalAmount - paidAmount);
+      const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
+      
+      return { paidAmount, remainingAmount, progress };
+    } catch (err) {
+      console.error("Error calculating loan metrics:", err);
+      return { paidAmount: 0, remainingAmount: 0, progress: 0 };
     }
-    
-    const remainingAmount = Math.max(0, totalAmount - paidAmount);
-    const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
-    
-    return { paidAmount, remainingAmount, progress };
   };
   
   const formatNextPaymentDate = (loan: Loan) => {
@@ -78,7 +83,7 @@ const ActiveLoansSection: React.FC<ActiveLoansSectionProps> = ({
         </Button>
       </div>
       
-      {activeLoans.length > 0 ? (
+      {activeLoans && activeLoans.length > 0 ? (
         <>
           {activeLoans.map(loan => {
             const { progress, remainingAmount } = calculateLoanMetrics(loan);
