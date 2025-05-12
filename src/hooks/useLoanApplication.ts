@@ -149,7 +149,7 @@ export const useLoanApplication = (sfdId?: string) => {
       
       setIsUploading(true);
       try {
-        // Get client ID
+        // Get client ID first
         const { data: clientData, error: clientError } = await supabase
           .from('sfd_clients')
           .select('id')
@@ -157,7 +157,14 @@ export const useLoanApplication = (sfdId?: string) => {
           .eq('sfd_id', sfdId)
           .single();
 
-        if (clientError) throw clientError;
+        if (clientError) {
+          console.error('Error fetching client:', clientError);
+          throw new Error(`Vous n'êtes pas encore client de cette SFD. Veuillez d'abord vous inscrire.`);
+        }
+        
+        if (!clientData) {
+          throw new Error(`Aucun compte client trouvé. Veuillez vous inscrire auprès de cette SFD d'abord.`);
+        }
         
         // Get selected loan plan to determine interest rate
         const { data: loanPlan, error: loanPlanError } = await supabase
@@ -171,29 +178,33 @@ export const useLoanApplication = (sfdId?: string) => {
         // Calculate monthly payment
         const monthlyInterestRate = loanPlan.interest_rate / 100 / 12;
         const totalMonths = application.duration_months;
-        // Calculate monthly payment using standard amortization formula
         const monthlyPayment = (application.amount * monthlyInterestRate * 
           Math.pow(1 + monthlyInterestRate, totalMonths)) / 
           (Math.pow(1 + monthlyInterestRate, totalMonths) - 1);
 
-        // Create loan record
-        const { data: loan, error: loanError } = await supabase
-          .from('sfd_loans')
-          .insert({
-            client_id: clientData.id,
-            sfd_id: sfdId,
-            amount: application.amount,
-            duration_months: application.duration_months,
-            purpose: application.purpose,
-            loan_plan_id: application.loan_plan_id,
-            interest_rate: loanPlan.interest_rate,
-            monthly_payment: Math.round(monthlyPayment),
-            status: 'pending'
-          })
-          .select()
-          .single();
+        // Create loan record as RPC call to bypass RLS issues
+        const { data: loan, error: loanError } = await supabase.functions
+          .invoke('loan-manager', {
+            body: {
+              action: 'create_loan',
+              data: {
+                client_id: clientData.id,
+                sfd_id: sfdId,
+                amount: application.amount,
+                duration_months: application.duration_months,
+                purpose: application.purpose,
+                loan_plan_id: application.loan_plan_id,
+                interest_rate: loanPlan.interest_rate,
+                monthly_payment: Math.round(monthlyPayment),
+                status: 'pending'
+              }
+            }
+          });
 
-        if (loanError) throw loanError;
+        if (loanError || !loan?.id) {
+          console.error('Error creating loan via function:', loanError);
+          throw new Error('Erreur lors de la création du prêt. Veuillez réessayer.');
+        }
 
         // Upload documents if provided
         if (application.documents?.length) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -13,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { Separator } from '@/components/ui/separator';
+import { useLoanApplication } from '@/hooks/useLoanApplication';
 
 interface LoanPlan {
   id: string;
@@ -125,7 +125,10 @@ const MobileLoanApplicationPage: React.FC = () => {
         .eq('sfd_id', plan.sfd_id)
         .maybeSingle();
         
-      if (clientError) throw clientError;
+      if (clientError) {
+        console.error("Erreur lors de la vérification du client:", clientError);
+        throw new Error("Erreur lors de la vérification de votre compte client");
+      }
       
       if (!clientData) {
         toast({
@@ -137,21 +140,14 @@ const MobileLoanApplicationPage: React.FC = () => {
         return;
       }
       
-      // Créer la demande de prêt
-      const { error: loanError } = await supabase
-        .from('sfd_loans')
-        .insert({
-          client_id: clientData.id,
-          sfd_id: plan.sfd_id,
-          amount: loanAmount,
-          duration_months: duration,
-          interest_rate: plan.interest_rate,
-          monthly_payment: monthlyPayment,
-          purpose: purpose,
-          status: 'pending',
-        });
-        
-      if (loanError) throw loanError;
+      // Créer la demande de prêt via la fonction du hook
+      const { submitApplication } = useLoanApplication(plan.sfd_id);
+      await submitApplication.mutateAsync({
+        amount: loanAmount,
+        duration_months: duration,
+        purpose: purpose,
+        loan_plan_id: plan.id
+      });
       
       toast({
         title: 'Demande envoyée',
@@ -159,11 +155,11 @@ const MobileLoanApplicationPage: React.FC = () => {
       });
       
       navigate('/mobile-flow/my-loans');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Erreur lors de la soumission de la demande de prêt:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible de soumettre votre demande de prêt',
+        description: error.message || 'Impossible de soumettre votre demande de prêt',
         variant: 'destructive',
       });
     } finally {
