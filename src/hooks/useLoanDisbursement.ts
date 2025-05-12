@@ -29,9 +29,11 @@ export function useLoanDisbursement() {
         const { data, error } = await supabase.functions.invoke('loan-manager', {
           body: {
             action: 'disburse_loan',
-            payload: {
-              ...payload,
-              disbursedBy: user.id
+            data: {
+              payload: {
+                ...payload,
+                disbursedBy: user.id
+              }
             }
           }
         });
