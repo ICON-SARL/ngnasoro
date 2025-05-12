@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -13,24 +13,63 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { useClientLoans } from '@/hooks/useClientLoans';
+import { useLoanApplication } from '@/hooks/useLoanApplication';
 import { useAuth } from '@/hooks/useAuth';
+import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+
+// SFD Interface
+interface SFD {
+  id: string;
+  name: string;
+  logo_url?: string;
+}
 
 const MobileLoanApplicationForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { applyForLoan, isUploading } = useClientLoans();
+  const { submitApplication, isUploading } = useLoanApplication();
+  
+  const [sfdList, setSfdList] = useState<SFD[]>([]);
+  const [isLoadingSfds, setIsLoadingSfds] = useState(false);
   
   const [formData, setFormData] = useState({
     sfd_id: '',
     amount: '',
     duration_months: '',
     purpose: '',
-    supporting_documents: [] as string[]
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
+  
+  // Fetch available SFDs
+  useEffect(() => {
+    const fetchSfds = async () => {
+      setIsLoadingSfds(true);
+      try {
+        const { data, error } = await supabase
+          .from('sfds')
+          .select('id, name, logo_url')
+          .eq('status', 'active')
+          .order('name');
+          
+        if (error) throw error;
+        setSfdList(data || []);
+      } catch (error) {
+        console.error('Error fetching SFDs:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la liste des SFDs",
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoadingSfds(false);
+      }
+    };
+    
+    fetchSfds();
+  }, [toast]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -62,24 +101,44 @@ const MobileLoanApplicationForm: React.FC = () => {
       return;
     }
     
+    if (!formData.duration_months) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une durée",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    if (!formData.purpose) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez indiquer l'objet du prêt",
+        variant: "destructive",
+      });
+      return;
+    }
+    
     setIsSubmitting(true);
     
     try {
-      await applyForLoan.mutateAsync({
+      await submitApplication.mutateAsync({
         sfd_id: formData.sfd_id,
         amount: Number(formData.amount),
         duration_months: Number(formData.duration_months),
         purpose: formData.purpose,
-        supporting_documents: formData.supporting_documents
+        loan_plan_id: '1', // Default loan plan - we'll improve this later
+        documents: []
       });
       
       toast({
         title: "Demande envoyée",
-        description: "Votre demande de prêt a été envoyée avec succès",
+        description: "Votre demande de prêt a été envoyée avec succès à la SFD",
       });
       
       navigate('/mobile-flow/my-loans');
     } catch (error: any) {
+      console.error('Loan application error:', error);
       toast({
         title: "Erreur",
         description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
@@ -90,28 +149,22 @@ const MobileLoanApplicationForm: React.FC = () => {
     }
   };
   
-  // Liste fictive des SFDs disponibles
-  const sfdsList = [
-    { id: "sfd1", name: "Microfinance Bamako" },
-    { id: "sfd2", name: "SFD Primaire" },
-    { id: "sfd3", name: "Caisse Rurale" }
-  ];
-  
   return (
     <Card className="border-0 shadow-sm">
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1">SFD</label>
+            <label className="block text-sm font-medium mb-1">SFD *</label>
             <Select
               value={formData.sfd_id}
               onValueChange={(value) => handleSelectChange('sfd_id', value)}
+              disabled={isLoadingSfds}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Sélectionner une SFD" />
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder={isLoadingSfds ? "Chargement..." : "Sélectionner une SFD"} />
               </SelectTrigger>
               <SelectContent>
-                {sfdsList.map((sfd) => (
+                {sfdList.map((sfd) => (
                   <SelectItem key={sfd.id} value={sfd.id}>
                     {sfd.name}
                   </SelectItem>
@@ -121,18 +174,20 @@ const MobileLoanApplicationForm: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Montant (FCFA)</label>
+            <label className="block text-sm font-medium mb-1">Montant (FCFA) *</label>
             <Input
               type="number"
               name="amount"
               value={formData.amount}
               onChange={handleInputChange}
               placeholder="Exemple: 50000"
+              min="10000"
             />
+            <p className="text-xs text-gray-500 mt-1">Minimum: 10,000 FCFA</p>
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Durée (mois)</label>
+            <label className="block text-sm font-medium mb-1">Durée (mois) *</label>
             <Select
               value={formData.duration_months}
               onValueChange={(value) => handleSelectChange('duration_months', value)}
@@ -151,7 +206,7 @@ const MobileLoanApplicationForm: React.FC = () => {
           </div>
           
           <div>
-            <label className="block text-sm font-medium mb-1">Objet du prêt</label>
+            <label className="block text-sm font-medium mb-1">Objet du prêt *</label>
             <Textarea
               name="purpose"
               value={formData.purpose}
@@ -167,12 +222,9 @@ const MobileLoanApplicationForm: React.FC = () => {
               className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
               disabled={isSubmitting || isUploading}
             >
-              {isSubmitting ? (
+              {isSubmitting || isUploading ? (
                 <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
+                  <Loader2 className="animate-spin mr-2 h-4 w-4" />
                   Traitement en cours...
                 </span>
               ) : (

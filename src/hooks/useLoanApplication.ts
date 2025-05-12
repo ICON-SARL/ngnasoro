@@ -12,6 +12,7 @@ export type LoanApplication = {
   duration_months: number;
   purpose: string;
   loan_plan_id: string;
+  sfd_id: string;
   documents?: {
     type: LoanDocumentType;
     file: File;
@@ -62,86 +63,6 @@ export const useLoanApplication = (sfdId?: string) => {
     return publicUrl;
   };
 
-  // Check loan status and update account if approved
-  const checkLoanStatus = async (loanId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('sfd_loans')
-        .select('*')
-        .eq('id', loanId)
-        .single();
-        
-      if (error) throw error;
-      
-      // If the loan is approved, credit the account
-      if (data && data.status === 'approved') {
-        await creditClientAccount(data.client_id, data.sfd_id, data.amount, data.id);
-      }
-      
-      return data;
-    } catch (error) {
-      console.error('Error checking loan status:', error);
-      throw error;
-    }
-  };
-
-  // Credit client account when loan is approved
-  const creditClientAccount = async (clientId: string, sfdId: string, amount: number, loanId: string) => {
-    try {
-      // Fetch the user_id of the client
-      const { data: clientData, error: clientError } = await supabase
-        .from('sfd_clients')
-        .select('user_id')
-        .eq('id', clientId)
-        .single();
-        
-      if (clientError) throw clientError;
-      
-      // Create a transaction for the loan disbursement
-      const { data: transactionData, error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: clientData.user_id,
-          sfd_id: sfdId,
-          type: 'loan_disbursement',
-          amount: amount,
-          status: 'success',
-          name: 'Décaissement de prêt',
-          description: `Prêt approuvé et montant crédité sur votre compte`,
-          reference_id: loanId
-        })
-        .select();
-        
-      if (transactionError) throw transactionError;
-      
-      // Update loan status to indicate disbursement
-      const { error: updateError } = await supabase
-        .from('sfd_loans')
-        .update({
-          disbursement_status: 'completed',
-          disbursed_at: new Date().toISOString(),
-          status: 'active'
-        })
-        .eq('id', loanId);
-        
-      if (updateError) throw updateError;
-      
-      // Create a loan activity record
-      await supabase
-        .from('loan_activities')
-        .insert({
-          loan_id: loanId,
-          activity_type: 'disbursement',
-          description: `Prêt disbursé pour un montant de ${amount.toLocaleString()} FCFA`
-        });
-        
-      return true;
-    } catch (error) {
-      console.error('Error crediting client account:', error);
-      throw error;
-    }
-  };
-
   // Submit loan application
   const submitApplication = useMutation({
     mutationFn: async (application: LoanApplication) => {
@@ -154,16 +75,17 @@ export const useLoanApplication = (sfdId?: string) => {
           .from('sfd_clients')
           .select('id')
           .eq('user_id', user.id)
-          .eq('sfd_id', sfdId)
-          .single();
+          .eq('sfd_id', application.sfd_id)
+          .maybeSingle();
 
         if (clientError) {
           console.error('Error fetching client:', clientError);
-          throw new Error(`Vous n'êtes pas encore client de cette SFD. Veuillez d'abord vous inscrire.`);
+          throw new Error(`Erreur lors de la récupération des informations client: ${clientError.message}`);
         }
         
         if (!clientData) {
-          throw new Error(`Aucun compte client trouvé. Veuillez vous inscrire auprès de cette SFD d'abord.`);
+          // If no client record exists, create an adhesion request
+          throw new Error(`Vous n'êtes pas encore client de cette SFD. Veuillez d'abord soumettre une demande d'adhésion.`);
         }
         
         // Get selected loan plan to determine interest rate
@@ -173,37 +95,47 @@ export const useLoanApplication = (sfdId?: string) => {
           .eq('id', application.loan_plan_id)
           .single();
           
-        if (loanPlanError) throw loanPlanError;
+        if (loanPlanError) {
+          // If no specific loan plan, use default values
+          console.warn('Using default loan plan values:', loanPlanError);
+        }
+        
+        // Use loan plan rates or defaults
+        const interestRate = loanPlan?.interest_rate || 5.5;
         
         // Calculate monthly payment
-        const monthlyInterestRate = loanPlan.interest_rate / 100 / 12;
+        const monthlyInterestRate = interestRate / 100 / 12;
         const totalMonths = application.duration_months;
         const monthlyPayment = (application.amount * monthlyInterestRate * 
           Math.pow(1 + monthlyInterestRate, totalMonths)) / 
           (Math.pow(1 + monthlyInterestRate, totalMonths) - 1);
 
-        // Create loan record as RPC call to bypass RLS issues
-        const { data: loan, error: loanError } = await supabase.functions
+        // Create loan record via edge function to bypass RLS
+        const { data: loan, error: functionError } = await supabase.functions
           .invoke('loan-manager', {
             body: {
               action: 'create_loan',
               data: {
                 client_id: clientData.id,
-                sfd_id: sfdId,
+                sfd_id: application.sfd_id,
                 amount: application.amount,
                 duration_months: application.duration_months,
                 purpose: application.purpose,
                 loan_plan_id: application.loan_plan_id,
-                interest_rate: loanPlan.interest_rate,
+                interest_rate: interestRate,
                 monthly_payment: Math.round(monthlyPayment),
                 status: 'pending'
               }
             }
           });
 
-        if (loanError || !loan?.id) {
-          console.error('Error creating loan via function:', loanError);
+        if (functionError) {
+          console.error('Error creating loan via function:', functionError);
           throw new Error('Erreur lors de la création du prêt. Veuillez réessayer.');
+        }
+        
+        if (!loan?.id) {
+          throw new Error('Erreur lors de la création du prêt. Aucun identifiant retourné.');
         }
 
         // Upload documents if provided
@@ -223,16 +155,15 @@ export const useLoanApplication = (sfdId?: string) => {
         }
 
         return loan;
+      } catch (error: any) {
+        console.error('Error submitting loan application:', error);
+        throw error;
       } finally {
         setIsUploading(false);
       }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-loans'] });
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande de prêt a été soumise avec succès",
-      });
     },
     onError: (error: any) => {
       toast({
@@ -247,8 +178,6 @@ export const useLoanApplication = (sfdId?: string) => {
     loanPlans: loanPlansQuery.data || [],
     isLoadingPlans: loanPlansQuery.isLoading,
     isUploading,
-    submitApplication,
-    checkLoanStatus,
-    creditClientAccount
+    submitApplication
   };
 };
