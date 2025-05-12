@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
 import { useClientLoans } from '@/hooks/useClientLoans';
-import { LoanApplication } from '@/types/sfdClients';
+import { LoanApplication } from '@/hooks/useLoanApplication';
 
 const ClientLoanApplication: React.FC = () => {
   const navigate = useNavigate();
@@ -23,7 +23,8 @@ const ClientLoanApplication: React.FC = () => {
     amount: 0,
     duration_months: 0,
     purpose: '',
-    supporting_documents: []
+    loan_plan_id: '1', // Default loan plan id
+    documents: []
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);

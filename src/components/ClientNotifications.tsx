@@ -59,7 +59,7 @@ const NotificationItem = ({ notification, markAsRead }: { notification: any, mar
 };
 
 const ClientNotifications = () => {
-  const { notifications, notificationsLoading, markNotificationAsRead, refetchNotifications } = useClientLoans();
+  const { notifications = [], notificationsLoading, markNotificationAsRead, refetchNotifications } = useClientLoans();
   
   const unreadNotifications = notifications.filter(notification => !notification.read);
   

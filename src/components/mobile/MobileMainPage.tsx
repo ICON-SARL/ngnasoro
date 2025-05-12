@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import MobileMenu from './MobileMenu';
@@ -19,7 +20,7 @@ const MobileMainPage: React.FC = () => {
   const { user } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   
-  const { loans, isLoading: loansLoading, refetchLoans } = useClientLoans();
+  const { loans = [], isLoading: loansLoading, refetch: refetchLoans } = useClientLoans();
   
   const { transactions, isLoading: transactionsLoading, fetchTransactions } = useTransactions(user?.id);
   

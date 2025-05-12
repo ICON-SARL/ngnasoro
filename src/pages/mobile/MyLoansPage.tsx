@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 const MyLoansPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { loans, isLoading } = useClientLoans();
+  const { loans = [], isLoading } = useClientLoans();
   
   // Redirect if user is not authenticated
   React.useEffect(() => {
@@ -43,6 +43,8 @@ const MyLoansPage: React.FC = () => {
         return <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-300">En attente</Badge>;
       case 'approved':
         return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Approuvé</Badge>;
+      case 'disbursed':
+        return <Badge variant="outline" className="bg-blue-100 text-blue-800 border-blue-300">Décaissé</Badge>;
       case 'active':
         return <Badge variant="outline" className="bg-green-100 text-green-800 border-green-300">Actif</Badge>;
       case 'rejected':

@@ -13,9 +13,9 @@ import MobileNavigation from './MobileNavigation';
 const HomeLoanPage = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { transactions, isLoading } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
+  const { transactions = [], isLoading } = useTransactions(user?.id || '', user?.id ? 'default-sfd' : '');
   
-  const formattedTransactions: TransactionListItem[] = transactions.map(transaction => ({
+  const formattedTransactions: TransactionListItem[] = (transactions || []).map(transaction => ({
     id: transaction.id,
     name: transaction.name,
     type: transaction.type,

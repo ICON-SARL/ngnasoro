@@ -16,8 +16,18 @@ export interface Loan {
   purpose: string;
   sfd_id: string;
   sfd_name?: string;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected';
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'disbursed';
   subsidy_amount?: number;
+}
+
+interface LoanNotification {
+  id: string;
+  title: string;
+  message: string;
+  created_at: string;
+  read: boolean;
+  type: string;
+  action_link?: string;
 }
 
 export function useClientLoans() {
@@ -25,7 +35,7 @@ export function useClientLoans() {
   const queryClient = useQueryClient();
   
   // Fetch all loans for the client
-  const { data: loans, isLoading, error, refetch } = useQuery({
+  const { data: loans = [], isLoading, error, refetch } = useQuery({
     queryKey: ['client-loans', user?.id],
     queryFn: async () => {
       if (!user?.id) return [];
@@ -83,12 +93,52 @@ export function useClientLoans() {
       queryClient.invalidateQueries({ queryKey: ['client-loans'] });
     }
   });
+
+  // Mock notifications data - in a real app, this would come from the database
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['client-notifications', user?.id],
+    queryFn: async () => {
+      // In a real implementation, this would fetch notifications from Supabase
+      // For now, we'll return mock data based on the loans
+      if (!loans || loans.length === 0) return [];
+
+      return loans.map(loan => ({
+        id: `notification-${loan.id}`,
+        title: `Prêt ${loan.status === 'approved' ? 'approuvé' : loan.status === 'rejected' ? 'rejeté' : 'mis à jour'}`,
+        message: `Votre demande de prêt de ${loan.amount} FCFA a été ${loan.status === 'approved' ? 'approuvée' : loan.status === 'rejected' ? 'rejetée' : 'mise à jour'}.`,
+        created_at: loan.created_at,
+        read: false,
+        type: `loan_${loan.status}`,
+        action_link: `/mobile-flow/loan-details/${loan.id}`
+      })) as LoanNotification[];
+    },
+    enabled: !!user?.id && loans.length > 0,
+  });
+  
+  // Mark notification as read
+  const markNotificationAsRead = useMutation({
+    mutationFn: async (notificationId: string) => {
+      // In a real implementation, update the notification in the database
+      console.log(`Marking notification ${notificationId} as read`);
+      return notificationId;
+    }
+  });
+
+  const refetchLoans = () => refetch();
+  const refetchNotifications = () => queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
+
+  const isUploading = false; // This would be set true when files are being uploaded
   
   return {
     loans,
     isLoading,
     error,
-    refetch,
-    applyForLoan
+    refetch: refetchLoans,
+    applyForLoan,
+    notifications,
+    notificationsLoading,
+    markNotificationAsRead,
+    refetchNotifications,
+    isUploading
   };
 }
