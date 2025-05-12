@@ -31,18 +31,22 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
     subsidizedOnly
   });
 
-  const handleApplyForLoan = (planId: string) => {
-    if (!activeSfdId) {
+  const handleApplyForLoan = (plan: LoanPlan) => {
+    if (!activeSfdId && !plan.sfd_id) {
       toast({
         title: "Erreur",
-        description: "Vous devez être connecté à une SFD pour faire une demande de prêt",
+        description: "Impossible de déterminer la SFD pour ce plan de prêt",
         variant: "destructive"
       });
       return;
     }
     
+    // Naviguer vers la page de demande de prêt en passant le plan et la SFD
     navigate('/mobile-flow/loan-application', { 
-      state: { planId }
+      state: { 
+        planId: plan.id, 
+        sfdId: plan.sfd_id || activeSfdId 
+      }
     });
   };
 
@@ -86,13 +90,13 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
   }
 
   // Filter plans based on subsidized status and SFD ID
-  const filteredPlans = plans.filter(plan => {
+  const filteredPlans = Array.isArray(plans) ? plans.filter(plan => {
     // Check if it matches the SFD filter (if provided, otherwise use activeSfdId)
     const effectiveSfdId = sfdId || activeSfdId;
     const matchesSfd = effectiveSfdId ? plan.sfd_id === effectiveSfdId : true;
     
     // Check if it matches the subsidy filter
-    const isSubsidized = plan.name.toLowerCase().includes('subvention') || 
+    const isSubsidized = plan.name?.toLowerCase().includes('subvention') || 
                         plan.description?.toLowerCase().includes('subvention');
     
     const matchesSubsidyFilter = subsidizedOnly ? isSubsidized : !isSubsidized;
@@ -104,7 +108,7 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
     });
     
     return matchesSfd && matchesSubsidyFilter;
-  });
+  }) : [];
   
   console.log('Filtered plans:', filteredPlans.length);
   
@@ -149,7 +153,7 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
             <div className="grid grid-cols-2 gap-x-4 gap-y-2 mt-3 text-sm">
               <div>
                 <p className="text-gray-500 text-xs">Montant:</p>
-                <p>{plan.min_amount.toLocaleString()} - {plan.max_amount.toLocaleString()} FCFA</p>
+                <p>{plan.min_amount?.toLocaleString()} - {plan.max_amount?.toLocaleString()} FCFA</p>
               </div>
               <div>
                 <p className="text-gray-500 text-xs">Durée:</p>
@@ -162,7 +166,7 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button 
-                      onClick={() => handleApplyForLoan(plan.id)}
+                      onClick={() => handleApplyForLoan(plan)}
                       className="bg-[#0D6A51] hover:bg-[#0D6A51]/90"
                     >
                       Faire une demande

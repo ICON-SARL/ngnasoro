@@ -12,13 +12,12 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useLoanApplication } from '@/hooks/useLoanApplication';
 import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
-// SFD Interface
 interface SFD {
   id: string;
   name: string;
@@ -28,48 +27,123 @@ interface SFD {
 const MobileLoanApplicationForm: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
+  const location = useLocation();
   const { user } = useAuth();
   const { submitApplication, isUploading } = useLoanApplication();
   
+  // Récupérer les paramètres de l'état
+  const planId = location.state?.planId;
+  const sfdId = location.state?.sfdId;
+  
   const [sfdList, setSfdList] = useState<SFD[]>([]);
+  const [selectedSfd, setSelectedSfd] = useState<SFD | null>(null);
   const [isLoadingSfds, setIsLoadingSfds] = useState(false);
+  const [isLoadingPlanInfo, setIsLoadingPlanInfo] = useState(false);
   
   const [formData, setFormData] = useState({
-    sfd_id: '',
+    sfd_id: sfdId || '',
     amount: '',
     duration_months: '',
     purpose: '',
+    loan_plan_id: planId || '1', // Utiliser le plan ID passé ou valeur par défaut
   });
   
   const [isSubmitting, setIsSubmitting] = useState(false);
-  
-  // Fetch available SFDs
+
   useEffect(() => {
-    const fetchSfds = async () => {
-      setIsLoadingSfds(true);
-      try {
-        const { data, error } = await supabase
-          .from('sfds')
-          .select('id, name, logo_url')
-          .eq('status', 'active')
-          .order('name');
+    // Si nous avons un planId, récupérer les informations du plan (y compris la SFD)
+    const fetchPlanInfo = async () => {
+      if (planId) {
+        setIsLoadingPlanInfo(true);
+        try {
+          const { data: planData, error: planError } = await supabase
+            .from('sfd_loan_plans')
+            .select(`
+              *,
+              sfds:sfd_id (
+                id,
+                name,
+                logo_url
+              )
+            `)
+            .eq('id', planId)
+            .single();
+            
+          if (planError) throw planError;
           
-        if (error) throw error;
-        setSfdList(data || []);
-      } catch (error) {
-        console.error('Error fetching SFDs:', error);
-        toast({
-          title: "Erreur",
-          description: "Impossible de charger la liste des SFDs",
-          variant: "destructive",
-        });
-      } finally {
-        setIsLoadingSfds(false);
+          if (planData && planData.sfds) {
+            // Définir la SFD associée au plan
+            setSelectedSfd(planData.sfds);
+            setFormData(prev => ({ 
+              ...prev, 
+              sfd_id: planData.sfds.id,
+              min_amount: planData.min_amount,
+              max_amount: planData.max_amount,
+              min_duration: planData.min_duration,
+              max_duration: planData.max_duration
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching loan plan:', error);
+        } finally {
+          setIsLoadingPlanInfo(false);
+        }
+      }
+      // Si nous avons un sfdId mais pas de planId, récupérer les informations de la SFD
+      else if (sfdId) {
+        setIsLoadingPlanInfo(true);
+        try {
+          const { data: sfdData, error: sfdError } = await supabase
+            .from('sfds')
+            .select('id, name, logo_url')
+            .eq('id', sfdId)
+            .single();
+            
+          if (sfdError) throw sfdError;
+          
+          if (sfdData) {
+            setSelectedSfd(sfdData);
+          }
+        } catch (error) {
+          console.error('Error fetching SFD info:', error);
+        } finally {
+          setIsLoadingPlanInfo(false);
+        }
       }
     };
     
-    fetchSfds();
-  }, [toast]);
+    fetchPlanInfo();
+  }, [planId, sfdId]);
+  
+  // Fetch available SFDs only if no plan or SFD is specified
+  useEffect(() => {
+    if (!sfdId && !planId) {
+      const fetchSfds = async () => {
+        setIsLoadingSfds(true);
+        try {
+          const { data, error } = await supabase
+            .from('sfds')
+            .select('id, name, logo_url')
+            .eq('status', 'active')
+            .order('name');
+            
+          if (error) throw error;
+          setSfdList(data || []);
+        } catch (error) {
+          console.error('Error fetching SFDs:', error);
+          toast({
+            title: "Erreur",
+            description: "Impossible de charger la liste des SFDs",
+            variant: "destructive",
+          });
+        } finally {
+          setIsLoadingSfds(false);
+        }
+      };
+      
+      fetchSfds();
+    }
+  }, [toast, sfdId, planId]);
   
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -78,6 +152,12 @@ const MobileLoanApplicationForm: React.FC = () => {
   
   const handleSelectChange = (name: string, value: string) => {
     setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Si le champ est sfd_id, mettre à jour le SFD sélectionné
+    if (name === 'sfd_id') {
+      const selected = sfdList.find(sfd => sfd.id === value);
+      if (selected) setSelectedSfd(selected);
+    }
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -127,7 +207,7 @@ const MobileLoanApplicationForm: React.FC = () => {
         amount: Number(formData.amount),
         duration_months: Number(formData.duration_months),
         purpose: formData.purpose,
-        loan_plan_id: '1', // Default loan plan - we'll improve this later
+        loan_plan_id: formData.loan_plan_id,
         documents: []
       });
       
@@ -153,25 +233,43 @@ const MobileLoanApplicationForm: React.FC = () => {
     <Card className="border-0 shadow-sm">
       <CardContent className="p-4">
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1">SFD *</label>
-            <Select
-              value={formData.sfd_id}
-              onValueChange={(value) => handleSelectChange('sfd_id', value)}
-              disabled={isLoadingSfds}
-            >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder={isLoadingSfds ? "Chargement..." : "Sélectionner une SFD"} />
-              </SelectTrigger>
-              <SelectContent>
-                {sfdList.map((sfd) => (
-                  <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          {/* N'afficher le sélecteur de SFD que si aucun plan/SFD n'est prédéfini */}
+          {!selectedSfd ? (
+            <div>
+              <label className="block text-sm font-medium mb-1">SFD *</label>
+              <Select
+                value={formData.sfd_id}
+                onValueChange={(value) => handleSelectChange('sfd_id', value)}
+                disabled={isLoadingSfds}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={isLoadingSfds ? "Chargement..." : "Sélectionner une SFD"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {sfdList.map((sfd) => (
+                    <SelectItem key={sfd.id} value={sfd.id}>
+                      {sfd.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          ) : (
+            <div>
+              <label className="block text-sm font-medium mb-1">SFD</label>
+              <div className="flex items-center p-2 border rounded bg-gray-50">
+                {selectedSfd.logo_url && (
+                  <img 
+                    src={selectedSfd.logo_url} 
+                    alt={selectedSfd.name} 
+                    className="h-6 w-6 mr-2 object-contain"
+                  />
+                )}
+                <span>{selectedSfd.name}</span>
+              </div>
+              <input type="hidden" name="sfd_id" value={formData.sfd_id} />
+            </div>
+          )}
           
           <div>
             <label className="block text-sm font-medium mb-1">Montant (FCFA) *</label>
