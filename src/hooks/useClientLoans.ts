@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LoanApplication } from './useLoanApplication';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Loan {
   id: string;
@@ -38,6 +39,7 @@ interface LoanNotification {
 export function useClientLoans() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   
   // Fetch all loans for the client
   const { data: loans = [], isLoading, error, refetch } = useQuery({
@@ -60,7 +62,28 @@ export function useClientLoans() {
         }
         
         if (!clientsData || clientsData.length === 0) {
-          console.log("No client records found for user");
+          console.log("No client records found for user - checking direct loan data");
+          
+          // As a fallback, try querying loans directly using user's ID in client_id
+          const { data: directLoans, error: directError } = await supabase
+            .from('sfd_loans')
+            .select(`
+              *,
+              sfds:sfd_id (name, logo_url)
+            `)
+            .eq('client_id', user.id)
+            .order('created_at', { ascending: false });
+            
+          if (directError) {
+            console.error("Direct loans query error:", directError);
+          } else if (directLoans && directLoans.length > 0) {
+            console.log("Found loans directly by user ID:", directLoans.length);
+            return directLoans.map(loan => ({
+              ...loan,
+              sfd_name: loan.sfds?.name || 'SFD'
+            })) as Loan[];
+          }
+          
           return [];
         }
         
@@ -105,15 +128,34 @@ export function useClientLoans() {
       if (!user?.id) throw new Error('User not authenticated');
       
       // Use the loan-manager edge function
-      return await supabase.functions.invoke('loan-manager', {
+      const { data, error } = await supabase.functions.invoke('loan-manager', {
         body: {
           action: 'create_loan',
           data: application
         }
       });
+      
+      if (error) {
+        console.error("Error in loan application:", error);
+        throw new Error(error.message || "Failed to create loan application");
+      }
+      
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-loans'] });
+      
+      toast({
+        title: "Demande envoyée",
+        description: "Votre demande de prêt a été envoyée avec succès"
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
+        variant: "destructive"
+      });
     }
   });
 

@@ -1,372 +1,357 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Slider } from '@/components/ui/slider';
-import { useAuth } from '@/hooks/useAuth';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Loader2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useLoanApplication } from '@/hooks/useLoanApplication';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Card, CardContent } from '@/components/ui/card';
 
 interface MobileLoanApplicationFormProps {
-  planId?: string;
   sfdId?: string;
+  planId?: string;
 }
 
-const MobileLoanApplicationForm: React.FC<MobileLoanApplicationFormProps> = ({ 
-  planId,
-  sfdId
-}) => {
+const MobileLoanApplicationForm: React.FC<MobileLoanApplicationFormProps> = ({ sfdId: initialSfdId, planId: initialPlanId }) => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const { user } = useAuth();
   const { toast } = useToast();
+  const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [amount, setAmount] = useState(100000);
-  const [duration, setDuration] = useState(6);
-  const [purpose, setPurpose] = useState('');
-  const [selectedSfdId, setSelectedSfdId] = useState<string>(sfdId || '');
-  const [sfds, setSfds] = useState<any[]>([]);
-  const [minAmount, setMinAmount] = useState(10000);
-  const [maxAmount, setMaxAmount] = useState(5000000);
-  const [interestRate, setInterestRate] = useState(5.5);
-  const [clientId, setClientId] = useState<string | null>(null);
-  const [loanPlan, setLoanPlan] = useState<any | null>(null);
+  const [sfdId, setSfdId] = useState<string>(initialSfdId || '');
+  const [sfdList, setSfdList] = useState<any[]>([]);
+  const [loading, setLoading] = useState<boolean>(false);
   
-  // Use planId and sfdId from props or from location state
-  const routePlanId = planId || location.state?.planId;
-  const routeSfdId = sfdId || location.state?.sfdId;
+  const [formData, setFormData] = useState({
+    amount: 0,
+    duration_months: 0,
+    purpose: '',
+    loan_plan_id: initialPlanId || '',
+  });
 
-  // Fetch loan plan if we have a planId
+  const { loanPlans, isLoadingPlans, submitApplication, isUploading } = useLoanApplication(sfdId);
+  
+  // Fetch available SFDs if not provided
   useEffect(() => {
-    if (routePlanId) {
-      fetchLoanPlan(routePlanId);
-    }
-  }, [routePlanId]);
-
-  // Fetch SFDs for selection dropdown if not provided sfdId
-  useEffect(() => {
-    if (!routeSfdId) {
-      fetchSfds();
-    } else {
-      setSelectedSfdId(routeSfdId);
-    }
-    fetchClientId();
-  }, [routeSfdId]);
-
-  // Set loan amount constraints based on plan
-  useEffect(() => {
-    if (loanPlan) {
-      setMinAmount(loanPlan.min_amount || 10000);
-      setMaxAmount(loanPlan.max_amount || 5000000);
-      setInterestRate(loanPlan.interest_rate || 5.5);
-      setAmount(Math.max(minAmount, Math.min(amount, maxAmount)));
-    }
-  }, [loanPlan, minAmount, maxAmount]);
-
-  const fetchLoanPlan = async (planId: string) => {
-    try {
-      const { data, error } = await supabase
-        .from('sfd_loan_plans')
-        .select('*, sfds:sfd_id(id, name)')
-        .eq('id', planId)
-        .single();
-
-      if (error) throw error;
-
-      if (data) {
-        console.log("Loaded loan plan:", data);
-        setLoanPlan(data);
-        // If we have a plan, we also know the SFD
-        if (data.sfd_id) {
-          setSelectedSfdId(data.sfd_id);
-        }
+    const fetchSfds = async () => {
+      try {
+        setLoading(true);
+        const { data, error } = await supabase
+          .from('sfds')
+          .select('id, name')
+          .eq('status', 'active');
+          
+        if (error) throw error;
+        setSfdList(data || []);
+      } catch (error) {
+        console.error('Error fetching SFDs:', error);
+        toast({
+          title: "Erreur",
+          description: "Impossible de charger la liste des SFDs",
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching loan plan:', err);
-      toast({
-        title: 'Erreur',
-        description: 'Impossible de charger les détails du plan de prêt',
-        variant: 'destructive',
-      });
-    }
-  };
-
-  const fetchSfds = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('sfds')
-        .select('id, name')
-        .eq('status', 'active')
-        .order('name');
-
-      if (error) throw error;
-      setSfds(data || []);
-    } catch (err) {
-      console.error('Error fetching SFDs:', err);
-    }
-  };
-
-  const fetchClientId = async () => {
-    if (!user?.id) return;
+    };
     
-    try {
-      // Find the client ID for the current user
-      const { data, error } = await supabase
-        .from('sfd_clients')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('sfd_id', selectedSfdId)
-        .single();
+    if (!initialSfdId) {
+      fetchSfds();
+    }
+  }, [initialSfdId, toast]);
 
-      if (error) {
-        console.log('Client not found for this SFD and user, might need to create one');
-        return;
+  // If we have a selected plan, update form with its details
+  useEffect(() => {
+    if (initialPlanId && loanPlans.length > 0) {
+      const selectedPlan = loanPlans.find(plan => plan.id === initialPlanId);
+      if (selectedPlan) {
+        setFormData(prev => ({
+          ...prev,
+          loan_plan_id: selectedPlan.id,
+          purpose: selectedPlan.name || 'Prêt',
+          amount: selectedPlan.min_amount || 0,
+          duration_months: selectedPlan.min_duration || 0,
+        }));
       }
+    }
+  }, [initialPlanId, loanPlans]);
 
-      if (data) {
-        setClientId(data.id);
-      }
-    } catch (err) {
-      console.error('Error fetching client ID:', err);
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: Number(value) }));
+  };
+  
+  const handleSelectChange = (name: string, value: string) => {
+    if (name === 'sfdId') {
+      setSfdId(value);
+    } else if (name === 'loan_plan_id') {
+      const selectedPlan = loanPlans.find(plan => plan.id === value);
+      setFormData(prev => ({ 
+        ...prev, 
+        [name]: value,
+        purpose: selectedPlan?.name || prev.purpose // Set purpose based on plan name
+      }));
+    } else if (name === 'duration_months') {
+      setFormData(prev => ({ ...prev, [name]: Number(value) }));
+    } else {
+      setFormData(prev => ({ ...prev, [name]: value }));
     }
   };
 
-  useEffect(() => {
-    if (selectedSfdId) {
-      fetchClientId();
+  const validateForm = () => {
+    if (!sfdId) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une SFD",
+        variant: "destructive"
+      });
+      return false;
     }
-  }, [selectedSfdId, user?.id]);
-
-  const calculateMonthlyPayment = () => {
-    const monthlyRate = interestRate / 100 / 12;
-    const payment = amount * (monthlyRate * Math.pow(1 + monthlyRate, duration)) /
-                   (Math.pow(1 + monthlyRate, duration) - 1);
-    return isFinite(payment) ? Math.round(payment) : 0;
+    
+    if (!formData.amount || formData.amount <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez entrer un montant valide",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.duration_months || formData.duration_months <= 0) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez sélectionner une durée",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    if (!formData.purpose) {
+      toast({
+        title: "Erreur",
+        description: "Veuillez préciser l'objet du prêt",
+        variant: "destructive"
+      });
+      return false;
+    }
+    
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!selectedSfdId || !purpose) {
-      toast({
-        title: 'Champs requis',
-        description: 'Veuillez remplir tous les champs obligatoires',
-        variant: 'destructive',
+    if (!validateForm()) return;
+    if (!user?.id) {
+      toast({ 
+        title: "Non connecté",
+        description: "Veuillez vous connecter pour soumettre une demande de prêt",
+        variant: "destructive"
       });
-      return;
-    }
-
-    if (!clientId) {
-      toast({
-        title: 'Erreur',
-        description: 'Vous devez d\'abord être client de cette SFD. Veuillez soumettre une demande d\'adhésion.',
-        variant: 'destructive',
-      });
+      navigate('/auth');
       return;
     }
     
     setIsSubmitting(true);
-
+    
     try {
-      console.log("Submitting loan application with:", {
-        client_id: clientId,
-        sfd_id: selectedSfdId,
-        loan_plan_id: routePlanId || null,
-        amount,
-        duration_months: duration,
-        purpose,
-        interest_rate: interestRate,
-        monthly_payment: calculateMonthlyPayment(),
-      });
-
-      // Submit to API directly using edge function
-      const { data, error } = await supabase.functions
-        .invoke('loan-manager', {
-          body: {
-            action: 'create_loan',
-            data: {
-              client_id: clientId,
-              sfd_id: selectedSfdId,
-              loan_plan_id: routePlanId || null,
-              amount,
-              duration_months: duration,
-              purpose,
-              interest_rate: interestRate,
-              monthly_payment: calculateMonthlyPayment(),
-              status: 'pending'
-            }
-          }
-        });
-
-      if (error) {
-        throw new Error(`Error creating loan: ${error.message}`);
+      console.log("Submitting loan application with data:", { ...formData, sfd_id: sfdId });
+      
+      // First, check if user is a client of the SFD
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('sfd_id', sfdId)
+        .maybeSingle();
+      
+      if (clientError) {
+        console.error("Error checking client status:", clientError);
       }
-
-      toast({
-        title: 'Demande envoyée',
-        description: 'Votre demande de prêt a été soumise avec succès',
+      
+      // Call loan-manager edge function directly
+      const { data: loanData, error } = await supabase.functions.invoke('loan-manager', {
+        body: {
+          action: 'create_loan',
+          data: {
+            ...formData,
+            sfd_id: sfdId,
+            client_id: clientData?.id || null // Will be looked up in the edge function if null
+          }
+        }
       });
       
-      navigate('/mobile-flow/my-loans', { replace: true });
-    } catch (error: any) {
-      console.error('Error submitting loan application:', error);
+      if (error || !loanData) {
+        throw new Error(error?.message || "Erreur lors de la création du prêt");
+      }
+      
       toast({
-        title: 'Erreur',
-        description: error.message || 'Une erreur est survenue lors de la soumission de votre demande',
-        variant: 'destructive',
+        title: "Demande envoyée",
+        description: "Votre demande de prêt a été envoyée avec succès",
+      });
+      
+      // Navigate back to loans list
+      navigate('/mobile-flow/loans');
+      
+    } catch (error: any) {
+      console.error("Error submitting loan application:", error);
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
+        variant: "destructive",
       });
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const formatCurrency = (value: number) => {
-    return value.toLocaleString('fr-FR') + ' FCFA';
+  const getDurationOptions = () => {
+    if (formData.loan_plan_id && loanPlans.length > 0) {
+      const selectedPlan = loanPlans.find(plan => plan.id === formData.loan_plan_id);
+      if (selectedPlan) {
+        const options = [];
+        const min = selectedPlan.min_duration || 1;
+        const max = selectedPlan.max_duration || 36;
+        
+        for (let i = min; i <= max; i += (i < 12 ? 3 : 6)) {
+          options.push(i);
+        }
+        
+        // Ensure max duration is included
+        if (!options.includes(max)) {
+          options.push(max);
+        }
+        
+        return options;
+      }
+    }
+    
+    // Default options
+    return [3, 6, 12, 24, 36];
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6">
-      {/* Only show SFD selection if no loan plan is selected */}
-      {!routePlanId && !routeSfdId && (
-        <div className="space-y-2">
-          <Label htmlFor="sfd">Institution de microfinance (SFD)</Label>
-          <Select
-            value={selectedSfdId}
-            onValueChange={setSelectedSfdId}
-            required
-          >
-            <SelectTrigger id="sfd">
-              <SelectValue placeholder="Sélectionnez une SFD" />
-            </SelectTrigger>
-            <SelectContent>
-              {sfds.map((sfd) => (
-                <SelectItem key={sfd.id} value={sfd.id}>
-                  {sfd.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+    <Card className="overflow-hidden border-0 shadow-md">
+      <CardContent className="p-0">
+        <div className="bg-white p-4">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {!initialSfdId && (
+              <div>
+                <label className="block text-sm font-medium mb-1">SFD</label>
+                <Select 
+                  value={sfdId} 
+                  onValueChange={(value) => handleSelectChange('sfdId', value)}
+                  disabled={loading}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner une SFD" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {sfdList.map((sfd) => (
+                      <SelectItem key={sfd.id} value={sfd.id}>
+                        {sfd.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {sfdId && !isLoadingPlans && loanPlans.length > 0 && (
+              <div>
+                <label className="block text-sm font-medium mb-1">Plan de prêt</label>
+                <Select 
+                  value={formData.loan_plan_id} 
+                  onValueChange={(value) => handleSelectChange('loan_plan_id', value)}
+                  disabled={!!initialPlanId}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner un plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {loanPlans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - {plan.min_amount.toLocaleString()} à {plan.max_amount.toLocaleString()} FCFA
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Montant (FCFA)</label>
+              <Input
+                type="number"
+                name="amount"
+                value={formData.amount || ''}
+                onChange={handleNumberChange}
+                placeholder="Exemple: 50000"
+                disabled={isLoadingPlans}
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Durée (mois)</label>
+              <Select
+                value={formData.duration_months ? String(formData.duration_months) : ''}
+                onValueChange={(value) => handleSelectChange('duration_months', value)}
+                disabled={isLoadingPlans}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Sélectionner une durée" />
+                </SelectTrigger>
+                <SelectContent>
+                  {getDurationOptions().map((duration) => (
+                    <SelectItem key={duration} value={String(duration)}>
+                      {duration} mois
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium mb-1">Objet du prêt</label>
+              <Textarea
+                name="purpose"
+                value={formData.purpose}
+                onChange={handleInputChange}
+                placeholder="Pourquoi avez-vous besoin de ce prêt?"
+                rows={3}
+                disabled={isLoadingPlans}
+              />
+            </div>
+            
+            <div className="pt-4">
+              <Button
+                type="submit"
+                className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
+                disabled={isSubmitting || isUploading || isLoadingPlans}
+              >
+                {isSubmitting ? (
+                  <span className="flex items-center">
+                    <Loader2 className="animate-spin mr-2 h-4 w-4" />
+                    Traitement en cours...
+                  </span>
+                ) : (
+                  "Soumettre la demande"
+                )}
+              </Button>
+            </div>
+          </form>
         </div>
-      )}
-
-      {/* Display loan plan name if one is selected */}
-      {loanPlan && (
-        <div className="bg-green-50 p-3 rounded-lg border border-green-200 mb-2">
-          <p className="text-sm font-medium">Plan de prêt: {loanPlan.name}</p>
-          <p className="text-xs text-gray-500">
-            Taux: {loanPlan.interest_rate}% - Montant: {loanPlan.min_amount.toLocaleString()} à {loanPlan.max_amount.toLocaleString()} FCFA
-          </p>
-        </div>
-      )}
-
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex justify-between">
-            <Label htmlFor="amount">Montant du prêt</Label>
-            <span className="text-sm font-medium">{formatCurrency(amount)}</span>
-          </div>
-          <Slider
-            id="amount"
-            min={minAmount}
-            max={maxAmount}
-            step={1000}
-            value={[amount]}
-            onValueChange={(values) => setAmount(values[0])}
-          />
-          <div className="flex justify-between text-xs text-gray-500">
-            <span>{formatCurrency(minAmount)}</span>
-            <span>{formatCurrency(maxAmount)}</span>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="duration">Durée du prêt (mois)</Label>
-          <Select
-            value={duration.toString()}
-            onValueChange={(value) => setDuration(parseInt(value))}
-            required
-          >
-            <SelectTrigger id="duration">
-              <SelectValue placeholder="Sélectionnez une durée" />
-            </SelectTrigger>
-            <SelectContent>
-              {[3, 6, 12, 18, 24, 36].map((months) => (
-                <SelectItem key={months} value={months.toString()}>
-                  {months} mois
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="purpose">Objet du prêt</Label>
-          <Select
-            value={purpose}
-            onValueChange={setPurpose}
-            required
-          >
-            <SelectTrigger id="purpose">
-              <SelectValue placeholder="Sélectionnez l'objet du prêt" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="Commerce">Commerce</SelectItem>
-              <SelectItem value="Agriculture">Agriculture</SelectItem>
-              <SelectItem value="Éducation">Éducation</SelectItem>
-              <SelectItem value="Construction">Construction</SelectItem>
-              <SelectItem value="Fonds de roulement">Fonds de roulement</SelectItem>
-              <SelectItem value="Autre">Autre</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-
-        <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
-          <div className="flex justify-between">
-            <span className="text-sm">Taux d'intérêt</span>
-            <span className="font-medium">{interestRate}%</span>
-          </div>
-          <div className="flex justify-between">
-            <span className="text-sm">Mensualité</span>
-            <span className="font-medium">{formatCurrency(calculateMonthlyPayment())}</span>
-          </div>
-          <div className="flex justify-between pt-2 border-t">
-            <span className="text-sm font-medium">Coût total</span>
-            <span className="font-bold">{formatCurrency(calculateMonthlyPayment() * duration)}</span>
-          </div>
-        </div>
-
-        {!clientId && selectedSfdId && (
-          <div className="bg-amber-50 p-3 rounded-lg border border-amber-200 text-amber-800 text-sm">
-            Vous devez d'abord être client de cette SFD pour soumettre une demande de prêt.
-            <Button 
-              variant="outline"
-              size="sm"
-              className="mt-2 w-full"
-              onClick={() => navigate('/mobile-flow/adhesion', { state: { sfdId: selectedSfdId } })}
-            >
-              Soumettre une demande d'adhésion
-            </Button>
-          </div>
-        )}
-
-        <Button 
-          type="submit" 
-          className="w-full"
-          disabled={isSubmitting || !selectedSfdId || !purpose || !clientId}
-        >
-          {isSubmitting ? (
-            <>
-              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Traitement...
-            </>
-          ) : 'Soumettre la demande'}
-        </Button>
-      </div>
-    </form>
+      </CardContent>
+    </Card>
   );
 };
 
