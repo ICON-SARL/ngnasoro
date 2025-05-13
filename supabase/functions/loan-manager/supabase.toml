@@ -1,4 +1,3 @@
 
 [functions.loan-manager]
 verify_jwt = false
-

@@ -1,0 +1,3 @@
+
+[functions.credit-manager]
+verify_jwt = false
