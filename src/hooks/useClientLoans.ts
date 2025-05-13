@@ -18,6 +18,11 @@ export interface Loan {
   sfd_name?: string;
   status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'disbursed';
   subsidy_amount?: number;
+  next_payment_date?: string;
+  sfds?: {
+    name: string;
+    logo_url: string;
+  };
 }
 
 interface LoanNotification {
@@ -41,43 +46,57 @@ export function useClientLoans() {
       if (!user?.id) return [];
       
       try {
+        console.log("Fetching client loans for user:", user.id);
+        
         // First try to get clients for this user
         const { data: clientsData, error: clientsError } = await supabase
           .from('sfd_clients')
           .select('id, sfd_id')
           .eq('user_id', user.id);
           
-        if (clientsError) throw clientsError;
+        if (clientsError) {
+          console.error("Error fetching client data:", clientsError);
+          return [];
+        }
         
         if (!clientsData || clientsData.length === 0) {
+          console.log("No client records found for user");
           return [];
         }
         
         // Now get loans for each client
         const clientIds = clientsData.map(client => client.id);
+        console.log("Found client IDs:", clientIds);
         
         const { data: loansData, error: loansError } = await supabase
           .from('sfd_loans')
           .select(`
             *,
-            sfds:sfd_id (name)
+            sfds:sfd_id (name, logo_url)
           `)
           .in('client_id', clientIds)
           .order('created_at', { ascending: false });
           
-        if (loansError) throw loansError;
+        if (loansError) {
+          console.error("Error fetching loans:", loansError);
+          return [];
+        }
+        
+        console.log("Loans fetched successfully:", loansData?.length || 0, "loans");
         
         // Format the data to match our interface
-        return loansData.map(loan => ({
+        return (loansData || []).map(loan => ({
           ...loan,
-          sfd_name: loan.sfds?.name
+          sfd_name: loan.sfds?.name || 'SFD'
         })) as Loan[];
       } catch (error) {
-        console.error("Error fetching client loans:", error);
+        console.error("Error in useClientLoans hook:", error);
         return [];
       }
     },
     enabled: !!user?.id,
+    refetchOnWindowFocus: false,
+    refetchOnMount: true
   });
   
   // Apply for a loan
@@ -85,60 +104,77 @@ export function useClientLoans() {
     mutationFn: async (application: LoanApplication) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      // This will use our useLoanApplication hook
-      const { submitApplication } = require('./useLoanApplication').useLoanApplication();
-      return await submitApplication.mutateAsync(application);
+      // Use the loan-manager edge function
+      return await supabase.functions.invoke('loan-manager', {
+        body: {
+          action: 'create_loan',
+          data: application
+        }
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-loans'] });
     }
   });
 
-  // Mock notifications data - in a real app, this would come from the database
+  // Generate notifications based on loans
   const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
     queryKey: ['client-notifications', user?.id],
     queryFn: async () => {
-      // In a real implementation, this would fetch notifications from Supabase
-      // For now, we'll return mock data based on the loans
+      // First try to get actual notifications from the database
+      const { data: actualNotifications, error: notifError } = await supabase
+        .from('admin_notifications')
+        .select('*')
+        .eq('recipient_id', user?.id)
+        .order('created_at', { ascending: false });
+        
+      if (!notifError && actualNotifications && actualNotifications.length > 0) {
+        return actualNotifications;
+      }
+    
+      // If no real notifications exist, generate mock ones based on loans
       if (!loans || !Array.isArray(loans) || loans.length === 0) return [];
 
       return loans.map(loan => ({
         id: `notification-${loan.id}`,
         title: `Prêt ${loan.status === 'approved' ? 'approuvé' : loan.status === 'rejected' ? 'rejeté' : 'mis à jour'}`,
-        message: `Votre demande de prêt de ${loan.amount} FCFA a été ${loan.status === 'approved' ? 'approuvée' : loan.status === 'rejected' ? 'rejetée' : 'mise à jour'}.`,
+        message: `Votre demande de prêt de ${loan.amount?.toLocaleString('fr-FR') || 0} FCFA a été ${loan.status === 'approved' ? 'approuvée' : loan.status === 'rejected' ? 'rejetée' : 'mise à jour'}.`,
         created_at: loan.created_at,
         read: false,
         type: `loan_${loan.status}`,
         action_link: `/mobile-flow/loan-details/${loan.id}`
       })) as LoanNotification[];
     },
-    enabled: !!user?.id && Array.isArray(loans) && loans.length > 0,
+    enabled: !!user?.id && Array.isArray(loans),
   });
   
   // Mark notification as read
   const markNotificationAsRead = useMutation({
     mutationFn: async (notificationId: string) => {
-      // In a real implementation, update the notification in the database
-      console.log(`Marking notification ${notificationId} as read`);
-      return notificationId;
+      const { data, error } = await supabase
+        .from('admin_notifications')
+        .update({ read: true })
+        .eq('id', notificationId)
+        .select();
+        
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
     }
   });
 
-  const refetchLoans = () => refetch();
-  const refetchNotifications = () => queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
-
-  const isUploading = false; // This would be set true when files are being uploaded
-  
   return {
-    loans,
+    loans: loans || [],
     isLoading,
     error,
-    refetch: refetchLoans,
+    refetch,
     applyForLoan,
-    notifications,
+    notifications: notifications || [],
     notificationsLoading,
     markNotificationAsRead,
-    refetchNotifications,
-    isUploading
+    refetchNotifications: () => queryClient.invalidateQueries({ queryKey: ['client-notifications'] }),
+    isUploading: false
   };
 }

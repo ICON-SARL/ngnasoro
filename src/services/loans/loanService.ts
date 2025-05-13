@@ -1,82 +1,205 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
+import { useToast } from '@/hooks/use-toast';
 
 /**
- * Fetch a loan by its ID
+ * Creates a new loan application
+ */
+export const createLoan = async (loanData: any): Promise<any> => {
+  try {
+    console.log("Creating loan with data:", JSON.stringify(loanData, null, 2));
+    
+    // Make sure required fields exist
+    if (!loanData.client_id || !loanData.sfd_id || !loanData.amount || !loanData.duration_months) {
+      throw new Error('Missing required loan data fields');
+    }
+
+    // Create loan directly through the database using service role
+    const { data: loan, error } = await supabase.functions
+      .invoke('loan-manager', {
+        body: {
+          action: 'create_loan',
+          data: loanData
+        }
+      });
+
+    if (error) {
+      console.error('Error creating loan via edge function:', error);
+      throw new Error(`Failed to create loan: ${error.message}`);
+    }
+
+    if (!loan) {
+      throw new Error('No loan data returned from server');
+    }
+
+    console.log('Loan created successfully:', loan);
+    return loan;
+  } catch (error: any) {
+    console.error('Error in createLoan service:', error);
+    throw new Error(error.message || 'Failed to create loan application');
+  }
+};
+
+/**
+ * Fetches loans by their ID
  */
 export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
   try {
-    // Query the database for the loan with the matching ID
+    if (!loanId) return null;
+    
     const { data, error } = await supabase
       .from('sfd_loans')
-      .select('*, sfds:sfd_id(name)')
+      .select(`
+        *,
+        sfds:sfd_id (
+          name,
+          logo_url
+        ),
+        sfd_clients:client_id (
+          full_name,
+          email,
+          phone
+        )
+      `)
       .eq('id', loanId)
       .single();
-
+    
     if (error) {
       console.error('Error fetching loan:', error);
       return null;
     }
-
-    return data as Loan;
+    
+    return {
+      ...data,
+      id: data.id,
+      client_name: data.sfd_clients?.full_name || 'Unknown',
+      sfd_name: data.sfds?.name || 'Unknown',
+    } as Loan;
   } catch (error) {
     console.error('Error in fetchLoanById:', error);
     return null;
   }
 };
 
-/**
- * Create a new loan
- */
-export const createLoan = async (loanData: any) => {
+// Get all loans for an SFD
+export const getSfdLoans = async (sfdId?: string): Promise<Loan[]> => {
   try {
+    if (!sfdId) {
+      const { data: { session } } = await supabase.auth.getSession();
+      sfdId = session?.user?.user_metadata?.sfd_id;
+      
+      if (!sfdId) {
+        console.error('No SFD ID provided or found in session');
+        return [];
+      }
+    }
+    
     const { data, error } = await supabase
       .from('sfd_loans')
-      .insert([loanData])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return data;
+      .select(`
+        *,
+        sfds:sfd_id (
+          name,
+          logo_url
+        ),
+        sfd_clients:client_id (
+          full_name,
+          email,
+          phone
+        )
+      `)
+      .eq('sfd_id', sfdId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching SFD loans:', error);
+      return [];
+    }
+    
+    return data.map(loan => ({
+      ...loan,
+      client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+      sfd_name: loan.sfds?.name || 'Unknown SFD',
+      reference: loan.id.substring(0, 8)
+    })) as Loan[];
   } catch (error) {
-    console.error('Error creating loan:', error);
-    throw error;
-  }
-};
-
-/**
- * Get all SFD loans
- */
-export const getSfdLoans = async () => {
-  try {
-    const { data, error } = await supabase
-      .from('sfd_loans')
-      .select('*, sfds:sfd_id(name)');
-
-    if (error) throw error;
-    return data;
-  } catch (error) {
-    console.error('Error fetching SFD loans:', error);
+    console.error('Error in getSfdLoans:', error);
     return [];
   }
 };
 
 /**
- * Approve a loan
+ * Get loans for a specific client
  */
+export const getClientLoans = async (clientId?: string): Promise<Loan[]> => {
+  if (!clientId) {
+    try {
+      // Get user ID from session
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      // Get client ID from user ID
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('sfd_clients')
+        .select('id')
+        .eq('user_id', user.id);
+      
+      if (clientsError || !clientsData?.length) {
+        console.log('No client found for this user');
+        return [];
+      }
+      
+      clientId = clientsData[0].id;
+    } catch (error) {
+      console.error('Error getting client ID:', error);
+      return [];
+    }
+  }
+  
+  try {
+    const { data, error } = await supabase
+      .from('sfd_loans')
+      .select(`
+        *,
+        sfds:sfd_id (
+          name,
+          logo_url
+        )
+      `)
+      .eq('client_id', clientId)
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('Error fetching client loans:', error);
+      return [];
+    }
+    
+    return data.map(loan => ({
+      ...loan,
+      sfd_name: loan.sfds?.name || 'Unknown SFD',
+      reference: loan.id.substring(0, 8)
+    })) as Loan[];
+  } catch (error) {
+    console.error('Error in getClientLoans:', error);
+    return [];
+  }
+};
+
+// Approve loan
 export const approveLoan = async (loanId: string) => {
   try {
     const { data, error } = await supabase
       .from('sfd_loans')
-      .update({
+      .update({ 
         status: 'approved',
         approved_at: new Date().toISOString(),
+        approved_by: (await supabase.auth.getUser()).data.user?.id
       })
       .eq('id', loanId)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
   } catch (error) {
@@ -85,21 +208,21 @@ export const approveLoan = async (loanId: string) => {
   }
 };
 
-/**
- * Reject a loan
- */
-export const rejectLoan = async (loanId: string) => {
+// Reject loan
+export const rejectLoan = async (loanId: string, reason?: string) => {
   try {
     const { data, error } = await supabase
       .from('sfd_loans')
-      .update({
+      .update({ 
         status: 'rejected',
-        updated_at: new Date().toISOString()
+        processed_at: new Date().toISOString(),
+        processed_by: (await supabase.auth.getUser()).data.user?.id,
+        rejection_reason: reason || 'Loan application rejected'
       })
       .eq('id', loanId)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
   } catch (error) {
@@ -108,95 +231,102 @@ export const rejectLoan = async (loanId: string) => {
   }
 };
 
-/**
- * Disburse a loan
- */
+// Disburse loan
 export const disburseLoan = async (loanId: string) => {
   try {
+    const { data, error } = await supabase.functions
+      .invoke('loan-manager', {
+        body: {
+          action: 'disburse_loan',
+          payload: {
+            loanId,
+            method: 'bank_transfer',
+            disbursedBy: (await supabase.auth.getUser()).data.user?.id,
+            notes: 'Disbursed via application'
+          }
+        }
+      });
+    
+    if (error) {
+      console.error('Error disbursing loan:', error);
+      throw new Error('Failed to disburse loan');
+    }
+    
+    return data;
+  } catch (error) {
+    console.error('Error in disburseLoan:', error);
+    throw error;
+  }
+};
+
+// Record loan payment
+export const recordLoanPayment = async (loanId: string, amount: number, paymentMethod: string) => {
+  try {
     const { data, error } = await supabase
-      .from('sfd_loans')
-      .update({
-        status: 'active',
-        disbursed_at: new Date().toISOString()
+      .from('loan_payments')
+      .insert({
+        loan_id: loanId,
+        amount,
+        payment_method: paymentMethod,
+        status: 'completed'
       })
-      .eq('id', loanId)
       .select()
       .single();
-
+    
     if (error) throw error;
     return data;
   } catch (error) {
-    console.error('Error disbursing loan:', error);
+    console.error('Error recording payment:', error);
     throw error;
   }
 };
 
-/**
- * Record loan payment
- */
-export const recordLoanPayment = async (loanId: string, amount: number, paymentMethod: string) => {
-  try {
-    // First, create the payment record
-    const { data: paymentRecord, error: paymentError } = await supabase
-      .from('loan_payments')
-      .insert([{
-        loan_id: loanId,
-        amount,
-        payment_method: paymentMethod
-      }])
-      .select()
-      .single();
-
-    if (paymentError) throw paymentError;
-
-    // Then update the loan's last payment date
-    const { data: loanData, error: loanError } = await supabase
-      .from('sfd_loans')
-      .update({
-        last_payment_date: new Date().toISOString()
-      })
-      .eq('id', loanId)
-      .select()
-      .single();
-
-    if (loanError) throw loanError;
-
-    return { paymentRecord, loanData };
-  } catch (error) {
-    console.error('Error recording loan payment:', error);
-    throw error;
-  }
-};
-
-/**
- * Get loan payments
- */
+// Get loan payments history
 export const getLoanPayments = async (loanId: string) => {
   try {
     const { data, error } = await supabase
       .from('loan_payments')
       .select('*')
       .eq('loan_id', loanId)
-      .order('payment_date', { ascending: true });
-
+      .order('payment_date', { ascending: false });
+    
     if (error) throw error;
-    return data;
+    return data || [];
   } catch (error) {
-    console.error('Error fetching loan payments:', error);
+    console.error('Error getting loan payments:', error);
     return [];
   }
 };
 
-/**
- * Send payment reminder
- */
+// Send payment reminder
 export const sendPaymentReminder = async (loanId: string) => {
   try {
-    // In a real app, this would integrate with a notification service
-    console.log(`Payment reminder sent for loan: ${loanId}`);
-    return true;
+    // Create reminder record
+    const { data, error } = await supabase
+      .from('loan_payment_reminders')
+      .insert({
+        loan_id: loanId,
+        sent_at: new Date().toISOString(),
+        is_sent: true
+      })
+      .select()
+      .single();
+    
+    if (error) throw error;
+    
+    // Create an activity log
+    await supabase
+      .from('loan_activities')
+      .insert({
+        loan_id: loanId,
+        activity_type: 'payment_reminder_sent',
+        description: 'Payment reminder sent to client',
+        performed_by: (await supabase.auth.getUser()).data.user?.id
+      });
+    
+    return data;
   } catch (error) {
     console.error('Error sending payment reminder:', error);
-    return false;
+    throw error;
   }
 };

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -48,6 +49,7 @@ const MobileLoanApplicationPage: React.FC = () => {
           if (error) throw error;
           
           if (data) {
+            console.log("Fetched plan data:", data);
             setPlanData(data);
             if (data.sfds) {
               setSfdName(data.sfds.name);
@@ -119,7 +121,7 @@ const MobileLoanApplicationPage: React.FC = () => {
           </p>
         </div>
 
-        <MobileLoanApplicationForm />
+        <MobileLoanApplicationForm planId={planId} sfdId={sfdId} />
       </div>
     </div>
   );

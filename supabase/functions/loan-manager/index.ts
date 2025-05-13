@@ -14,7 +14,7 @@ serve(async (req) => {
   }
   
   try {
-    // Initialiser le client Supabase avec les autorisations de service
+    // Initialize Supabase client with service key
     const supabaseUrl = Deno.env.get("SUPABASE_URL");
     const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -30,40 +30,74 @@ serve(async (req) => {
       }
     });
     
-    // Récupérer le jeton d'autorisation du client
+    // Extract auth token from header (if available)
     const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      throw new Error("Unauthorized: No auth header");
+    let user = null;
+    
+    if (authHeader) {
+      const authToken = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userError } = await supabase.auth.getUser(authToken);
+      
+      if (userError) {
+        console.error("Auth error:", userError.message);
+      } else {
+        user = userData.user;
+      }
     }
     
-    // Vérifier l'utilisateur actuel
-    const authToken = authHeader.replace("Bearer ", "");
-    const { data: { user }, error: userError } = await supabase.auth.getUser(authToken);
-    
-    if (userError || !user) {
-      throw new Error("Unauthorized: Invalid user");
+    // Parse the request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          }
+        }
+      );
     }
     
-    // Analyser le corps de la demande
-    const { action, data } = await req.json();
+    const { action, data } = body;
+    console.log(`Processing ${action} action with data:`, JSON.stringify(data, null, 2));
     
     if (action === "create_loan") {
-      // Vérifier que l'utilisateur a le droit de créer un prêt pour ce client
-      const { data: clientCheck, error: clientCheckError } = await supabase
-        .from("sfd_clients")
-        .select("id, user_id")
-        .eq("id", data.client_id)
-        .single();
-      
-      if (clientCheckError || !clientCheck) {
-        throw new Error("Client not found or unauthorized");
+      // Validate required fields
+      if (!data || !data.client_id || !data.sfd_id || !data.amount || !data.duration_months) {
+        throw new Error("Missing required loan data");
       }
       
-      if (clientCheck.user_id !== user.id && !user.app_metadata?.role === "sfd_admin") {
-        throw new Error("Unauthorized: You cannot create a loan for this client");
+      // Verify that the user has permission to create a loan for this client
+      // For client-created loans, we'll verify the client_id belongs to the user
+      if (user) {
+        const { data: clientCheck, error: clientCheckError } = await supabase
+          .from("sfd_clients")
+          .select("id, user_id, sfd_id")
+          .eq("id", data.client_id)
+          .single();
+        
+        if (clientCheckError) {
+          console.error("Error checking client:", clientCheckError);
+          throw new Error("Client not found or unauthorized");
+        }
+        
+        // If the client's user_id doesn't match the authenticated user, 
+        // and user is not an SFD admin, deny access
+        const isAdmin = user?.app_metadata?.role === "sfd_admin" || 
+                       user?.app_metadata?.role === "admin";
+                       
+        if (clientCheck.user_id !== user.id && !isAdmin) {
+          throw new Error("Unauthorized: You cannot create a loan for this client");
+        }
       }
       
-      // Créer l'enregistrement de prêt avec le compte de service qui contourne le RLS
+      console.log("Creating loan record in database...");
+      
+      // Create loan record using service role to bypass RLS
       const { data: loan, error: loanError } = await supabase
         .from("sfd_loans")
         .insert({
@@ -72,9 +106,9 @@ serve(async (req) => {
           amount: data.amount,
           duration_months: data.duration_months,
           purpose: data.purpose,
-          loan_plan_id: data.loan_plan_id,
-          interest_rate: data.interest_rate,
-          monthly_payment: data.monthly_payment,
+          loan_plan_id: data.loan_plan_id || null,
+          interest_rate: data.interest_rate || 5.5,
+          monthly_payment: data.monthly_payment || 0,
           status: data.status || "pending"
         })
         .select()
@@ -85,22 +119,25 @@ serve(async (req) => {
         throw new Error(`Error creating loan: ${loanError.message}`);
       }
       
-      // Créer une activité pour ce prêt
+      console.log("Loan created successfully:", loan);
+      
+      // Create loan activity for audit trail
+      const performerId = user?.id || "system";
       await supabase.from("loan_activities").insert({
         loan_id: loan.id,
         activity_type: "application_submitted",
         description: "Demande de prêt soumise",
-        performed_by: user.id
+        performed_by: performerId
       });
       
-      // Créer une notification pour l'administrateur SFD
+      // Create notification for SFD admin
       await supabase.from("admin_notifications").insert({
         title: "Nouvelle demande de prêt",
         message: `Nouvelle demande de prêt pour ${data.amount.toLocaleString()} FCFA a été soumise.`,
         type: "loan_application",
         recipient_role: "sfd_admin",
         action_link: `/sfd/loans/${loan.id}`,
-        sender_id: user.id
+        sender_id: performerId
       });
       
       return new Response(
@@ -115,7 +152,7 @@ serve(async (req) => {
       );
     }
     
-    // New action for loan disbursement
+    // Loan disbursement action
     if (action === "disburse_loan") {
       const { payload } = data;
       
@@ -180,8 +217,8 @@ serve(async (req) => {
         .insert({
           loan_id: loan.id,
           activity_type: "disbursement",
-          description: `Prêt disbursé pour un montant de ${loan.amount.toLocaleString()} FCFA`,
-          performed_by: payload.disbursedBy || user.id
+          description: `Prêt décaissé pour un montant de ${loan.amount.toLocaleString()} FCFA`,
+          performed_by: payload.disbursedBy || (user ? user.id : 'system')
         });
       
       return new Response(
@@ -196,6 +233,7 @@ serve(async (req) => {
       );
     }
     
+    // If action is not recognized
     throw new Error(`Unsupported action: ${action}`);
     
   } catch (error) {
