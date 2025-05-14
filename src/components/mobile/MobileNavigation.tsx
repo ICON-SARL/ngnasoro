@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, CreditCard, User, Menu, History, AlertCircle } from 'lucide-react';
+import { Home, CreditCard, User, PiggyBank, AlertCircle } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
@@ -14,7 +14,7 @@ const MobileNavigation: React.FC = () => {
   const navItems = [
     { icon: <Home size={20} />, label: 'Accueil', path: '/mobile-flow/dashboard' },
     { icon: <CreditCard size={20} />, label: 'Prêts', path: '/mobile-flow/loans' },
-    { icon: <History size={20} />, label: 'Transactions', path: '/mobile-flow/transactions' },
+    { icon: <PiggyBank size={20} />, label: 'Mes Fonds', path: '/mobile-flow/funds-management' },
     { icon: <AlertCircle size={20} />, label: 'Diagnostic', path: '/mobile-flow/diagnostics' },
     { icon: <User size={20} />, label: 'Profil', path: '/mobile-flow/profile' },
   ];
