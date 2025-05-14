@@ -1,167 +1,126 @@
 
-// This file contains functions to fetch and format loan details
-
 import { supabase } from '@/integrations/supabase/client';
-import { LoanDetails, LoanStatus, LoanPayment } from '@/types/loans';
-import { addMonths, format, parseISO, differenceInDays } from 'date-fns';
+import { LoanStatus, LoanDetails } from '@/types/loans';
 
-export async function fetchLoanDetails(loanId: string): Promise<{ 
-  loanDetails: LoanDetails | null, 
-  loanStatus: LoanStatus | null 
+/**
+ * Fetches loan details from the database
+ */
+export async function fetchLoanDetails(loanId: string | undefined): Promise<{
+  loanDetails: LoanDetails | null;
+  loanStatus: LoanStatus | null;
+  error: string | null;
 }> {
   try {
+    if (!loanId) {
+      return { loanDetails: null, loanStatus: null, error: null };
+    }
+    
     const { data, error } = await supabase
       .from('sfd_loans')
       .select(`
-        *,
-        sfd_loan_plans (*),
-        sfd_loan_payments (*)
+        id, 
+        amount, 
+        interest_rate, 
+        duration_months, 
+        monthly_payment,
+        purpose,
+        disbursed_at,
+        status,
+        next_payment_date,
+        last_payment_date,
+        sfd_id,
+        client_id
       `)
       .eq('id', loanId)
       .single();
-    
+      
     if (error) throw error;
     
     if (!data) {
-      return { loanDetails: null, loanStatus: null };
+      return { loanDetails: null, loanStatus: null, error: 'Loan not found' };
     }
     
-    // Create the loan details object
+    // Process loan details
     const loanDetails: LoanDetails = {
-      loanType: data.sfd_loan_plans?.name || 'Standard',
+      loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
       loanPurpose: data.purpose,
       totalAmount: data.amount,
-      disbursalDate: data.disbursed_at || '',
-      endDate: data.disbursed_at ? 
-        format(addMonths(parseISO(data.disbursed_at), data.duration_months), 'yyyy-MM-dd') :
-        '',
+      disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
+      endDate: new Date(new Date(data.disbursed_at || Date.now()).setMonth(
+        new Date(data.disbursed_at || Date.now()).getMonth() + data.duration_months
+      )).toLocaleDateString('fr-FR', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }),
       interestRate: data.interest_rate,
       status: data.status,
       disbursed: !!data.disbursed_at,
-      withdrawn: !!data.withdrawn_at
+      withdrawn: data.status === 'withdrawn'
     };
     
-    // Calculate loan status
-    const loanStatus: LoanStatus = calculateLoanStatus(data, data.sfd_loan_payments || []);
+    // Get payment history
+    const { data: paymentsData, error: paymentsError } = await supabase
+      .from('loan_payments')
+      .select('*')
+      .eq('loan_id', loanId)
+      .order('payment_date', { ascending: false });
+      
+    if (paymentsError) throw paymentsError;
     
-    return { loanDetails, loanStatus };
-  } catch (error) {
-    console.error('Error fetching loan details:', error);
-    return { loanDetails: null, loanStatus: null };
-  }
-}
-
-function calculateLoanStatus(loan: any, payments: any[]): LoanStatus {
-  // Calculate total paid amount
-  const paidAmount = payments
-    .filter(p => p.status === 'confirmed')
-    .reduce((sum, payment) => sum + payment.amount, 0);
-  
-  // Calculate total amount due (principal + interest)
-  const totalAmount = calculateTotalAmount(loan.amount, loan.interest_rate, loan.duration_months);
-  
-  // Calculate remaining amount
-  const remainingAmount = totalAmount - paidAmount;
-  
-  // Calculate progress percentage
-  const progress = totalAmount > 0 ? Math.min(100, (paidAmount / totalAmount) * 100) : 0;
-  
-  // Determine next payment due date
-  const nextPaymentDue = calculateNextPaymentDue(loan, payments);
-  
-  // Calculate any late fees
-  const lateFees = calculateLateFees(loan, payments, nextPaymentDue);
-  
-  // Format payment history
-  const paymentHistory = formatPaymentHistory(payments);
-  
-  return {
-    nextPaymentDue,
-    paidAmount,
-    totalAmount,
-    remainingAmount,
-    progress,
-    lateFees,
-    paymentHistory,
-    disbursed: !!loan.disbursed_at,
-    withdrawn: !!loan.withdrawn_at,
-    status: loan.status,
-    disbursement_status: loan.disbursement_status
-  };
-}
-
-function calculateTotalAmount(principal: number, interestRate: number, durationMonths: number): number {
-  // Simple interest calculation: P * (1 + r * t), where r is annual rate and t is in years
-  const rateDecimal = interestRate / 100;
-  const years = durationMonths / 12;
-  return principal * (1 + rateDecimal * years);
-}
-
-function calculateNextPaymentDue(loan: any, payments: any[]): string {
-  // If loan is not disbursed yet, or it's completed/rejected, no payment is due
-  if (!loan.disbursed_at || ['completed', 'rejected'].includes(loan.status)) {
-    return '';
-  }
-  
-  // Calculate monthly payment date based on disbursal date
-  const disbursalDate = parseISO(loan.disbursed_at);
-  const monthlyPaymentDay = disbursalDate.getDate();
-  
-  // Find how many payments have been made
-  const paymentsMade = payments.filter(p => p.status === 'confirmed').length;
-  
-  // Calculate next payment date (disbursalDate + (paymentsMade + 1) months)
-  const nextPaymentDate = addMonths(disbursalDate, paymentsMade + 1);
-  
-  return format(nextPaymentDate, 'yyyy-MM-dd');
-}
-
-function calculateLateFees(loan: any, payments: any[], nextPaymentDue: string): number {
-  // If no payment is due, no late fees
-  if (!nextPaymentDue) {
-    return 0;
-  }
-  
-  // Check if next payment is overdue
-  const today = new Date();
-  const nextPaymentDate = parseISO(nextPaymentDue);
-  const daysLate = differenceInDays(today, nextPaymentDate);
-  
-  if (daysLate <= 0) {
-    return 0;
-  }
-  
-  // Calculate late fee (simplified for this example)
-  // Let's assume 0.1% per day late, capped at 5%
-  const monthlyPayment = loan.monthly_payment || (loan.amount / loan.duration_months);
-  const lateFeeRate = Math.min(daysLate * 0.001, 0.05);
-  return monthlyPayment * lateFeeRate;
-}
-
-function formatPaymentHistory(payments: any[]): LoanPayment[] {
-  return payments.map(payment => {
-    // Determine payment status
-    let status: 'paid' | 'pending' | 'overdue' | 'late';
+    // Calculate loan status values
+    const paidAmount = paymentsData?.reduce((total, payment) => total + payment.amount, 0) || 0;
+    const totalAmount = data.amount + (data.amount * data.interest_rate / 100);
+    const remainingAmount = totalAmount - paidAmount;
+    const progress = Math.min(100, Math.round((paidAmount / totalAmount) * 100));
     
-    if (payment.status === 'confirmed') {
-      status = 'paid';
-    } else if (payment.status === 'pending') {
-      status = 'pending';
-    } else if (payment.status === 'overdue') {
-      status = 'overdue';
-    } else {
-      status = 'late';
-    }
+    const now = new Date();
+    const nextPaymentDate = data.next_payment_date ? new Date(data.next_payment_date) : null;
+    const lateFees = (nextPaymentDate && nextPaymentDate < now) ? data.monthly_payment * 0.05 : 0;
     
-    return {
-      id: payment.id,
-      date: payment.payment_date,
-      amount: payment.amount,
-      status
+    // Format payment history
+    const paymentHistory = paymentsData?.map((payment, index) => {
+      let status: 'paid' | 'pending' | 'late';
+      if (payment.status === 'completed') status = 'paid';
+      else if (payment.status === 'late') status = 'late';
+      else status = 'pending';
+      
+      return {
+        id: index + 1,
+        date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
+          day: '2-digit',
+          month: 'long',
+          year: 'numeric'
+        }),
+        amount: payment.amount,
+        status
+      };
+    }) || [];
+    
+    // Create loan status object
+    const loanStatus: LoanStatus = {
+      nextPaymentDue: nextPaymentDate ? nextPaymentDate.toLocaleDateString('fr-FR', {
+        day: '2-digit',
+        month: 'long',
+        year: 'numeric'
+      }) : 'Non défini',
+      paidAmount,
+      totalAmount,
+      remainingAmount,
+      progress,
+      lateFees,
+      paymentHistory,
+      disbursed: !!data.disbursed_at,
+      withdrawn: data.status === 'withdrawn'
     };
-  });
+    
+    return { loanDetails, loanStatus, error: null };
+  } catch (err: any) {
+    console.error('Error fetching loan details:', err);
+    return { loanDetails: null, loanStatus: null, error: err.message };
+  }
 }
-
-export default {
-  fetchLoanDetails
-};

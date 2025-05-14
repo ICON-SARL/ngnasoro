@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import { Account } from '@/types/transactions';
 import MainDashboard from '../dashboard/MainDashboard';
 import FundsManagementView from '../funds/FundsManagementView';
@@ -23,7 +23,6 @@ interface MobileFlowRoutesProps {
   handlePaymentSubmit: (data: { recipient: string, amount: number, note: string }) => Promise<void>;
 }
 
-// Export route elements that can be used in a parent Routes component
 const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   onAction,
   account,
@@ -35,7 +34,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   handlePaymentSubmit
 }) => {
   return (
-    <>
+    <Routes>
       <Route path="splash" element={<SplashScreen onComplete={() => onAction('Start')} />} />
       <Route path="welcome" element={<WelcomeScreen onStart={() => onAction('Start')} />} />
       <Route path="main" element={
@@ -55,7 +54,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="transfers" element={<TransferPage />} />
       <Route index element={<Navigate to="main" replace />} />
       <Route path="*" element={<Navigate to="main" replace />} />
-    </>
+    </Routes>
   );
 };
 

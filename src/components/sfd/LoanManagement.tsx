@@ -1,93 +1,143 @@
 
-import React, { useEffect, useState } from 'react';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoanPlanManagement } from './LoanPlanManagement';
+import LoanList from './loans/LoanList'; // Changed from named import to default import
+import LoanPlanDialog from './LoanPlanDialog';
+import { useAuth } from '@/hooks/useAuth';
+import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useSfdLoans } from '@/hooks/useSfdLoans';
-import { LoanWorkflow } from '@/components/sfd/loans';
-import { LoanPlanManagement } from '@/components/sfd/LoanPlanManagement';
-import { Plus } from 'lucide-react';
-import NewLoanPlanDialog from '@/components/sfd/loans/NewLoanPlanDialog';
-import EditLoanPlanDialog from '@/components/sfd/loans/EditLoanPlanDialog';
+import { SfdActivationAlert } from './SfdActivationAlert';
 
-interface LoanManagementProps {
+export interface LoanManagementProps {
   onRefresh?: () => void;
 }
 
-export function LoanManagement({ onRefresh }: LoanManagementProps) {
+export function LoanManagement({ onRefresh }: LoanManagementProps = {}) {
+  const [activeTab, setActiveTab] = useState('plans');
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [planToEdit, setPlanToEdit] = useState<any | null>(null);
+  const [sfdStatus, setSfdStatus] = useState<string>('active');
+  const [sfdName, setSfdName] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(true);
+  const { activeSfdId } = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('loans');
-  const [isNewPlanDialogOpen, setIsNewPlanDialogOpen] = useState(false);
-  const [editingPlan, setEditingPlan] = useState<any>(null);
-  
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
+
+  useEffect(() => {
+    if (activeSfdId) {
+      checkSfdStatus();
+    }
+  }, [activeSfdId]);
+
+  const checkSfdStatus = async () => {
+    if (!activeSfdId) return;
+    
+    setIsLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('status, name')
+        .eq('id', activeSfdId)
+        .single();
+        
+      if (error) throw error;
+      
+      setSfdStatus(data?.status || 'error');
+      setSfdName(data?.name || '');
+    } catch (error) {
+      console.error('Error checking SFD status:', error);
+      setSfdStatus('error');
+    } finally {
+      setIsLoading(false);
+    }
   };
-  
-  const handleNewPlanClick = () => {
-    setIsNewPlanDialogOpen(true);
+
+  const handleNewPlan = () => {
+    if (sfdStatus !== 'active') {
+      toast({
+        title: "SFD inactive",
+        description: "Veuillez activer la SFD avant de créer des plans de prêt",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPlanToEdit(null);
+    setIsDialogOpen(true);
   };
-  
+
   const handleEditPlan = (plan: any) => {
-    setEditingPlan(plan);
+    if (sfdStatus !== 'active') {
+      toast({
+        title: "SFD inactive",
+        description: "Veuillez activer la SFD avant de modifier des plans de prêt",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    setPlanToEdit(plan);
+    setIsDialogOpen(true);
   };
-  
-  const handlePlanCreated = () => {
-    setIsNewPlanDialogOpen(false);
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    
+    // Call the onRefresh callback if provided
+    if (onRefresh) {
+      onRefresh();
+    }
+  };
+
+  const handleSfdActivated = () => {
+    checkSfdStatus();
     toast({
-      title: 'Plan créé',
-      description: 'Le plan de prêt a été créé avec succès',
+      title: "SFD activée",
+      description: "La SFD a été activée avec succès",
     });
-    // Refresh data
-    if (onRefresh) onRefresh();
   };
-  
-  const handlePlanUpdated = () => {
-    setEditingPlan(null);
-    toast({
-      title: 'Plan modifié',
-      description: 'Le plan de prêt a été mis à jour avec succès',
-    });
-    // Refresh data
-    if (onRefresh) onRefresh();
-  };
-  
+
+  if (isLoading) {
+    return <div className="p-4 text-center">Chargement des informations de la SFD...</div>;
+  }
+
+  const showActivationAlert = sfdStatus !== 'active' && activeSfdId;
+
   return (
-    <div className="space-y-6">
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="mb-6">
-          <TabsTrigger value="loans">Prêts</TabsTrigger>
+    <div className="space-y-4">
+      {showActivationAlert && (
+        <SfdActivationAlert 
+          sfdId={activeSfdId || ''} 
+          sfdName={sfdName}
+          status={sfdStatus}
+          onActivate={handleSfdActivated}
+        />
+      )}
+      
+      <Tabs defaultValue={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
           <TabsTrigger value="plans">Plans de Prêt</TabsTrigger>
+          <TabsTrigger value="applications">Demandes</TabsTrigger>
         </TabsList>
         
-        <TabsContent value="loans">
-          <LoanWorkflow />
+        <TabsContent value="plans" className="space-y-4 mt-6">
+          <LoanPlanManagement 
+            onNewPlan={handleNewPlan} 
+            onEditPlan={handleEditPlan}
+          />
         </TabsContent>
         
-        <TabsContent value="plans">
-          <LoanPlanManagement 
-            onNewPlan={handleNewPlanClick} 
-            onEditPlan={handleEditPlan} 
-          />
+        <TabsContent value="applications" className="space-y-4 mt-6">
+          <LoanList />
         </TabsContent>
       </Tabs>
       
-      <NewLoanPlanDialog
-        isOpen={isNewPlanDialogOpen}
-        onClose={() => setIsNewPlanDialogOpen(false)}
-        onPlanCreated={handlePlanCreated}
+      <LoanPlanDialog 
+        isOpen={isDialogOpen} 
+        onClose={handleDialogClose} 
+        onSaved={checkSfdStatus}
+        planToEdit={planToEdit}
       />
-      
-      {editingPlan && (
-        <EditLoanPlanDialog
-          isOpen={!!editingPlan}
-          onClose={() => setEditingPlan(null)}
-          onPlanUpdated={handlePlanUpdated}
-          plan={editingPlan}
-        />
-      )}
     </div>
   );
 }
-
-export default LoanManagement;

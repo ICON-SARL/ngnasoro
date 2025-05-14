@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, CreditCard, User, PiggyBank, AlertCircle } from 'lucide-react';
+import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;
@@ -33,7 +32,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       id: 'home',
       label: 'Accueil',
       icon: Home,
-      path: '/mobile-flow/dashboard'
+      path: '/mobile-flow/main'
     },
     {
       id: 'loans',

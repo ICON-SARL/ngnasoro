@@ -1,117 +1,182 @@
-
-import { useState, useEffect } from 'react';
-import { useMutation } from '@tanstack/react-query';
-import { useAuth } from '@/hooks/useAuth';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { LoanApplication } from '@/types/loans';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
 
-export enum LoanDocumentType {
-  ID_CARD = 'id_card',
-  PROOF_OF_INCOME = 'proof_of_income',
-  BANK_STATEMENT = 'bank_statement',
-  OTHER = 'other'
-}
+export type LoanDocumentType = 'id_card' | 'proof_of_income' | 'bank_statement' | 'business_plan';
 
-export function useLoanApplication(sfdId?: string) {
+export type LoanApplication = {
+  amount: number;
+  duration_months: number;
+  purpose: string;
+  loan_plan_id: string;
+  sfd_id: string;
+  documents?: {
+    type: LoanDocumentType;
+    file: File;
+  }[];
+};
+
+export const useLoanApplication = (sfdId?: string) => {
+  const { toast } = useToast();
   const { user } = useAuth();
-  const [loanPlans, setLoanPlans] = useState<any[]>([]);
-  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
+  const queryClient = useQueryClient();
   const [isUploading, setIsUploading] = useState(false);
-  
-  // Fetch loan plans for the SFD
-  useEffect(() => {
-    const fetchLoanPlans = async () => {
-      if (!sfdId && !user) return;
+
+  // Fetch available loan plans
+  const loanPlansQuery = useQuery({
+    queryKey: ['loan-plans', sfdId],
+    queryFn: async () => {
+      if (!sfdId) return [];
       
-      setIsLoadingPlans(true);
-      try {
-        const { data, error } = await supabase
-          .from('sfd_loan_plans')
-          .select(`
-            *,
-            sfds:sfd_id (name, logo_url)
-          `)
-          .eq(sfdId ? 'sfd_id' : 'is_published', sfdId || true)
-          .eq('is_active', true)
-          .order('name');
-          
-        if (error) throw error;
-        setLoanPlans(data || []);
-      } catch (err) {
-        console.error("Error fetching loan plans:", err);
-        setLoanPlans([]);
-      } finally {
-        setIsLoadingPlans(false);
-      }
-    };
-    
-    fetchLoanPlans();
-  }, [sfdId, user]);
-  
-  // Submit loan application mutation
-  const submitMutation = useMutation({
-    mutationFn: async (loanData: LoanApplication) => {
-      try {
-        setIsUploading(true);
+      const { data, error } = await supabase
+        .from('sfd_loan_plans')
+        .select('*')
+        .eq('sfd_id', sfdId)
+        .eq('is_active', true)
+        .order('min_amount');
         
-        // First get the client ID
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!sfdId
+  });
+
+  // Upload loan document
+  const uploadDocument = async (file: File, loanId: string, type: LoanDocumentType) => {
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${loanId}/${type}-${Date.now()}.${fileExt}`;
+    const filePath = `loan-documents/${fileName}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('loan-documents')
+      .upload(filePath, file);
+
+    if (uploadError) throw uploadError;
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('loan-documents')
+      .getPublicUrl(filePath);
+
+    return publicUrl;
+  };
+
+  // Submit loan application
+  const submitApplication = useMutation({
+    mutationFn: async (application: LoanApplication) => {
+      if (!user?.id) throw new Error('User not authenticated');
+      
+      setIsUploading(true);
+      try {
+        // Get client ID first
         const { data: clientData, error: clientError } = await supabase
           .from('sfd_clients')
           .select('id')
-          .eq('user_id', user?.id)
-          .eq('sfd_id', loanData.sfd_id)
+          .eq('user_id', user.id)
+          .eq('sfd_id', application.sfd_id)
           .maybeSingle();
-        
-        if (clientError) throw clientError;
-        
-        if (!clientData) {
-          throw new Error("Vous n'êtes pas enregistré comme client de cette SFD");
+
+        if (clientError) {
+          console.error('Error fetching client:', clientError);
+          throw new Error(`Erreur lors de la récupération des informations client: ${clientError.message}`);
         }
         
-        // Calculate monthly payment (simple formula for demo)
-        const monthlyRate = (loanData.interest_rate || 5) / 100 / 12;
-        const monthlyPayment = 
-          (loanData.amount * monthlyRate * Math.pow(1 + monthlyRate, loanData.duration_months)) / 
-          (Math.pow(1 + monthlyRate, loanData.duration_months) - 1);
+        if (!clientData) {
+          // If no client record exists, create an adhesion request
+          throw new Error(`Vous n'êtes pas encore client de cette SFD. Veuillez d'abord soumettre une demande d'adhésion.`);
+        }
         
-        // Create the loan
-        const { data, error } = await supabase
-          .from('sfd_loans')
-          .insert({
-            client_id: clientData.id,
-            sfd_id: loanData.sfd_id,
-            loan_plan_id: loanData.loan_plan_id,
-            amount: loanData.amount,
-            duration_months: loanData.duration_months,
-            interest_rate: loanData.interest_rate || 5,
-            purpose: loanData.purpose,
-            status: 'pending',
-            monthly_payment: monthlyPayment
-          })
-          .select()
+        // Get selected loan plan to determine interest rate
+        const { data: loanPlan, error: loanPlanError } = await supabase
+          .from('sfd_loan_plans')
+          .select('interest_rate, fees')
+          .eq('id', application.loan_plan_id)
           .single();
           
-        if (error) throw error;
+        if (loanPlanError) {
+          // If no specific loan plan, use default values
+          console.warn('Using default loan plan values:', loanPlanError);
+        }
         
-        return { success: true, data };
+        // Use loan plan rates or defaults
+        const interestRate = loanPlan?.interest_rate || 5.5;
+        
+        // Calculate monthly payment
+        const monthlyInterestRate = interestRate / 100 / 12;
+        const totalMonths = application.duration_months;
+        const monthlyPayment = (application.amount * monthlyInterestRate * 
+          Math.pow(1 + monthlyInterestRate, totalMonths)) / 
+          (Math.pow(1 + monthlyInterestRate, totalMonths) - 1);
+
+        // Create loan record via edge function to bypass RLS
+        const { data: loan, error: functionError } = await supabase.functions
+          .invoke('loan-manager', {
+            body: {
+              action: 'create_loan',
+              data: {
+                client_id: clientData.id,
+                sfd_id: application.sfd_id,
+                amount: application.amount,
+                duration_months: application.duration_months,
+                purpose: application.purpose,
+                loan_plan_id: application.loan_plan_id,
+                interest_rate: interestRate,
+                monthly_payment: Math.round(monthlyPayment),
+                status: 'pending'
+              }
+            }
+          });
+
+        if (functionError) {
+          console.error('Error creating loan via function:', functionError);
+          throw new Error('Erreur lors de la création du prêt. Veuillez réessayer.');
+        }
+        
+        if (!loan?.id) {
+          throw new Error('Erreur lors de la création du prêt. Aucun identifiant retourné.');
+        }
+
+        // Upload documents if provided
+        if (application.documents?.length) {
+          const documentPromises = application.documents.map(async (doc) => {
+            const publicUrl = await uploadDocument(doc.file, loan.id, doc.type);
+            
+            return supabase.from('loan_documents').insert({
+              loan_id: loan.id,
+              document_type: doc.type,
+              document_url: publicUrl,
+              uploaded_by: user.id
+            });
+          });
+
+          await Promise.all(documentPromises);
+        }
+
+        return loan;
       } catch (error: any) {
-        console.error("Error submitting loan application:", error);
-        return { success: false, error: error.message };
+        console.error('Error submitting loan application:', error);
+        throw error;
       } finally {
         setIsUploading(false);
       }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
+        variant: "destructive",
+      });
     }
   });
-  
-  const submitApplication = async (loanData: LoanApplication) => {
-    return submitMutation.mutateAsync(loanData);
-  };
-  
+
   return {
-    loanPlans,
-    isLoadingPlans,
-    isUploading: isUploading || submitMutation.isPending,
-    submitApplication,
-    submitMutation
+    loanPlans: loanPlansQuery?.data || [],
+    isLoadingPlans: loanPlansQuery?.isLoading,
+    isUploading,
+    submitApplication
   };
-}
+};
