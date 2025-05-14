@@ -10,17 +10,25 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { useSfdLoans } from '@/hooks/useSfdLoans';
+import { useClientLoans } from '@/hooks/useClientLoans';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useToast } from '@/hooks/use-toast';
 
 const MobileLoansPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
   const [sfdName, setSfdName] = useState<string>('votre SFD');
   const { data: plans = [] } = useSfdLoanPlans();
-  const { data: loans = [], isLoading: isLoadingLoans } = useSfdLoans();
+  const { loans = [], isLoading: isLoadingLoans, refetch } = useClientLoans();
   const [searchTerm, setSearchTerm] = useState('');
+  const { toast } = useToast();
+
+  // Refetch loans when component mounts
+  useEffect(() => {
+    console.log("MobileLoansPage mounted, refetching loans...");
+    refetch();
+  }, [refetch]);
 
   // Filtrer les prêts en fonction du terme de recherche
   const filteredLoans = loans.filter(loan => 
@@ -34,6 +42,11 @@ const MobileLoansPage: React.FC = () => {
       setSfdName(plans[0].sfds.name || 'votre SFD');
     }
   }, [plans]);
+
+  useEffect(() => {
+    // Log current loans for debugging
+    console.log("Current loans in MobileLoansPage:", loans);
+  }, [loans]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -77,6 +90,18 @@ const MobileLoansPage: React.FC = () => {
     }
   };
 
+  const handleApplyForLoan = () => {
+    if (!activeSfdId) {
+      toast({
+        title: "SFD requise",
+        description: "Vous devez être lié à une SFD pour faire une demande de prêt",
+        variant: "destructive"
+      });
+      return;
+    }
+    navigate('/mobile-flow/loan-plans');
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-20">
       <div className="bg-white p-4 shadow-sm">
@@ -98,7 +123,7 @@ const MobileLoansPage: React.FC = () => {
 
         <div className="mt-4 mb-4">
           <Button
-            onClick={() => navigate('/mobile-flow/loan-plans')}
+            onClick={handleApplyForLoan}
             className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
           >
             <CreditCard className="h-4 w-4 mr-2" />

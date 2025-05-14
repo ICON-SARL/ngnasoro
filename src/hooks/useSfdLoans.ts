@@ -18,10 +18,40 @@ export function useSfdLoans() {
 
       try {
         console.log("Fetching SFD loans for user:", user.id);
-        const sfdId = user?.sfd_id || user?.app_metadata?.sfd_id;
+        
+        // Get SFD ID from the user metadata - check both locations
+        const sfdId = user?.sfd_id || user?.app_metadata?.sfd_id || user?.user_metadata?.sfd_id;
         
         if (!sfdId) {
           console.warn("No SFD ID found for user");
+          
+          // Check if the user is directly assigned as a client in sfd_loans
+          const { data: directLoans, error: directError } = await supabase
+            .from('sfd_loans')
+            .select(`
+              *,
+              sfd_clients(full_name, email, phone),
+              sfds:sfd_id (
+                name,
+                logo_url
+              )
+            `)
+            .eq('client_id', user.id)
+            .order('created_at', { ascending: false });
+            
+          if (directError) {
+            console.error('Failed to fetch direct loans:', directError);
+            return [];
+          }
+          
+          if (directLoans && directLoans.length > 0) {
+            console.log(`Found ${directLoans.length} loans directly assigned to user ID`);
+            return directLoans.map(loan => ({
+              ...loan,
+              client_name: loan.sfd_clients?.full_name || 'Client'
+            }));
+          }
+          
           return [];
         }
         
