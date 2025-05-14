@@ -24,6 +24,15 @@ import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import HomeLoanPage from '@/components/mobile/loan/HomeLoanPage';
 
 // Export the routes as an array of route elements
+export const authRoutes = (
+  <>
+    <Route path="/auth" element={<LoginPage />} />
+    <Route path="/register" element={<RegisterPage />} />
+    <Route path="/access-denied" element={<AccessDeniedPage />} />
+    <Route path="/permission-test" element={<PermissionTestPage />} />
+  </>
+);
+
 export const mobileRoutes = (
   <>
     <Route path="/" element={<SplashScreen />} />
@@ -44,11 +53,14 @@ export const mobileRoutes = (
   </>
 );
 
-// This is now a component that renders routes, not a router
-export const MobileRouter = () => (
-  <Routes>
-    {mobileRoutes}
-  </Routes>
-);
+// This component is now just a collection of routes, not a router
+const Router = () => {
+  return (
+    <Routes>
+      {authRoutes}
+      <Route path="*" element={<div>Page Not Found</div>} />
+    </Routes>
+  );
+};
 
-export default MobileRouter;
+export default Router;

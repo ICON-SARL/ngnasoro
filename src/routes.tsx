@@ -22,6 +22,7 @@ import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
 import PermissionTestPage from './pages/PermissionTestPage';
+import MobileApp from './pages/mobile/MobileApp';
 
 const router = createBrowserRouter([
   {
@@ -78,8 +79,12 @@ const router = createBrowserRouter([
     element: <MobileFlowPage />,
     children: [
       {
-        path: '',
+        index: true,
         element: <SplashScreen />,
+      },
+      {
+        path: 'splash',
+        element: <SplashScreen />
       },
       {
         path: 'dashboard',
@@ -140,6 +145,20 @@ const router = createBrowserRouter([
       {
         path: '*',
         element: <div>Mobile Page Not Found</div>,
+      },
+    ],
+  },
+  {
+    path: '/mobile-app',
+    element: <MobileApp />,
+    children: [
+      {
+        index: true,
+        element: <div>Mobile App Home</div>,
+      },
+      {
+        path: '*',
+        element: <div>Mobile App Page Not Found</div>,
       },
     ],
   },

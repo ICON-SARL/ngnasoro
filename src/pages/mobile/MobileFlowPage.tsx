@@ -87,8 +87,10 @@ const MobileFlowPage: React.FC = () => {
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
+      
       {/* Use Outlet instead of nested Router */}
       <Outlet />
+      
       <MobileNavigation />
     </div>
   );
