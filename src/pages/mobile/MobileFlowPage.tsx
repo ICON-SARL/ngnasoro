@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { MobileRouter } from '@/components/Router';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
@@ -12,7 +11,6 @@ const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
   const { user, loading, signOut } = useAuth();
@@ -88,7 +86,7 @@ const MobileFlowPage: React.FC = () => {
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
-      <MobileRouter />
+      <Outlet />
       <MobileNavigation />
     </div>
   );
