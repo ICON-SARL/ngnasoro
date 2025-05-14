@@ -1,15 +1,13 @@
 
-import { createBrowserRouter, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
-import { MobileRouter, AuthRoutes } from './components/Router';
+import { MobileRouter } from './components/Router';
+import { Outlet } from 'react-router-dom';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
-import SplashScreen from './components/mobile/SplashScreen';
-import UnauthorizedPage from './pages/UnauthorizedPage';
-import AccessDeniedPage from './pages/AccessDeniedPage';
 
 const router = createBrowserRouter([
   {
@@ -37,16 +35,6 @@ const router = createBrowserRouter([
           },
         ],
       },
-      // Auth routes
-      <AuthRoutes />,
-      {
-        path: 'access-denied',
-        element: <AccessDeniedPage />
-      },
-      {
-        path: 'unauthorized',
-        element: <UnauthorizedPage />
-      },
     ],
   },
   // Mobile routes
@@ -56,15 +44,15 @@ const router = createBrowserRouter([
     children: [
       {
         path: 'dashboard',
-        element: <div>Mobile Dashboard</div>,
+        element: <MobileRouter />,
       },
       {
         path: 'profile',
-        element: <div>Mobile Profile</div>,
+        element: <MobileRouter />,
       },
       {
         path: 'loans',
-        element: <div>Mobile Loans</div>,
+        element: <MobileRouter />,
       },
       {
         path: 'funds-management',
@@ -72,7 +60,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'transactions',
-        element: <div>Mobile Transactions</div>,
+        element: <MobileRouter />,
       },
       {
         path: 'loan-application',
@@ -92,10 +80,8 @@ const router = createBrowserRouter([
       },
       {
         index: true,
-        element: <SplashScreen />,
-      },
-      // Include all mobile routes
-      <MobileRouter />,
+        element: <MobileRouter />,
+      }
     ],
   },
 ]);

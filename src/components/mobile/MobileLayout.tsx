@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet } from 'react-router-dom';
-import MobileNavigation from '@/components/MobileNavigation';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileLayout: React.FC = () => {
   return (

@@ -1,9 +1,8 @@
 
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { RouterProvider } from 'react-router-dom';
+import App from './App';
 import './index.css';
-import router from './routes';
 import { setupDatabase, synchronizeUserRoles } from './utils/setupDatabase';
 
 // Declare the type for the window object to include our custom function
@@ -66,7 +65,5 @@ const rootElement = document.getElementById('root');
 if (!rootElement) throw new Error('Failed to find the root element');
 
 ReactDOM.createRoot(rootElement).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
+  <App />
 );
