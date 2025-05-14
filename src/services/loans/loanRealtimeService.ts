@@ -1,8 +1,8 @@
 
 import { supabase } from "@/integrations/supabase/client";
 
-export const setupLoanRealtimeSubscription = (callback: (payload: any) => void) => {
-  console.log("Setting up loan realtime subscription for all loans");
+export const setupLoanRealtimeSubscription = (callback: (payload: any) => void, loanId?: string) => {
+  console.log("Setting up loan realtime subscription", loanId ? `for loan: ${loanId}` : "for all loans");
 
   const channel = supabase
     .channel("loan-updates")
@@ -12,6 +12,7 @@ export const setupLoanRealtimeSubscription = (callback: (payload: any) => void) 
         event: "*", // Listen to all events (INSERT, UPDATE, DELETE)
         schema: "public",
         table: "sfd_loans",
+        ...(loanId ? { filter: `id=eq.${loanId}` } : {}),
       },
       (payload) => {
         console.log("Loan update received:", payload);
@@ -27,6 +28,56 @@ export const setupLoanRealtimeSubscription = (callback: (payload: any) => void) 
     console.log("Cleaning up loan realtime subscription");
     supabase.removeChannel(channel);
   };
+};
+
+export const setupLoanPaymentSubscription = (loanId: string, callback: (payload: any) => void) => {
+  if (!loanId) return () => {};
+  
+  console.log(`Setting up loan payment subscription for loan: ${loanId}`);
+  
+  const channel = supabase
+    .channel(`loan-payments-${loanId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "loan_payments",
+        filter: `loan_id=eq.${loanId}`,
+      },
+      (payload) => {
+        console.log("Loan payment update received:", payload);
+        callback(payload.new || payload.old);
+      }
+    )
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
+};
+
+export const setupLoanActivitySubscription = (loanId: string, callback: (payload: any) => void) => {
+  if (!loanId) return () => {};
+  
+  console.log(`Setting up loan activity subscription for loan: ${loanId}`);
+  
+  const channel = supabase
+    .channel(`loan-activities-${loanId}`)
+    .on(
+      "postgres_changes",
+      {
+        event: "*",
+        schema: "public",
+        table: "loan_activities",
+        filter: `loan_id=eq.${loanId}`,
+      },
+      (payload) => {
+        console.log("Loan activity update received:", payload);
+        callback(payload.new || payload.old);
+      }
+    )
+    .subscribe();
+
+  return () => supabase.removeChannel(channel);
 };
 
 export const setupClientLoanSubscription = (clientId: string, callback: (payload: any) => void) => {
