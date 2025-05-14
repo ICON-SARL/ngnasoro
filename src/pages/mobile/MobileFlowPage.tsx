@@ -1,7 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-import { MobileRouter } from '@/components/Router';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
@@ -88,7 +87,8 @@ const MobileFlowPage: React.FC = () => {
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
-      <MobileRouter />
+      {/* Use Outlet instead of nested Router */}
+      <Outlet />
       <MobileNavigation />
     </div>
   );

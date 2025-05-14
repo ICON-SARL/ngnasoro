@@ -1,17 +1,14 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
-
 import { useAuth } from '@/hooks/useAuth';
 import { useAccount } from '@/hooks/useAccount';
 import { useTransactions } from '@/hooks/useTransactions';
-import { UserRole } from '@/hooks/auth/types';
 
 // Import refactored components
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
-import MobileFlowRoutes from '@/components/mobile/routes/MobileFlowRoutes';
 import { useActionHandler } from '@/utils/actionHandler';
 
 const MobileFlow = () => {
@@ -139,16 +136,8 @@ const MobileFlow = () => {
         onLogout={handleLogout} 
       />
 
-      <MobileFlowRoutes 
-        onAction={onAction}
-        account={account}
-        transactions={transactions || []}
-        transactionsLoading={transactionsLoading}
-        toggleMenu={toggleMenu}
-        showWelcome={showWelcome}
-        setShowWelcome={setShowWelcome}
-        handlePaymentSubmit={handlePaymentSubmit}
-      />
+      {/* Use Outlet instead of nested Router */}
+      <Outlet />
       
       {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
     </div>

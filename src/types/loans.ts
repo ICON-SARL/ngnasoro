@@ -17,7 +17,7 @@ export interface LoanPayment {
   id: number;
   date: string;
   amount: number;
-  status: 'paid' | 'pending' | 'overdue';
+  status: 'paid' | 'pending' | 'overdue' | 'late';
 }
 
 export interface LoanDetails {
@@ -40,6 +40,7 @@ export interface CreateLoanInput {
   duration_months: number;
   purpose: string;
   loan_plan_id?: string;
+  monthly_payment?: number;
 }
 
 export interface Loan {
@@ -50,7 +51,7 @@ export interface Loan {
   duration_months: number;
   interest_rate: number;
   purpose: string;
-  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted';
+  status: 'pending' | 'approved' | 'active' | 'completed' | 'rejected' | 'defaulted' | string;
   created_at: string;
   approved_at?: string;
   disbursed_at?: string;
@@ -78,4 +79,11 @@ export interface LoanApplication {
   duration_months: number;
   purpose: string;
   interest_rate?: number;
+}
+
+export enum LoanDocumentType {
+  ID_CARD = 'id_card',
+  PROOF_OF_INCOME = 'proof_of_income',
+  BANK_STATEMENT = 'bank_statement',
+  OTHER = 'other'
 }

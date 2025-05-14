@@ -5,6 +5,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { LoanApplication } from '@/types/loans';
 
+export enum LoanDocumentType {
+  ID_CARD = 'id_card',
+  PROOF_OF_INCOME = 'proof_of_income',
+  BANK_STATEMENT = 'bank_statement',
+  OTHER = 'other'
+}
+
 export function useLoanApplication(sfdId?: string) {
   const { user } = useAuth();
   const [loanPlans, setLoanPlans] = useState<any[]>([]);
@@ -104,6 +111,7 @@ export function useLoanApplication(sfdId?: string) {
     loanPlans,
     isLoadingPlans,
     isUploading: isUploading || submitMutation.isPending,
-    submitApplication
+    submitApplication,
+    submitMutation
   };
 }

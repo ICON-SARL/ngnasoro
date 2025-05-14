@@ -23,6 +23,7 @@ interface MobileFlowRoutesProps {
   handlePaymentSubmit: (data: { recipient: string, amount: number, note: string }) => Promise<void>;
 }
 
+// Convert this to a component that returns route elements, not a Router component
 const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   onAction,
   account,
@@ -34,7 +35,8 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
   handlePaymentSubmit
 }) => {
   return (
-    <Routes>
+    <>
+      {/* These are the individual routes that can be used in a Routes component */}
       <Route path="splash" element={<SplashScreen onComplete={() => onAction('Start')} />} />
       <Route path="welcome" element={<WelcomeScreen onStart={() => onAction('Start')} />} />
       <Route path="main" element={
@@ -54,7 +56,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="transfers" element={<TransferPage />} />
       <Route index element={<Navigate to="main" replace />} />
       <Route path="*" element={<Navigate to="main" replace />} />
-    </Routes>
+    </>
   );
 };
 
