@@ -1,13 +1,16 @@
 
 import React from 'react';
-import { Outlet } from 'react-router-dom';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 
-const MobileLayout: React.FC = () => {
+interface MobileLayoutProps {
+  children: React.ReactNode;
+}
+
+const MobileLayout: React.FC<MobileLayoutProps> = ({ children }) => {
   return (
     <div className="min-h-screen bg-gray-50 pb-16">
       <main className="container mx-auto">
-        <Outlet />
+        {children}
       </main>
       <MobileNavigation />
     </div>

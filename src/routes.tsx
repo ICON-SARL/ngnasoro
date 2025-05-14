@@ -23,6 +23,7 @@ import RegisterPage from './pages/RegisterPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
 import PermissionTestPage from './pages/PermissionTestPage';
 import MobileApp from './pages/mobile/MobileApp';
+import { authRoutes } from './components/Router';
 
 const router = createBrowserRouter([
   // Main App routes
@@ -34,6 +35,7 @@ const router = createBrowserRouter([
         index: true,
         element: <div>Welcome to the App</div>,
       },
+      // Import auth routes from the Router component
       {
         path: 'auth',
         element: <LoginPage />,

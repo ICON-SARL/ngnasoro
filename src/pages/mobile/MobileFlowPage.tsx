@@ -88,7 +88,7 @@ const MobileFlowPage: React.FC = () => {
         onLogout={handleLogout} 
       />
       
-      {/* Use Outlet instead of nested Router */}
+      {/* Use Outlet to render the child routes */}
       <Outlet />
       
       <MobileNavigation />
