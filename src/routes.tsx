@@ -1,24 +1,13 @@
+
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
-import HomePage from './pages/HomePage';
-import AuthPage from './pages/AuthPage';
-import DashboardPage from './pages/DashboardPage';
-import SfdPage from './pages/SfdPage';
-import SfdUsersPage from './pages/SfdUsersPage';
-import SfdLoansPage from './pages/SfdLoansPage';
-import SfdClientsPage from './pages/SfdClientsPage';
-import SfdClientDetailsPage from './pages/SfdClientDetailsPage';
-import SfdLoanDetailsPage from './pages/SfdLoanDetailsPage';
-import AdminLoanPlansPage from './pages/AdminLoanPlansPage';
-import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
-import MobileProfilePage from './pages/mobile/MobileProfilePage';
-import MobileLoansPage from './pages/mobile/MyLoansPage';
-import MobileTransactionsPage from './pages/mobile/MobileTransactionsPage';
-import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
-import MobileLoanDetailsPage from './pages/mobile/MobileLoanDetailsPage';
-import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
-import LoanApplicationPage from './pages/LoanApplicationPage';
+import { MobileRouter } from './components/Router';
 import { Outlet } from 'react-router-dom';
+import MobileFlowPage from './pages/mobile/MobileFlowPage';
+import FundsManagementPage from './pages/mobile/FundsManagementPage';
+import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
+import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
+import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
 
 const router = createBrowserRouter([
   {
@@ -27,22 +16,22 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <HomePage />,
+        element: <div>Welcome to the App</div>,
       },
       {
         path: 'auth',
-        element: <AuthPage />,
+        element: <div>Authentication Page</div>,
       },
       {
         path: 'dashboard',
-        element: <DashboardPage />,
+        element: <div>Dashboard Page</div>,
       },
       {
         path: 'admin',
         children: [
           {
             path: 'loan-plans',
-            element: <AdminLoanPlansPage />,
+            element: <div>Admin Loan Plans</div>,
           },
         ],
       },
@@ -51,23 +40,27 @@ const router = createBrowserRouter([
   // Mobile routes
   {
     path: '/mobile-flow',
-    element: <Outlet />,
+    element: <MobileFlowPage />,
     children: [
       {
         path: 'dashboard',
-        element: <MobileDashboardPage />,
+        element: <MobileRouter />,
       },
       {
         path: 'profile',
-        element: <MobileProfilePage />,
+        element: <MobileRouter />,
       },
       {
         path: 'loans',
-        element: <MobileLoansPage />,
+        element: <MobileRouter />,
+      },
+      {
+        path: 'funds-management',
+        element: <FundsManagementPage />,
       },
       {
         path: 'transactions',
-        element: <MobileTransactionsPage />,
+        element: <MobileRouter />,
       },
       {
         path: 'loan-application',
@@ -79,46 +72,18 @@ const router = createBrowserRouter([
       },
       {
         path: 'loan-details/:loanId',
-        element: <MobileLoanDetailsPage />,
+        element: <LoanDetailsPage />,
       },
       {
         path: 'diagnostics',
         element: <MobileDiagnosticsPage />,
+      },
+      {
+        index: true,
+        element: <MobileRouter />,
       }
     ],
   },
-  // Other SFD routes
-  {
-    path: '/sfd',
-    element: <SfdPage />,
-    children: [
-      {
-        path: 'users',
-        element: <SfdUsersPage />,
-      },
-      {
-        path: 'loans',
-        element: <SfdLoansPage />,
-      },
-      {
-        path: 'loans/:loanId',
-        element: <SfdLoanDetailsPage />,
-      },
-      {
-        path: 'clients',
-        element: <SfdClientsPage />,
-      },
-      {
-        path: 'clients/:clientId',
-        element: <SfdClientDetailsPage />,
-      },
-    ],
-  },
-  // Standalone pages
-  {
-    path: '/loan-application',
-    element: <LoanApplicationPage />,
-  }
 ]);
 
 export default router;
