@@ -25,6 +25,7 @@ import PermissionTestPage from './pages/PermissionTestPage';
 import MobileApp from './pages/mobile/MobileApp';
 
 const router = createBrowserRouter([
+  // Main App routes
   {
     path: '/',
     element: <App />,
@@ -40,6 +41,14 @@ const router = createBrowserRouter([
       {
         path: 'register',
         element: <RegisterPage />,
+      },
+      {
+        path: 'access-denied',
+        element: <AccessDeniedPage />,
+      },
+      {
+        path: 'permission-test',
+        element: <PermissionTestPage />,
       },
       {
         path: 'dashboard',
@@ -63,17 +72,10 @@ const router = createBrowserRouter([
         path: 'loans',
         element: <LoansPage />,
       },
-      {
-        path: 'access-denied',
-        element: <AccessDeniedPage />,
-      },
-      {
-        path: 'permission-test',
-        element: <PermissionTestPage />,
-      },
     ],
   },
-  // Mobile routes - All mobile routes are under this parent route
+  
+  // Mobile Flow routes
   {
     path: '/mobile-flow',
     element: <MobileFlowPage />,
@@ -148,6 +150,8 @@ const router = createBrowserRouter([
       },
     ],
   },
+  
+  // Mobile App routes
   {
     path: '/mobile-app',
     element: <MobileApp />,
