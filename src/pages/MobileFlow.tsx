@@ -110,7 +110,7 @@ const MobileFlow = () => {
         onLogout={handleLogout} 
       />
 
-      {/* Use Outlet instead of nested Router */}
+      {/* Use Outlet to render nested routes */}
       <Outlet />
       
       {!isWelcomePage && <div className="sm:hidden"><MobileNavigation onAction={onAction} /></div>}
