@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { Loan } from '@/types/sfdClients';
 import { useToast } from '@/hooks/use-toast';
@@ -300,47 +301,13 @@ export const getLoanPayments = async (loanId: string) => {
 // Send payment reminder
 export const sendPaymentReminder = async (loanId: string) => {
   try {
-    // First, get the loan details to determine payment information
-    const { data: loanData, error: loanError } = await supabase
-      .from('sfd_loans')
-      .select('*')
-      .eq('id', loanId)
-      .single();
-    
-    if (loanError) throw loanError;
-    
-    if (!loanData) throw new Error('Loan not found');
-    
-    const now = new Date();
-    const nextPaymentDate = loanData.next_payment_date ? new Date(loanData.next_payment_date) : 
-      new Date(now.setMonth(now.getMonth() + 1));
-    
-    // Calculate reminder date (typically 3 days before payment)
-    const reminderDate = new Date(nextPaymentDate);
-    reminderDate.setDate(reminderDate.getDate() - 3);
-    
-    // Determine payment number (count of existing payments + 1)
-    const { count: paymentCount, error: countError } = await supabase
-      .from('loan_payments')
-      .select('*', { count: 'exact', head: false })
-      .eq('loan_id', loanId);
-    
-    if (countError) throw countError;
-    
-    const paymentNumber = (paymentCount || 0) + 1;
-    
     // Create reminder record
     const { data, error } = await supabase
       .from('loan_payment_reminders')
       .insert({
         loan_id: loanId,
         sent_at: new Date().toISOString(),
-        is_sent: true,
-        payment_date: nextPaymentDate.toISOString(),
-        reminder_date: reminderDate.toISOString(),
-        payment_number: paymentNumber,
-        amount: loanData.monthly_payment || 0,
-        client_id: loanData.client_id
+        is_sent: true
       })
       .select()
       .single();

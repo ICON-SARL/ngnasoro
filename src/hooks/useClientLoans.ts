@@ -3,7 +3,6 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
 import { LoanApplication } from './useLoanApplication';
-import { useToast } from '@/hooks/use-toast';
 
 export interface Loan {
   id: string;
@@ -39,7 +38,6 @@ interface LoanNotification {
 export function useClientLoans() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const { toast } = useToast();
   
   // Fetch all loans for the client
   const { data: loans = [], isLoading, error, refetch } = useQuery({
@@ -50,7 +48,7 @@ export function useClientLoans() {
       try {
         console.log("Fetching client loans for user:", user.id);
         
-        // Method 1: First try to get clients for this user
+        // First try to get clients for this user
         const { data: clientsData, error: clientsError } = await supabase
           .from('sfd_clients')
           .select('id, sfd_id')
@@ -58,79 +56,39 @@ export function useClientLoans() {
           
         if (clientsError) {
           console.error("Error fetching client data:", clientsError);
+          return [];
         }
         
-        // Get loans by client IDs if clients were found
-        if (clientsData && clientsData.length > 0) {
-          const clientIds = clientsData.map(client => client.id);
-          console.log("Found client IDs:", clientIds);
-          
-          const { data: loansData, error: loansError } = await supabase
-            .from('sfd_loans')
-            .select(`
-              *,
-              sfds:sfd_id (name, logo_url)
-            `)
-            .in('client_id', clientIds)
-            .order('created_at', { ascending: false });
-            
-          if (loansError) {
-            console.error("Error fetching loans by client IDs:", loansError);
-          } else if (loansData && loansData.length > 0) {
-            console.log("Found loans by client IDs:", loansData.length);
-            
-            return (loansData || []).map(loan => ({
-              ...loan,
-              sfd_name: loan.sfds?.name || 'SFD'
-            })) as Loan[];
-          }
+        if (!clientsData || clientsData.length === 0) {
+          console.log("No client records found for user");
+          return [];
         }
         
-        // Method 2: Try querying loans directly using user's ID
-        console.log("Trying direct loan query with user ID:", user.id);
-        const { data: directLoans, error: directError } = await supabase
+        // Now get loans for each client
+        const clientIds = clientsData.map(client => client.id);
+        console.log("Found client IDs:", clientIds);
+        
+        const { data: loansData, error: loansError } = await supabase
           .from('sfd_loans')
           .select(`
             *,
             sfds:sfd_id (name, logo_url)
           `)
-          .eq('client_id', user.id)
+          .in('client_id', clientIds)
           .order('created_at', { ascending: false });
           
-        if (directError) {
-          console.error("Direct loans query error:", directError);
-        } else if (directLoans && directLoans.length > 0) {
-          console.log("Found loans directly by user ID:", directLoans.length);
-          return directLoans.map(loan => ({
-            ...loan,
-            sfd_name: loan.sfds?.name || 'SFD'
-          })) as Loan[];
+        if (loansError) {
+          console.error("Error fetching loans:", loansError);
+          return [];
         }
         
-        // Method 3: Search for loans with a relationship to this user through any client association
-        console.log("Trying extended loan search for user:", user.id);
-        const { data: extendedLoans, error: extendedError } = await supabase
-          .from('sfd_loans')
-          .select(`
-            *,
-            sfd_clients!inner(user_id),
-            sfds:sfd_id (name, logo_url)
-          `)
-          .eq('sfd_clients.user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (extendedError) {
-          console.error("Extended loans query error:", extendedError);
-        } else if (extendedLoans && extendedLoans.length > 0) {
-          console.log("Found loans through client association:", extendedLoans.length);
-          return extendedLoans.map(loan => ({
-            ...loan,
-            sfd_name: loan.sfds?.name || 'SFD'
-          })) as Loan[];
-        }
+        console.log("Loans fetched successfully:", loansData?.length || 0, "loans");
         
-        console.log("No loans found for user:", user.id);
-        return [];
+        // Format the data to match our interface
+        return (loansData || []).map(loan => ({
+          ...loan,
+          sfd_name: loan.sfds?.name || 'SFD'
+        })) as Loan[];
       } catch (error) {
         console.error("Error in useClientLoans hook:", error);
         return [];
@@ -146,41 +104,16 @@ export function useClientLoans() {
     mutationFn: async (application: LoanApplication) => {
       if (!user?.id) throw new Error('User not authenticated');
       
-      console.log("Creating loan application:", application);
-      
       // Use the loan-manager edge function
-      const { data, error } = await supabase.functions.invoke('loan-manager', {
+      return await supabase.functions.invoke('loan-manager', {
         body: {
           action: 'create_loan',
-          data: {
-            ...application,
-            user_id: user.id // Add user_id to help with association
-          }
+          data: application
         }
       });
-      
-      if (error) {
-        console.error("Error in loan application:", error);
-        throw new Error(error.message || "Failed to create loan application");
-      }
-      
-      console.log("Loan created successfully:", data);
-      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['client-loans'] });
-      
-      toast({
-        title: "Demande envoyée",
-        description: "Votre demande de prêt a été envoyée avec succès"
-      });
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Erreur",
-        description: error.message || "Une erreur est survenue lors de l'envoi de votre demande",
-        variant: "destructive"
-      });
     }
   });
 

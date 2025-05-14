@@ -1,23 +1,24 @@
+
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
-// Fix the import to use the correct module
-import MobileRouter from '@/components/mobile/routes/MobileRouter';
+import { useNavigate, useLocation, Routes, Route } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
+import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
+import SfdSelectorPage from '@/pages/SfdSelectorPage';
+import FundsManagementPage from '@/pages/mobile/FundsManagementPage';
+import { MobileRouter } from '@/components/Router';
 import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, userRole } = useAuth();
 
-  // Check if user is authenticated
   useEffect(() => {
     if (!loading) {
       if (!user) {
@@ -30,7 +31,6 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Get the user role and redirect if needed
       const role = user.app_metadata?.role;
       
       if (role === 'admin') {
@@ -50,10 +50,17 @@ const MobileFlowPage: React.FC = () => {
         navigate('/agency-dashboard');
         return;
       }
-    }
-  }, [user, loading, navigate, toast]);
 
-  // Handle logout
+      if (role === 'user' && location.pathname === '/mobile-flow/main') {
+        toast({
+          title: "Bienvenue",
+          description: "Pour accéder à toutes les fonctionnalités, vous devez d'abord adhérer à une SFD.",
+        });
+        navigate('/mobile-flow/sfd-selector');
+      }
+    }
+  }, [user, loading, navigate, toast, location.pathname]);
+
   const handleLogout = async () => {
     try {
       await signOut();
@@ -88,7 +95,12 @@ const MobileFlowPage: React.FC = () => {
         onClose={() => setMenuOpen(false)} 
         onLogout={handleLogout} 
       />
-      <MobileRouter />
+      <Routes>
+        <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
+        <Route path="sfd-selector" element={<SfdSelectorPage />} />
+        <Route path="funds-management" element={<FundsManagementPage />} />
+        <Route path="*" element={<MobileRouter />} />
+      </Routes>
       <MobileNavigation />
     </div>
   );

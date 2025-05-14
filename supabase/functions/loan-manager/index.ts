@@ -1,456 +1,252 @@
 
-import { serve } from 'https://deno.land/std@0.131.0/http/server.ts';
-import { createClient, SupabaseClient } from 'https://esm.sh/@supabase/supabase-js@2.0.0';
+import { serve } from "https://deno.land/std@0.188.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-interface RequestBody {
-  action: string;
-  data: any;
-}
-
-// Initialize Supabase client with environment variables
-const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-
-async function handleCreateLoan(supabase: SupabaseClient, requestData: any) {
-  console.log("Creating loan record in database...");
-  
-  try {
-    // Extract data from the request
-    const { 
-      client_id, 
-      sfd_id, 
-      amount, 
-      duration_months, 
-      purpose, 
-      loan_plan_id, 
-      user_id // This is an additional field to help with client association
-    } = requestData;
-    
-    // If client_id is missing but user_id is provided, try to find or create a client record
-    let effectiveClientId = client_id;
-    
-    if (!effectiveClientId && user_id) {
-      console.log("No client_id provided, but user_id is present. Looking up client by user_id...");
-      
-      // Look up client by user_id
-      const { data: clientData, error: clientLookupError } = await supabase
-        .from('sfd_clients')
-        .select('id')
-        .eq('user_id', user_id)
-        .eq('sfd_id', sfd_id)
-        .single();
-      
-      if (clientLookupError || !clientData) {
-        console.log("No existing client found for user_id", user_id, "Creating temporary client record...");
-        
-        // Get user info
-        const { data: userData, error: userError } = await supabase
-          .from('profiles')
-          .select('full_name, email, phone')
-          .eq('id', user_id)
-          .single();
-          
-        if (userError) {
-          console.error("Error fetching user data:", userError);
-          throw new Error("Impossible de récupérer les informations utilisateur");
-        }
-        
-        // Create a new client record
-        const { data: newClient, error: clientCreateError } = await supabase
-          .from('sfd_clients')
-          .insert({
-            user_id: user_id,
-            sfd_id: sfd_id,
-            full_name: userData?.full_name || "Client",
-            email: userData?.email || "",
-            phone: userData?.phone || "",
-            status: 'active'
-          })
-          .select()
-          .single();
-          
-        if (clientCreateError) {
-          console.error("Error creating client:", clientCreateError);
-          throw new Error("Impossible de créer un enregistrement client");
-        }
-        
-        effectiveClientId = newClient.id;
-        console.log("Created new client with ID:", effectiveClientId);
-      } else {
-        effectiveClientId = clientData.id;
-        console.log("Found existing client with ID:", effectiveClientId);
-      }
-    }
-    
-    if (!effectiveClientId) {
-      throw new Error("Un identifiant client est nécessaire pour créer un prêt");
-    }
-    
-    // Get interest rate from loan plan if provided
-    let interestRate = requestData.interest_rate;
-    if (loan_plan_id && !interestRate) {
-      const { data: planData, error: planError } = await supabase
-        .from('sfd_loan_plans')
-        .select('interest_rate')
-        .eq('id', loan_plan_id)
-        .single();
-        
-      if (!planError && planData) {
-        interestRate = planData.interest_rate;
-      } else {
-        interestRate = 5.0; // Default interest rate
-      }
-    }
-    
-    // Calculate monthly payment if needed
-    let monthlyPayment = requestData.monthly_payment;
-    if (!monthlyPayment && amount && duration_months && interestRate) {
-      // Simple monthly payment calculation
-      const monthlyInterestRate = interestRate / 100 / 12;
-      monthlyPayment = (amount * monthlyInterestRate * Math.pow(1 + monthlyInterestRate, duration_months)) / 
-                       (Math.pow(1 + monthlyInterestRate, duration_months) - 1);
-      monthlyPayment = Math.round(monthlyPayment); // Round to whole number
-    }
-    
-    // Create the loan record
-    const { data: loan, error } = await supabase
-      .from('sfd_loans')
-      .insert({
-        client_id: effectiveClientId,
-        sfd_id,
-        amount,
-        duration_months,
-        purpose,
-        interest_rate: interestRate || 5.0,
-        monthly_payment: monthlyPayment || 0,
-        status: 'pending',
-        loan_plan_id
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error creating loan:", error);
-      throw new Error(`Erreur lors de la création du prêt: ${error.message}`);
-    }
-    
-    console.log("Loan created successfully:", loan);
-    
-    // Create a notification for the SFD
-    try {
-      await supabase
-        .from('admin_notifications')
-        .insert({
-          title: "Nouvelle demande de prêt",
-          message: `Une nouvelle demande de prêt de ${amount.toLocaleString()} FCFA a été soumise`,
-          type: "loan_request",
-          recipient_role: "sfd_admin",
-          action_link: `/sfd-loans/${loan.id}`,
-          sender_id: user_id || effectiveClientId
-        });
-    } catch (notifError) {
-      console.error("Error creating notification (non-critical):", notifError);
-    }
-    
-    return loan;
-  } catch (error) {
-    console.error("Error in handleCreateLoan:", error);
-    throw error;
-  }
-}
-
-async function handleApproveLoan(supabase: SupabaseClient, loanId: string) {
-  try {
-    // Get current user ID for auditing
-    const authHeader = Deno.env.get('HTTP_AUTHORIZATION') || '';
-    let userId = 'system';
-    
-    if (authHeader.startsWith('Bearer ')) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-        if (user) {
-          userId = user.id;
-        }
-      } catch (e) {
-        console.error("Error getting user:", e);
-      }
-    }
-    
-    // Update loan status
-    const { data: updatedLoan, error } = await supabase
-      .from('sfd_loans')
-      .update({ 
-        status: 'approved',
-        approved_at: new Date().toISOString(),
-        approved_by: userId,
-        processed_by: userId,
-        processed_at: new Date().toISOString()
-      })
-      .eq('id', loanId)
-      .select('*, sfd_clients(user_id)')
-      .single();
-      
-    if (error) {
-      console.error("Error approving loan:", error);
-      throw new Error(`Erreur lors de l'approbation du prêt: ${error.message}`);
-    }
-    
-    // Create a notification for the client
-    try {
-      if (updatedLoan?.sfd_clients?.user_id) {
-        await supabase
-          .from('admin_notifications')
-          .insert({
-            title: "Prêt approuvé",
-            message: `Votre demande de prêt de ${updatedLoan.amount.toLocaleString()} FCFA a été approuvée`,
-            type: "loan_approved",
-            recipient_id: updatedLoan.sfd_clients.user_id,
-            action_link: `/mobile-flow/loan-details/${loanId}`,
-            sender_id: userId
-          });
-      }
-    } catch (notifError) {
-      console.error("Error creating notification (non-critical):", notifError);
-    }
-    
-    return updatedLoan;
-  } catch (error) {
-    console.error("Error in handleApproveLoan:", error);
-    throw error;
-  }
-}
-
-async function handleRejectLoan(supabase: SupabaseClient, loanId: string, reason?: string) {
-  try {
-    // Get current user ID for auditing
-    const authHeader = Deno.env.get('HTTP_AUTHORIZATION') || '';
-    let userId = 'system';
-    
-    if (authHeader.startsWith('Bearer ')) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-        if (user) {
-          userId = user.id;
-        }
-      } catch (e) {
-        console.error("Error getting user:", e);
-      }
-    }
-    
-    // Update loan status
-    const { data: updatedLoan, error } = await supabase
-      .from('sfd_loans')
-      .update({ 
-        status: 'rejected',
-        rejection_reason: reason || 'Demande refusée par la SFD',
-        processed_by: userId,
-        processed_at: new Date().toISOString()
-      })
-      .eq('id', loanId)
-      .select('*, sfd_clients(user_id)')
-      .single();
-      
-    if (error) {
-      console.error("Error rejecting loan:", error);
-      throw new Error(`Erreur lors du rejet du prêt: ${error.message}`);
-    }
-    
-    // Create a notification for the client
-    try {
-      if (updatedLoan?.sfd_clients?.user_id) {
-        await supabase
-          .from('admin_notifications')
-          .insert({
-            title: "Prêt refusé",
-            message: `Votre demande de prêt a été refusée${reason ? `: ${reason}` : ''}`,
-            type: "loan_rejected",
-            recipient_id: updatedLoan.sfd_clients.user_id,
-            action_link: `/mobile-flow/loan-details/${loanId}`,
-            sender_id: userId
-          });
-      }
-    } catch (notifError) {
-      console.error("Error creating notification (non-critical):", notifError);
-    }
-    
-    return updatedLoan;
-  } catch (error) {
-    console.error("Error in handleRejectLoan:", error);
-    throw error;
-  }
-}
-
-async function handleDisburseLoan(supabase: SupabaseClient, loanId: string) {
-  try {
-    // Get current user ID for auditing
-    const authHeader = Deno.env.get('HTTP_AUTHORIZATION') || '';
-    let userId = 'system';
-    
-    if (authHeader.startsWith('Bearer ')) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-        if (user) {
-          userId = user.id;
-        }
-      } catch (e) {
-        console.error("Error getting user:", e);
-      }
-    }
-    
-    const now = new Date();
-    const nextMonth = new Date(now);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    
-    // Update loan status
-    const { data: updatedLoan, error } = await supabase
-      .from('sfd_loans')
-      .update({ 
-        status: 'active',
-        disbursement_status: 'completed',
-        disbursed_at: now.toISOString(),
-        disbursement_date: now.toISOString(),
-        next_payment_date: nextMonth.toISOString(),
-        disbursement_reference: `DISB-${Date.now()}`
-      })
-      .eq('id', loanId)
-      .select('*, sfd_clients(user_id)')
-      .single();
-      
-    if (error) {
-      console.error("Error disbursing loan:", error);
-      throw new Error(`Erreur lors du décaissement du prêt: ${error.message}`);
-    }
-    
-    // Create a notification for the client
-    try {
-      if (updatedLoan?.sfd_clients?.user_id) {
-        await supabase
-          .from('admin_notifications')
-          .insert({
-            title: "Prêt décaissé",
-            message: `Votre prêt de ${updatedLoan.amount.toLocaleString()} FCFA a été décaissé`,
-            type: "loan_disbursed",
-            recipient_id: updatedLoan.sfd_clients.user_id,
-            action_link: `/mobile-flow/loan-details/${loanId}`,
-            sender_id: userId
-          });
-      }
-    } catch (notifError) {
-      console.error("Error creating notification (non-critical):", notifError);
-    }
-    
-    return updatedLoan;
-  } catch (error) {
-    console.error("Error in handleDisburseLoan:", error);
-    throw error;
-  }
-}
-
-async function handleRecordPayment(supabase: SupabaseClient, loanId: string, amount: number, paymentMethod: string) {
-  try {
-    // Record the payment
-    const { data: payment, error } = await supabase
-      .from('loan_payments')
-      .insert({
-        loan_id: loanId,
-        amount,
-        payment_method: paymentMethod,
-        status: 'completed',
-        payment_date: new Date().toISOString()
-      })
-      .select()
-      .single();
-      
-    if (error) {
-      console.error("Error recording payment:", error);
-      throw new Error(`Erreur lors de l'enregistrement du paiement: ${error.message}`);
-    }
-    
-    // Update the loan with the last payment date and calculate next payment date
-    const now = new Date();
-    const nextMonth = new Date(now);
-    nextMonth.setMonth(nextMonth.getMonth() + 1);
-    
-    await supabase
-      .from('sfd_loans')
-      .update({
-        last_payment_date: now.toISOString(),
-        next_payment_date: nextMonth.toISOString()
-      })
-      .eq('id', loanId);
-    
-    return payment;
-  } catch (error) {
-    console.error("Error in handleRecordPayment:", error);
-    throw error;
-  }
-}
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+};
 
 serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return new Response(null, { headers: corsHeaders });
+  }
+  
   try {
-    // Initialize Supabase client
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Initialize Supabase client with service key
+    const supabaseUrl = Deno.env.get("SUPABASE_URL");
+    const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY");
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     
-    // Get the authenticated user if available
-    let userId: string | null = null;
-    const authHeader = req.headers.get('Authorization');
+    if (!supabaseUrl || !supabaseAnonKey || !supabaseServiceKey) {
+      throw new Error("Missing environment variables");
+    }
     
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const { data: { user } } = await supabase.auth.getUser(authHeader.replace('Bearer ', ''));
-        if (user) {
-          userId = user.id;
-          console.log("Authenticated user:", userId);
-        }
-      } catch (e) {
-        console.error("Auth error:", e);
+    const supabase = createClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false
+      }
+    });
+    
+    // Extract auth token from header (if available)
+    const authHeader = req.headers.get("Authorization");
+    let user = null;
+    
+    if (authHeader) {
+      const authToken = authHeader.replace("Bearer ", "");
+      const { data: userData, error: userError } = await supabase.auth.getUser(authToken);
+      
+      if (userError) {
+        console.error("Auth error:", userError.message);
+      } else {
+        user = userData.user;
       }
     }
     
-    // Parse request body
-    const requestJson: RequestBody = await req.json();
-    const { action, data } = requestJson;
-    
-    console.log("Processing", action, "action with data:", data);
-    
-    let result;
-    
-    // Process the request based on the action
-    switch (action) {
-      case 'create_loan':
-        result = await handleCreateLoan(supabase, data);
-        break;
-        
-      case 'approve_loan':
-        result = await handleApproveLoan(supabase, data);
-        break;
-        
-      case 'reject_loan':
-        result = await handleRejectLoan(supabase, data.loanId, data.reason);
-        break;
-        
-      case 'disburse_loan':
-        result = await handleDisburseLoan(supabase, data);
-        break;
-        
-      case 'record_payment':
-        result = await handleRecordPayment(supabase, data.loanId, data.amount, data.paymentMethod);
-        break;
-        
-      default:
-        throw new Error(`Unknown action: ${action}`);
+    // Parse the request body
+    let body;
+    try {
+      body = await req.json();
+    } catch (error) {
+      return new Response(
+        JSON.stringify({ error: "Invalid JSON" }),
+        { 
+          status: 400, 
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          }
+        }
+      );
     }
     
-    return new Response(JSON.stringify(result), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 200,
-    });
-  } catch (error) {
-    console.error('Error processing request:', error);
+    const { action, data } = body;
+    console.log(`Processing ${action} action with data:`, JSON.stringify(data, null, 2));
     
-    return new Response(JSON.stringify({ error: error.message }), {
-      headers: { 'Content-Type': 'application/json' },
-      status: 400,
-    });
+    if (action === "create_loan") {
+      // Validate required fields
+      if (!data || !data.client_id || !data.sfd_id || !data.amount || !data.duration_months) {
+        throw new Error("Missing required loan data");
+      }
+      
+      // Verify that the user has permission to create a loan for this client
+      // For client-created loans, we'll verify the client_id belongs to the user
+      if (user) {
+        const { data: clientCheck, error: clientCheckError } = await supabase
+          .from("sfd_clients")
+          .select("id, user_id, sfd_id")
+          .eq("id", data.client_id)
+          .single();
+        
+        if (clientCheckError) {
+          console.error("Error checking client:", clientCheckError);
+          throw new Error("Client not found or unauthorized");
+        }
+        
+        // If the client's user_id doesn't match the authenticated user, 
+        // and user is not an SFD admin, deny access
+        const isAdmin = user?.app_metadata?.role === "sfd_admin" || 
+                       user?.app_metadata?.role === "admin";
+                       
+        if (clientCheck.user_id !== user.id && !isAdmin) {
+          throw new Error("Unauthorized: You cannot create a loan for this client");
+        }
+      }
+      
+      console.log("Creating loan record in database...");
+      
+      // Create loan record using service role to bypass RLS
+      const { data: loan, error: loanError } = await supabase
+        .from("sfd_loans")
+        .insert({
+          client_id: data.client_id,
+          sfd_id: data.sfd_id,
+          amount: data.amount,
+          duration_months: data.duration_months,
+          purpose: data.purpose,
+          loan_plan_id: data.loan_plan_id || null,
+          interest_rate: data.interest_rate || 5.5,
+          monthly_payment: data.monthly_payment || 0,
+          status: data.status || "pending"
+        })
+        .select()
+        .single();
+      
+      if (loanError) {
+        console.error("Error creating loan:", loanError);
+        throw new Error(`Error creating loan: ${loanError.message}`);
+      }
+      
+      console.log("Loan created successfully:", loan);
+      
+      // Create loan activity for audit trail
+      const performerId = user?.id || "system";
+      await supabase.from("loan_activities").insert({
+        loan_id: loan.id,
+        activity_type: "application_submitted",
+        description: "Demande de prêt soumise",
+        performed_by: performerId
+      });
+      
+      // Create notification for SFD admin
+      await supabase.from("admin_notifications").insert({
+        title: "Nouvelle demande de prêt",
+        message: `Nouvelle demande de prêt pour ${data.amount.toLocaleString()} FCFA a été soumise.`,
+        type: "loan_application",
+        recipient_role: "sfd_admin",
+        action_link: `/sfd/loans/${loan.id}`,
+        sender_id: performerId
+      });
+      
+      return new Response(
+        JSON.stringify(loan),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          }
+        }
+      );
+    }
+    
+    // Loan disbursement action
+    if (action === "disburse_loan") {
+      const { payload } = data;
+      
+      if (!payload || !payload.loanId) {
+        throw new Error("Missing loan information");
+      }
+      
+      // Fetch the loan
+      const { data: loan, error: loanError } = await supabase
+        .from("sfd_loans")
+        .select("*, client:client_id(user_id)")
+        .eq("id", payload.loanId)
+        .single();
+      
+      if (loanError || !loan) {
+        throw new Error("Loan not found");
+      }
+      
+      // Check if loan is already disbursed
+      if (loan.disbursement_status === "completed") {
+        throw new Error("Loan has already been disbursed");
+      }
+      
+      // Update loan status
+      const { error: updateError } = await supabase
+        .from("sfd_loans")
+        .update({
+          disbursement_status: "completed",
+          disbursed_at: new Date().toISOString(),
+          status: "active"
+        })
+        .eq("id", payload.loanId);
+        
+      if (updateError) {
+        throw new Error(`Error updating loan: ${updateError.message}`);
+      }
+      
+      // Create transaction for loan disbursement
+      const { data: transactionData, error: transactionError } = await supabase
+        .from("transactions")
+        .insert({
+          user_id: loan.client.user_id,
+          sfd_id: loan.sfd_id,
+          type: "loan_disbursement",
+          amount: loan.amount,
+          status: "success",
+          name: "Décaissement de prêt",
+          description: `Prêt approuvé et montant crédité sur votre compte`,
+          reference_id: loan.id,
+          method: payload.method || "bank_transfer",
+          notes: payload.notes
+        })
+        .select();
+        
+      if (transactionError) {
+        throw new Error(`Error creating transaction: ${transactionError.message}`);
+      }
+      
+      // Create loan activity
+      await supabase
+        .from("loan_activities")
+        .insert({
+          loan_id: loan.id,
+          activity_type: "disbursement",
+          description: `Prêt décaissé pour un montant de ${loan.amount.toLocaleString()} FCFA`,
+          performed_by: payload.disbursedBy || (user ? user.id : 'system')
+        });
+      
+      return new Response(
+        JSON.stringify({ success: true, transaction: transactionData }),
+        { 
+          status: 200,
+          headers: { 
+            ...corsHeaders,
+            "Content-Type": "application/json" 
+          }
+        }
+      );
+    }
+    
+    // If action is not recognized
+    throw new Error(`Unsupported action: ${action}`);
+    
+  } catch (error) {
+    console.error("Function error:", error.message);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { 
+        status: 400, 
+        headers: { 
+          ...corsHeaders,
+          "Content-Type": "application/json" 
+        }
+      }
+    );
   }
 });
