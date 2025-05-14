@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.188.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -42,7 +41,10 @@ serve(async (req) => {
         console.error("Auth error:", userError.message);
       } else {
         user = userData.user;
+        console.log("Authenticated user:", user.id);
       }
+    } else {
+      console.log("No auth header provided, proceeding with anonymous request");
     }
     
     // Parse the request body
@@ -67,32 +69,61 @@ serve(async (req) => {
     
     if (action === "create_loan") {
       // Validate required fields
-      if (!data || !data.client_id || !data.sfd_id || !data.amount || !data.duration_months) {
+      if (!data || !data.sfd_id || !data.amount || !data.duration_months) {
         throw new Error("Missing required loan data");
       }
       
-      // Verify that the user has permission to create a loan for this client
-      // For client-created loans, we'll verify the client_id belongs to the user
-      if (user) {
-        const { data: clientCheck, error: clientCheckError } = await supabase
+      // Get client_id either from request or look it up using the user's ID
+      let clientId = data.client_id;
+      
+      // If no client_id provided but we have a user, find their client record for this SFD
+      if (!clientId && user) {
+        console.log(`No client_id provided, looking up client record for user ${user.id} in SFD ${data.sfd_id}`);
+        
+        const { data: clientData, error: clientLookupError } = await supabase
           .from("sfd_clients")
-          .select("id, user_id, sfd_id")
-          .eq("id", data.client_id)
-          .single();
-        
-        if (clientCheckError) {
-          console.error("Error checking client:", clientCheckError);
-          throw new Error("Client not found or unauthorized");
+          .select("id")
+          .eq("user_id", user.id)
+          .eq("sfd_id", data.sfd_id)
+          .maybeSingle();
+          
+        if (clientLookupError) {
+          console.error("Error looking up client:", clientLookupError);
+        } else if (clientData) {
+          clientId = clientData.id;
+          console.log(`Found client ID ${clientId} for user ${user.id}`);
+        } else {
+          console.error(`No client record found for user ${user.id} in SFD ${data.sfd_id}`);
+          return new Response(
+            JSON.stringify({ 
+              error: "Vous n'êtes pas client de cette SFD. Veuillez d'abord créer un compte client.", 
+              code: "NO_CLIENT_RECORD" 
+            }),
+            { 
+              status: 400, 
+              headers: { 
+                ...corsHeaders,
+                "Content-Type": "application/json" 
+              }
+            }
+          );
         }
-        
-        // If the client's user_id doesn't match the authenticated user, 
-        // and user is not an SFD admin, deny access
-        const isAdmin = user?.app_metadata?.role === "sfd_admin" || 
-                       user?.app_metadata?.role === "admin";
-                       
-        if (clientCheck.user_id !== user.id && !isAdmin) {
-          throw new Error("Unauthorized: You cannot create a loan for this client");
-        }
+      }
+      
+      if (!clientId) {
+        throw new Error("Missing client_id and couldn't determine it from user session");
+      }
+      
+      // Verify the client exists
+      const { data: clientCheck, error: clientCheckError } = await supabase
+        .from("sfd_clients")
+        .select("id, user_id, sfd_id")
+        .eq("id", clientId)
+        .single();
+      
+      if (clientCheckError || !clientCheck) {
+        console.error("Error checking client:", clientCheckError || "Client not found");
+        throw new Error("Client not found or unauthorized");
       }
       
       console.log("Creating loan record in database...");
@@ -101,7 +132,7 @@ serve(async (req) => {
       const { data: loan, error: loanError } = await supabase
         .from("sfd_loans")
         .insert({
-          client_id: data.client_id,
+          client_id: clientId,
           sfd_id: data.sfd_id,
           amount: data.amount,
           duration_months: data.duration_months,
