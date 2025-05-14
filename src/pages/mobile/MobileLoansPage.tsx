@@ -19,7 +19,7 @@ const MobileLoansPage: React.FC = () => {
   const { user, activeSfdId } = useAuth();
   const [sfdName, setSfdName] = useState<string>('votre SFD');
   const { data: plans = [] } = useSfdLoanPlans();
-  const { data: loans = [], isLoading: isLoadingLoans } = useSfdLoans();
+  const { data: loans = [], isLoading: isLoadingLoans, refetch } = useSfdLoans();
   const [searchTerm, setSearchTerm] = useState('');
 
   // Filtrer les prêts en fonction du terme de recherche
@@ -29,11 +29,23 @@ const MobileLoansPage: React.FC = () => {
   );
 
   useEffect(() => {
-    // Si des plans sont disponibles, récupérer le nom de la SFD du premier plan
+    // If des plans are available, récupérer le nom de la SFD du premier plan
     if (plans && plans.length > 0 && plans[0].sfds) {
       setSfdName(plans[0].sfds.name || 'votre SFD');
     }
   }, [plans]);
+
+  useEffect(() => {
+    // Refresh loans data when component mounts
+    if (refetch) {
+      console.log("MobileLoansPage: Refreshing loans data");
+      refetch();
+    }
+  }, [refetch]);
+
+  console.log("MobileLoansPage rendering with", loans.length, "loans");
+  console.log("User data:", user);
+  console.log("Active SFD ID:", activeSfdId);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -191,8 +203,6 @@ const MobileLoansPage: React.FC = () => {
           )}
         </div>
       </div>
-      
-      <MobileNavigation />
     </div>
   );
 };
