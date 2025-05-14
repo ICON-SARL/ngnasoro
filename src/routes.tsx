@@ -8,6 +8,8 @@ import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
+import SfdLoansPage from './pages/SfdLoansPage';
+import LoansPage from './pages/LoansPage';
 
 const router = createBrowserRouter([
   {
@@ -34,6 +36,15 @@ const router = createBrowserRouter([
             element: <div>Admin Loan Plans</div>,
           },
         ],
+      },
+      // SFD routes
+      {
+        path: 'sfd-loans',
+        element: <SfdLoansPage />,
+      },
+      {
+        path: 'loans',
+        element: <LoansPage />,
       },
     ],
   },
@@ -67,8 +78,8 @@ const router = createBrowserRouter([
         element: <MobileLoanApplicationPage />,
       },
       {
-        path: 'loan-application/:planId',
-        element: <MobileLoanApplicationPage />,
+        path: 'loan-plans',
+        element: <div>Loan Plans Mobile View</div>,
       },
       {
         path: 'loan-details/:loanId',
