@@ -1,7 +1,6 @@
 
 import { createBrowserRouter } from 'react-router-dom';
 import App from './App';
-import { Outlet } from 'react-router-dom';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
@@ -22,6 +21,7 @@ import HomeLoanPage from './components/mobile/loan/HomeLoanPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
+import PermissionTestPage from './pages/PermissionTestPage';
 
 const router = createBrowserRouter([
   {
@@ -65,6 +65,10 @@ const router = createBrowserRouter([
       {
         path: 'access-denied',
         element: <AccessDeniedPage />,
+      },
+      {
+        path: 'permission-test',
+        element: <PermissionTestPage />,
       },
     ],
   },

@@ -3,7 +3,11 @@ import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Home, CreditCard, User, PiggyBank, AlertCircle } from 'lucide-react';
 
-const MobileNavigation: React.FC = () => {
+interface MobileNavigationProps {
+  onAction?: (action: string, data?: any) => void;
+}
+
+const MobileNavigation: React.FC<MobileNavigationProps> = ({ onAction }) => {
   const navigate = useNavigate();
   const location = useLocation();
   
@@ -19,6 +23,13 @@ const MobileNavigation: React.FC = () => {
     { icon: <User size={20} />, label: 'Profil', path: '/mobile-flow/profile' },
   ];
   
+  const handleNavigation = (path: string, label: string) => {
+    navigate(path);
+    if (onAction) {
+      onAction('navigate', { destination: label });
+    }
+  };
+  
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-10">
       <div className="grid grid-cols-5 h-16">
@@ -28,7 +39,7 @@ const MobileNavigation: React.FC = () => {
             className={`flex flex-col items-center justify-center space-y-1 ${
               isActive(item.path) ? 'text-[#0D6A51]' : 'text-gray-500'
             }`}
-            onClick={() => navigate(item.path)}
+            onClick={() => handleNavigation(item.path, item.label)}
           >
             {item.icon}
             <span className="text-xs">{item.label}</span>

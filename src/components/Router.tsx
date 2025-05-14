@@ -23,10 +23,9 @@ import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage'
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import HomeLoanPage from '@/components/mobile/loan/HomeLoanPage';
 
-// Instead of exporting a router component, export the routes as an array
-// that can be included in the main router
+// Export the routes as an array of route elements
 export const mobileRoutes = (
-  <Routes>
+  <>
     <Route path="/" element={<SplashScreen />} />
     <Route path="/main" element={<div>Mobile Main</div>} />
     <Route path="/profile" element={<ProfilePage />} />
@@ -39,24 +38,17 @@ export const mobileRoutes = (
     <Route path="/loans" element={<HomeLoanPage />} />
     <Route path="/kyc" element={<KycVerificationHistoryPage />} />
     <Route path="/loan-application" element={<MobileLoanApplicationPage />} />
-    <Route 
-      path="/my-loans" 
-      element={<MobileMyLoansPage />} 
-    />
-    <Route 
-      path="/loan-details/:loanId" 
-      element={<LoanDetailsPage />} 
-    />
+    <Route path="/my-loans" element={<MobileMyLoansPage />} />
+    <Route path="/loan-details/:loanId" element={<LoanDetailsPage />} />
     <Route path="*" element={<div>Mobile Page Not Found</div>} />
+  </>
+);
+
+// This is now a component that renders routes, not a router
+export const MobileRouter = () => (
+  <Routes>
+    {mobileRoutes}
   </Routes>
 );
 
-// This is now a simple component that renders routes, not a router
-export const MobileRouter = () => mobileRoutes;
-
-// We no longer need a separate Router component since we're using the router from routes.tsx
-const Router = () => {
-  return mobileRoutes;
-};
-
-export default Router;
+export default MobileRouter;

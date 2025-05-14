@@ -4,10 +4,6 @@ import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import MobileNavigation from '@/components/MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { useAccount } from '@/hooks/useAccount';
-import { useTransactions } from '@/hooks/useTransactions';
-
-// Import refactored components
 import MobileMenu from '@/components/mobile/menu/MobileMenu';
 import { useActionHandler } from '@/utils/actionHandler';
 
@@ -18,13 +14,6 @@ const MobileFlow = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   
   const { user, loading, signOut, userRole } = useAuth();
-  
-  // Utilisation conditionnelle des hooks pour éviter les erreurs
-  const { account, isLoading: accountLoading } = useAccount ? useAccount() : { account: null, isLoading: false };
-  const { transactions, isLoading: transactionsLoading } = useTransactions && user?.id ? 
-    useTransactions(user.id, user.id ? 'default-sfd' : '') : 
-    { transactions: [], isLoading: false };
-  
   const { handleAction } = useActionHandler ? useActionHandler() : { handleAction: () => {} };
 
   const [showWelcome, setShowWelcome] = useState(() => {
@@ -83,21 +72,6 @@ const MobileFlow = () => {
     }
   };
 
-  // Handler for payment submission
-  const handlePaymentSubmit = async (data: { recipient: string, amount: number, note: string }) => {
-    try {
-      // Implémentation simplifiée
-      navigate('/mobile-flow/main');
-      
-      toast({
-        title: 'Paiement réussi',
-        description: `Vous avez envoyé ${data.amount} FCFA à ${data.recipient}`,
-      });
-    } catch (error) {
-      console.error('Payment error:', error);
-    }
-  };
-
   // Menu handlers
   const toggleMenu = () => {
     setMenuOpen(!menuOpen);
@@ -124,7 +98,7 @@ const MobileFlow = () => {
 
   const isWelcomePage = location.pathname === '/mobile-flow/welcome';
 
-  if (loading || accountLoading) {
+  if (loading) {
     return <div className="p-8 text-center">Chargement...</div>;
   }
 
