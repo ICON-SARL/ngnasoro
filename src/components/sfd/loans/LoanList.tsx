@@ -1,104 +1,194 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Table, 
   TableBody, 
+  TableCaption, 
   TableCell, 
   TableHead, 
   TableHeader, 
-  TableRow 
+  TableRow
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { useLoansPage } from '@/hooks/sfd/useLoansPage';
+import { 
+  Eye, 
+  Search,
+  RefreshCw,
+  Check,
+  X,
+  AlertCircle
+} from 'lucide-react';
+import { useSfdLoans } from '@/hooks/useSfdLoans';
+import { useToast } from '@/hooks/use-toast';
+import { Input } from '@/components/ui/input';
+import { formatDate } from '@/lib/utils';
+import LoanDetailsDialog from './LoanDetailsDialog';
+import { useLoanRealtime } from '@/hooks/useLoanRealtime';
 import { Loan } from '@/types/sfdClients';
+import LoadingSpinner from '@/components/ui/loading-spinner';
 
-interface LoanListProps {
-  loans?: Loan[];
-  loading?: boolean;
-}
+const LoanList: React.FC = () => {
+  const { loans, isLoading, error, refetch } = useSfdLoans();
+  const { toast } = useToast();
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedLoan, setSelectedLoan] = useState<Loan | null>(null);
+  const [isDetailsOpen, setIsDetailsOpen] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  
+  // Use the new realtime hook
+  const { isConnected } = useLoanRealtime();
+  
+  // Filter loans based on search term
+  const filteredLoans = loans.filter(loan => 
+    loan.client_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    String(loan.amount).includes(searchTerm) ||
+    loan.purpose?.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
-const LoanList: React.FC<LoanListProps> = (props) => {
-  const navigate = useNavigate();
-  const { loans: fetchedLoans, isLoading: fetchLoading, refetch } = useLoansPage();
-  
-  const loans = props.loans || fetchedLoans;
-  const isLoading = props.loading || fetchLoading;
-  
-  useEffect(() => {
-    if (!props.loans) {
-      refetch();
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    try {
+      await refetch();
+      toast({
+        title: "Liste actualisée",
+        description: "La liste des prêts a été mise à jour",
+      });
+    } catch (err) {
+      console.error('Error refreshing loans:', err);
+      toast({
+        title: "Erreur",
+        description: "Impossible d'actualiser la liste des prêts",
+        variant: "destructive",
+      });
+    } finally {
+      setIsRefreshing(false);
     }
-  }, [props.loans, refetch]);
+  };
+
+  const handleViewDetails = (loan: Loan) => {
+    setSelectedLoan(loan);
+    setIsDetailsOpen(true);
+  };
+
+  const handleCloseDetails = () => {
+    setIsDetailsOpen(false);
+    // Refresh the list to get any updates
+    refetch();
+  };
+
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case 'pending':
+        return <Badge className="bg-amber-100 text-amber-800">En attente</Badge>;
+      case 'approved':
+        return <Badge className="bg-blue-100 text-blue-800">Approuvé</Badge>;
+      case 'active':
+        return <Badge className="bg-green-100 text-green-800">Actif</Badge>;
+      case 'completed':
+        return <Badge className="bg-gray-100 text-gray-800">Terminé</Badge>;
+      case 'rejected':
+        return <Badge className="bg-red-100 text-red-800">Rejeté</Badge>;
+      default:
+        return <Badge>{status}</Badge>;
+    }
+  };
   
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-40">
-        <p>Chargement des prêts...</p>
-      </div>
-    );
-  }
-  
-  if (!loans || loans.length === 0) {
-    return (
-      <div className="text-center py-8">
-        <p className="text-muted-foreground">Aucun prêt trouvé</p>
-      </div>
-    );
-  }
-  
+  // Notify user about realtime connection status
+  useEffect(() => {
+    if (isConnected) {
+      console.log('Realtime connection established for loans');
+    }
+  }, [isConnected]);
+
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>ID</TableHead>
-          <TableHead>Client</TableHead>
-          <TableHead>Montant</TableHead>
-          <TableHead>Durée</TableHead>
-          <TableHead>Taux</TableHead>
-          <TableHead>Statut</TableHead>
-          <TableHead>Subvention</TableHead>
-          <TableHead className="text-right">Actions</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {loans.map((loan) => (
-          <TableRow key={loan.id}>
-            <TableCell className="font-medium">{loan.reference || loan.id.substring(0, 8)}</TableCell>
-            <TableCell>{loan.client_name || 'Client #' + loan.client_id.substring(0, 4)}</TableCell>
-            <TableCell>{loan.amount.toLocaleString()} FCFA</TableCell>
-            <TableCell>{loan.duration_months} mois</TableCell>
-            <TableCell>{loan.interest_rate}%</TableCell>
-            <TableCell>
-              {loan.status === 'pending' && <Badge variant="outline">En attente</Badge>}
-              {loan.status === 'approved' && <Badge className="bg-blue-100 text-blue-800">Approuvé</Badge>}
-              {loan.status === 'active' && <Badge className="bg-green-100 text-green-800">Actif</Badge>}
-              {loan.status === 'rejected' && <Badge className="bg-red-100 text-red-800">Rejeté</Badge>}
-              {loan.status === 'completed' && <Badge className="bg-gray-100 text-gray-800">Terminé</Badge>}
-              {loan.status === 'defaulted' && <Badge className="bg-red-200 text-red-900">En défaut</Badge>}
-            </TableCell>
-            <TableCell>
-              {loan.subsidy_amount && loan.subsidy_amount > 0 ? 
-                `${loan.subsidy_amount.toLocaleString()} FCFA` : 
-                'Non'
-              }
-            </TableCell>
-            <TableCell className="text-right">
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => navigate(`/sfd-loans/${loan.id}`)}
-              >
-                <FileText className="h-4 w-4 mr-1" />
-                Détails
-              </Button>
-            </TableCell>
-          </TableRow>
-        ))}
-      </TableBody>
-    </Table>
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher un prêt..."
+            className="pl-8 w-[250px] md:w-[300px]"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? 'animate-spin' : ''}`} />
+          Actualiser
+        </Button>
+      </div>
+
+      {isLoading ? (
+        <div className="flex justify-center items-center py-8">
+          <LoadingSpinner />
+        </div>
+      ) : error ? (
+        <div className="p-4 border rounded-md bg-red-50 text-red-800 flex items-center">
+          <AlertCircle className="h-5 w-5 mr-2" />
+          <p>Une erreur est survenue lors du chargement des prêts.</p>
+        </div>
+      ) : (
+        <Table>
+          {filteredLoans.length === 0 && (
+            <TableCaption>
+              {loans.length === 0 ? 
+                "Aucun prêt trouvé. Les nouvelles demandes apparaîtront ici." : 
+                "Aucun résultat pour cette recherche."}
+            </TableCaption>
+          )}
+          <TableHeader>
+            <TableRow>
+              <TableHead>ID</TableHead>
+              <TableHead>Client</TableHead>
+              <TableHead>Montant</TableHead>
+              <TableHead>Objet</TableHead>
+              <TableHead>Date</TableHead>
+              <TableHead>Statut</TableHead>
+              <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {filteredLoans.map((loan) => (
+              <TableRow key={loan.id}>
+                <TableCell className="font-medium">
+                  {loan.reference || loan.id.substring(0, 8)}
+                </TableCell>
+                <TableCell>{loan.client_name || 'Client inconnu'}</TableCell>
+                <TableCell>{loan.amount?.toLocaleString()} FCFA</TableCell>
+                <TableCell className="max-w-[200px] truncate">{loan.purpose}</TableCell>
+                <TableCell>{formatDate(loan.created_at)}</TableCell>
+                <TableCell>{getStatusBadge(loan.status)}</TableCell>
+                <TableCell className="text-right">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleViewDetails(loan)}
+                  >
+                    <Eye className="h-4 w-4 mr-2" />
+                    Détails
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      )}
+
+      {selectedLoan && (
+        <LoanDetailsDialog
+          isOpen={isDetailsOpen}
+          onClose={handleCloseDetails}
+          loan={selectedLoan}
+          onLoanUpdated={refetch}
+        />
+      )}
+    </div>
   );
 };
 

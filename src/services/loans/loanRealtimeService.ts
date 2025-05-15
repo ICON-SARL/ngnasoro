@@ -16,7 +16,7 @@ export function setupLoanRealtimeSubscription(onUpdate: LoanUpdateCallback, loan
     .on(
       'postgres_changes',
       {
-        event: '*',
+        event: '*',  // Listen for all events (INSERT, UPDATE, DELETE)
         schema: 'public',
         table: 'sfd_loans',
         filter: loanId ? `id=eq.${loanId}` : undefined
