@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Logo from './Logo';
 import LoginForm from '@/components/auth/login/LoginForm';
 import { Check } from 'lucide-react';
@@ -96,12 +96,12 @@ const SfdAuthUI = () => {
           />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
-            <Link 
-              to="/auth"
+            <a 
+              href="/auth"
               className="text-blue-600 hover:underline font-medium"
             >
               Changer de type de connexion
-            </Link>
+            </a>
           </div>
         </div>
       </div>

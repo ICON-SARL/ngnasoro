@@ -81,36 +81,36 @@ const routes: RouteObject[] = [
   },
   // Routes pour l'administration SFD (nouveau layout)
   {
-    path: 'agency-dashboard',
+    path: '/agency-dashboard',
     element: <SfdAdminLayout><div>SFD Admin Dashboard</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-loans',
+    path: '/sfd-loans',
     element: <SfdAdminLayout><div>SFD Loans Management</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-clients',
+    path: '/sfd-clients',
     element: <SfdAdminLayout><div>SFD Clients Management</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-adhesion-requests',
+    path: '/sfd-adhesion-requests',
     element: <SfdAdminLayout><div>SFD Adhesion Requests</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-transactions',
+    path: '/sfd-transactions',
     element: <SfdAdminLayout><div>SFD Transactions</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-subsidy-requests',
+    path: '/sfd-subsidy-requests',
     element: <SfdAdminLayout><div>SFD Subsidy Requests</div></SfdAdminLayout>,
   },
   {
-    path: 'sfd-settings',
+    path: '/sfd-settings',
     element: <SfdAdminLayout><div>SFD Settings</div></SfdAdminLayout>,
   },
   // Routes mobile
   {
-    path: 'mobile-flow',
+    path: '/mobile-flow',
     element: <MobileFlowPage />,
     children: [
       {
@@ -180,7 +180,7 @@ const routes: RouteObject[] = [
     ],
   },
   {
-    path: 'kyc',
+    path: '/kyc',
     element: <KYCVerification />,
   },
   {
