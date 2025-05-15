@@ -138,6 +138,7 @@ export function useSfdLoans() {
     loans: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
+    refetch: query.refetch, // Add the refetch function from the query
     createLoan,
     approveLoan,
     rejectLoan,

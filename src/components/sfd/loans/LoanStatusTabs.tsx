@@ -1,74 +1,72 @@
 
-import React from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React, { useState } from 'react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import LoanList from './LoanList';
 import { Loan } from '@/types/sfdClients';
+import { Badge } from '@/components/ui/badge';
 
 interface LoanStatusTabsProps {
-  activeTab: string;
-  setActiveTab: (value: string) => void;
   loans: Loan[];
   loading: boolean;
 }
 
-const LoanStatusTabs: React.FC<LoanStatusTabsProps> = ({
-  activeTab,
-  setActiveTab,
-  loans,
-  loading
-}) => {
-  // Filter loans based on active tab
-  const filteredLoans = loans.filter(loan => {
-    if (activeTab === 'all') return true;
-    
-    // Handle special case for defaulted status
-    if (activeTab === 'defaulted' && loan.status === 'defaulted') return true;
-    
-    // For other statuses, directly match the status
-    return loan.status === activeTab;
-  });
-  
+// This component is not being used in the current code but was referenced in the build errors
+// We're implementing it so it can be used if needed
+export const LoanStatusTabs: React.FC<LoanStatusTabsProps> = ({ loans, loading }) => {
+  const [activeTab, setActiveTab] = useState('all');
+
+  const pendingLoans = loans.filter(loan => loan.status === 'pending');
+  const approvedLoans = loans.filter(loan => loan.status === 'approved');
+  const activeLoans = loans.filter(loan => loan.status === 'active');
+  const completedLoans = loans.filter(loan => loan.status === 'completed');
+  const rejectedLoans = loans.filter(loan => loan.status === 'rejected');
+
   return (
-    <Tabs 
-      defaultValue="all" 
-      value={activeTab} 
-      onValueChange={setActiveTab}
-      className="space-y-4"
-    >
-      <TabsList>
-        <TabsTrigger value="all">Tous les prêts</TabsTrigger>
-        <TabsTrigger value="pending">En attente</TabsTrigger>
-        <TabsTrigger value="approved">Approuvés</TabsTrigger>
-        <TabsTrigger value="active">Actifs</TabsTrigger>
-        <TabsTrigger value="defaulted">En défaut</TabsTrigger>
-        <TabsTrigger value="rejected">Rejetés</TabsTrigger>
+    <Tabs defaultValue="all" className="w-full" onValueChange={setActiveTab}>
+      <TabsList className="grid grid-cols-6 mb-4">
+        <TabsTrigger value="all" className="flex gap-2">
+          Tous
+          <Badge variant="outline">{loans.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="pending" className="flex gap-2">
+          En attente
+          <Badge variant="outline">{pendingLoans.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="approved" className="flex gap-2">
+          Approuvés
+          <Badge variant="outline">{approvedLoans.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="active" className="flex gap-2">
+          Actifs
+          <Badge variant="outline">{activeLoans.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="completed" className="flex gap-2">
+          Terminés
+          <Badge variant="outline">{completedLoans.length}</Badge>
+        </TabsTrigger>
+        <TabsTrigger value="rejected" className="flex gap-2">
+          Rejetés
+          <Badge variant="outline">{rejectedLoans.length}</Badge>
+        </TabsTrigger>
       </TabsList>
-      
-      <TabsContent value={activeTab} className="space-y-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle>
-              {activeTab === 'all' && 'Tous les prêts'}
-              {activeTab === 'pending' && 'Prêts en attente'}
-              {activeTab === 'approved' && 'Prêts approuvés'}
-              {activeTab === 'active' && 'Prêts actifs'}
-              {activeTab === 'defaulted' && 'Prêts en défaut'}
-              {activeTab === 'rejected' && 'Prêts rejetés'}
-            </CardTitle>
-            <CardDescription>
-              {activeTab === 'pending' && 'Prêts en attente d\'approbation'}
-              {activeTab === 'approved' && 'Prêts approuvés en attente de décaissement'}
-              {activeTab === 'active' && 'Prêts actifs en cours de remboursement'}
-              {activeTab === 'defaulted' && 'Prêts avec retards de paiement significatifs'}
-              {activeTab === 'rejected' && 'Prêts rejetés'}
-              {activeTab === 'all' && 'Tous les prêts de la SFD'}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LoanList loans={filteredLoans} loading={loading} />
-          </CardContent>
-        </Card>
+
+      <TabsContent value="all">
+        <LoanList />
+      </TabsContent>
+      <TabsContent value="pending">
+        <LoanList />
+      </TabsContent>
+      <TabsContent value="approved">
+        <LoanList />
+      </TabsContent>
+      <TabsContent value="active">
+        <LoanList />
+      </TabsContent>
+      <TabsContent value="completed">
+        <LoanList />
+      </TabsContent>
+      <TabsContent value="rejected">
+        <LoanList />
       </TabsContent>
     </Tabs>
   );

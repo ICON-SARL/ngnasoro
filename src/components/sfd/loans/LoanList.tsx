@@ -22,11 +22,12 @@ import {
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
-import { formatDate } from '@/lib/utils';
-import LoanDetailsDialog from './LoanDetailsDialog';
-import { useLoanRealtime } from '@/hooks/useLoanRealtime';
+import { cn } from '@/lib/utils';
 import { Loan } from '@/types/sfdClients';
 import LoadingSpinner from '@/components/ui/loading-spinner';
+import LoanDetailsDialog from './LoanDetailsDialog';
+import { useLoanRealtime } from '@/hooks/useLoanRealtime';
+import { formatDate } from '@/utils/formatters'; // Fixed import path
 
 const LoanList: React.FC = () => {
   const { loans, isLoading, error, refetch } = useSfdLoans();
@@ -157,7 +158,7 @@ const LoanList: React.FC = () => {
             {filteredLoans.map((loan) => (
               <TableRow key={loan.id}>
                 <TableCell className="font-medium">
-                  {loan.reference || loan.id.substring(0, 8)}
+                  {loan.id.substring(0, 8)}
                 </TableCell>
                 <TableCell>{loan.client_name || 'Client inconnu'}</TableCell>
                 <TableCell>{loan.amount?.toLocaleString()} FCFA</TableCell>

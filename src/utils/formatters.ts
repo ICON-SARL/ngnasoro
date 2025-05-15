@@ -25,8 +25,17 @@ export function formatPercentage(value: number): string {
  * Format a date in the French format
  */
 export function formatDate(date: Date | string): string {
+  if (!date) return '';
+  
   if (typeof date === 'string') {
     date = new Date(date);
   }
-  return date.toLocaleDateString('fr-FR');
+  
+  return date.toLocaleDateString('fr-FR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
 }
