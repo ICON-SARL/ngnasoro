@@ -1,15 +1,34 @@
 
-import { createBrowserRouter } from 'react-router-dom';
+import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import App from './App';
-import { MobileRouter } from './components/Router';
 import { Outlet } from 'react-router-dom';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
+import AccessDeniedPage from './pages/AccessDeniedPage';
+import PermissionTestPage from './pages/PermissionTestPage';
+import UnauthorizedPage from './pages/UnauthorizedPage';
+import MobileApp from './pages/mobile/MobileApp';
+import AccountPage from './components/mobile/account/AccountPage';
+import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
+import SfdSelectorPage from './pages/SfdSelectorPage';
+import { LoanActivityPage } from './pages/mobile/LoanActivityPage';
+import ProfilePage from './components/mobile/profile/ProfilePage';
+import SfdConnectionPage from './pages/mobile/SfdConnectionPage';
+import MobileLoanPlansPage from './pages/mobile/MobileLoanPlansPage';
+import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
+import SplashScreen from './components/mobile/SplashScreen';
+import KycVerificationHistoryPage from './pages/KycVerificationHistoryPage';
+import KYCVerification from './pages/KYCVerification';
+import MobileLoansPage from './pages/mobile/MobileLoansPage';
+import HomeLoanPage from './components/mobile/loan/HomeLoanPage';
+import TransferPage from './pages/mobile/TransferPage';
 
-const router = createBrowserRouter([
+const routes: RouteObject[] = [
   {
     path: '/',
     element: <App />,
@@ -20,7 +39,19 @@ const router = createBrowserRouter([
       },
       {
         path: 'auth',
-        element: <div>Authentication Page</div>,
+        element: <LoginPage />,
+      },
+      {
+        path: 'register',
+        element: <RegisterPage />,
+      },
+      {
+        path: 'access-denied',
+        element: <AccessDeniedPage />,
+      },
+      {
+        path: 'permission-test',
+        element: <PermissionTestPage />,
       },
       {
         path: 'dashboard',
@@ -44,15 +75,15 @@ const router = createBrowserRouter([
     children: [
       {
         path: 'dashboard',
-        element: <MobileRouter />,
+        element: <MobileApp />,
       },
       {
         path: 'profile',
-        element: <MobileRouter />,
+        element: <ProfilePage />,
       },
       {
         path: 'loans',
-        element: <MobileRouter />,
+        element: <HomeLoanPage />,
       },
       {
         path: 'funds-management',
@@ -60,7 +91,7 @@ const router = createBrowserRouter([
       },
       {
         path: 'transactions',
-        element: <MobileRouter />,
+        element: <div>Transactions</div>,
       },
       {
         path: 'loan-application',
@@ -79,11 +110,57 @@ const router = createBrowserRouter([
         element: <MobileDiagnosticsPage />,
       },
       {
+        path: 'sfd-adhesion/:sfdId',
+        element: <SfdAdhesionPage />,
+      },
+      {
+        path: 'sfd-selector',
+        element: <SfdSelectorPage />,
+      },
+      {
+        path: 'sfd-connection',
+        element: <SfdConnectionPage />,
+      },
+      {
+        path: 'loan-activity',
+        element: <LoanActivityPage />,
+      },
+      {
+        path: 'loan-plans',
+        element: <MobileLoanPlansPage />,
+      },
+      {
+        path: 'my-loans',
+        element: <MobileMyLoansPage />,
+      },
+      {
+        path: 'kyc',
+        element: <KycVerificationHistoryPage />,
+      },
+      {
+        path: 'transfers',
+        element: <TransferPage />,
+      },
+      {
+        path: 'unauthorized',
+        element: <UnauthorizedPage />,
+      },
+      {
         index: true,
-        element: <MobileRouter />,
-      }
+        element: <MobileApp />,
+      },
     ],
   },
-]);
+  {
+    path: '/kyc',
+    element: <KYCVerification />,
+  },
+  {
+    path: '*',
+    element: <div>Page Not Found</div>,
+  },
+];
+
+const router = createBrowserRouter(routes);
 
 export default router;

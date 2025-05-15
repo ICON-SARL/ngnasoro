@@ -1,11 +1,10 @@
 
 import React from 'react';
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from '@/pages/LoginPage';
 import RegisterPage from '@/pages/RegisterPage';
 import AccessDeniedPage from '@/pages/AccessDeniedPage';
 import PermissionTestPage from '@/pages/PermissionTestPage';
-import ProtectedRoute from '@/components/routes/ProtectedRoute';
 import { UserRole } from '@/utils/auth/roleTypes';
 import SfdAdhesionPage from '@/pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from '@/pages/SfdSelectorPage';
@@ -17,13 +16,13 @@ import MobileLoanPlansPage from '@/pages/mobile/MobileLoanPlansPage';
 import MobileMyLoansPage from '@/pages/mobile/MobileMyLoansPage';
 import LoanDetailsPage from '@/pages/mobile/LoanDetailsPage';
 import SplashScreen from '@/components/mobile/SplashScreen';
-import RoleGuard from '@/components/RoleGuard';
 import KycVerificationHistoryPage from '@/pages/KycVerificationHistoryPage';
 import KYCVerification from '@/pages/KYCVerification';
 import MobileLoanApplicationPage from '@/pages/mobile/MobileLoanApplicationPage';
 import MobileLoansPage from '@/pages/mobile/MobileLoansPage';
 import HomeLoanPage from '@/components/mobile/loan/HomeLoanPage';
 
+// Exporter les routes mobiles pour être utilisées dans routes.tsx
 export const MobileRouter = () => {
   return (
     <Routes>
@@ -51,22 +50,3 @@ export const MobileRouter = () => {
     </Routes>
   );
 };
-
-const Router = () => {
-  return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<SplashScreen />} />
-        <Route path="/auth" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
-        <Route path="/access-denied" element={<AccessDeniedPage />} />
-        <Route path="/permission-test" element={<PermissionTestPage />} />
-        <Route path="/kyc" element={<KYCVerification />} />
-        <Route path="/mobile-flow/*" element={<MobileRouter />} />
-        <Route path="*" element={<div>Page Not Found</div>} />
-      </Routes>
-    </BrowserRouter>
-  );
-};
-
-export default Router;
