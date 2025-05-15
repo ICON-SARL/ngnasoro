@@ -6,26 +6,25 @@ import { useToast } from '@/hooks/use-toast';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loan } from '@/types/sfdClients';
 
+/**
+ * Hook for managing SFD loans including fetching, creating, and modifying loans
+ */
 export function useSfdLoans() {
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
+  // Query to fetch all loans for the active SFD
   const query = useQuery({
-    queryKey: ['sfd-loans', user?.id],
+    queryKey: ['sfd-loans', activeSfdId],
     queryFn: async () => {
-      if (!user?.id) return []; // Return empty array if no user
-
+      if (!activeSfdId) {
+        console.warn("No active SFD ID found, cannot fetch loans");
+        return [];
+      }
+      
       try {
-        console.log("Fetching SFD loans for user:", user.id);
-        const sfdId = user?.sfd_id || user?.app_metadata?.sfd_id;
-        
-        if (!sfdId) {
-          console.warn("No SFD ID found for user");
-          return [];
-        }
-        
-        console.log("Using SFD ID:", sfdId);
+        console.log("Fetching SFD loans for SFD ID:", activeSfdId);
         
         // Fetch all loans for this SFD directly
         const { data: loans, error: loansError } = await supabase
@@ -38,31 +37,34 @@ export function useSfdLoans() {
               logo_url
             )
           `)
-          .eq('sfd_id', sfdId)
+          .eq('sfd_id', activeSfdId)
           .order('created_at', { ascending: false });
 
         if (loansError) {
           console.error('Failed to fetch loans:', loansError);
-          return [];
+          throw loansError;
         }
         
-        console.log(`Found ${loans?.length || 0} loans for SFD ${sfdId}`);
+        console.log(`Found ${loans?.length || 0} loans for SFD ${activeSfdId}`);
         
         // Format loans with client names
         return (loans || []).map(loan => ({
           ...loan,
           client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
-        }));
+          reference: loan.id.substring(0, 8),
+        })) as Loan[];
       } catch (err) {
         console.error('Error in useSfdLoans hook:', err);
-        return [];
+        throw err;
       }
     },
     meta: {
-      errorMessage: "Impossible de charger vos prêts"
+      errorMessage: "Impossible de charger les prêts"
     },
-    retry: 1,
-    refetchOnWindowFocus: false
+    retry: 2,
+    refetchOnWindowFocus: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    cacheTime: 1000 * 60 * 30, // 30 minutes
   });
 
   // Create loan mutation
@@ -93,6 +95,13 @@ export function useSfdLoans() {
         description: "Le prêt a été approuvé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'approbation du prêt",
+        variant: "destructive", 
+      });
     }
   });
 
@@ -105,6 +114,13 @@ export function useSfdLoans() {
         description: "Le prêt a été rejeté",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du rejet du prêt",
+        variant: "destructive",
+      });
     }
   });
 
@@ -117,6 +133,13 @@ export function useSfdLoans() {
         description: "Le prêt a été décaissé avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors du décaissement du prêt", 
+        variant: "destructive",
+      });
     }
   });
 
@@ -130,15 +153,28 @@ export function useSfdLoans() {
         description: "Le paiement a été enregistré avec succès",
       });
       queryClient.invalidateQueries({ queryKey: ['sfd-loans'] });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de l'enregistrement du paiement",
+        variant: "destructive",
+      });
     }
   });
+
+  // Manual refetch function
+  const manualRefetch = async () => {
+    console.log("Manually refetching SFD loans...");
+    return query.refetch();
+  };
 
   return {
     data: query.data || [], 
     loans: query.data || [],
     isLoading: query.isLoading,
     error: query.error,
-    refetch: query.refetch, // Add the refetch function from the query
+    refetch: manualRefetch,
     createLoan,
     approveLoan,
     rejectLoan,
