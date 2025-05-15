@@ -110,7 +110,7 @@ const routes: RouteObject[] = [
   },
   // Routes mobile
   {
-    path: '/mobile-flow',
+    path: 'mobile-flow',
     element: <MobileFlowPage />,
     children: [
       {
@@ -180,7 +180,7 @@ const routes: RouteObject[] = [
     ],
   },
   {
-    path: '/kyc',
+    path: 'kyc',
     element: <KYCVerification />,
   },
   {
