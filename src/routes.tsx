@@ -1,18 +1,13 @@
 
 import { createBrowserRouter, RouteObject } from 'react-router-dom';
 import App from './App';
-import { Outlet } from 'react-router-dom';
-import MobileFlowPage from './pages/mobile/MobileFlowPage';
-import FundsManagementPage from './pages/mobile/FundsManagementPage';
-import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
-import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
-import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
 import PermissionTestPage from './pages/PermissionTestPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
-import MobileApp from './pages/mobile/MobileApp';
+import MobileFlowPage from './pages/mobile/MobileFlowPage';
+import SfdLoginPage from './pages/SfdLoginPage';
 import AccountPage from './components/mobile/account/AccountPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
@@ -24,10 +19,13 @@ import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
 import SplashScreen from './components/mobile/SplashScreen';
 import KycVerificationHistoryPage from './pages/KycVerificationHistoryPage';
 import KYCVerification from './pages/KYCVerification';
+import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
 import HomeLoanPage from './components/mobile/loan/HomeLoanPage';
 import TransferPage from './pages/mobile/TransferPage';
+import { SfdAdminLayout } from './components/sfd/SfdAdminLayout';
 
+// Route principale avec layout racine App
 const routes: RouteObject[] = [
   {
     path: '/',
@@ -35,7 +33,7 @@ const routes: RouteObject[] = [
     children: [
       {
         index: true,
-        element: <div>Welcome to the App</div>,
+        element: <SplashScreen onComplete={() => {}} />,
       },
       {
         path: 'auth',
@@ -54,6 +52,10 @@ const routes: RouteObject[] = [
         element: <PermissionTestPage />,
       },
       {
+        path: 'unauthorized',
+        element: <UnauthorizedPage />,
+      },
+      {
         path: 'dashboard',
         element: <div>Dashboard Page</div>,
       },
@@ -61,21 +63,63 @@ const routes: RouteObject[] = [
         path: 'admin',
         children: [
           {
+            path: 'auth',
+            element: <LoginPage isSfdAdmin={false} />,
+          },
+          {
             path: 'loan-plans',
             element: <div>Admin Loan Plans</div>,
           },
         ],
       },
+      // Page d'authentification SFD - IMPORTANT: Pas dans la hiérarchie de l'App
+      {
+        path: 'sfd/auth',
+        element: <SfdLoginPage />,
+      },
     ],
   },
-  // Mobile routes
+  // Routes pour l'administration SFD (nouveau layout)
+  {
+    path: 'agency-dashboard',
+    element: <SfdAdminLayout><div>SFD Admin Dashboard</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-loans',
+    element: <SfdAdminLayout><div>SFD Loans Management</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-clients',
+    element: <SfdAdminLayout><div>SFD Clients Management</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-adhesion-requests',
+    element: <SfdAdminLayout><div>SFD Adhesion Requests</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-transactions',
+    element: <SfdAdminLayout><div>SFD Transactions</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-subsidy-requests',
+    element: <SfdAdminLayout><div>SFD Subsidy Requests</div></SfdAdminLayout>,
+  },
+  {
+    path: 'sfd-settings',
+    element: <SfdAdminLayout><div>SFD Settings</div></SfdAdminLayout>,
+  },
+  // Routes mobile
   {
     path: '/mobile-flow',
     element: <MobileFlowPage />,
     children: [
       {
-        path: 'dashboard',
-        element: <MobileApp />,
+        index: true,
+        element: <AccountPage />,
+      },
+      {
+        path: 'main',
+        element: <AccountPage />,
       },
       {
         path: 'profile',
@@ -87,27 +131,7 @@ const routes: RouteObject[] = [
       },
       {
         path: 'funds-management',
-        element: <FundsManagementPage />,
-      },
-      {
-        path: 'transactions',
-        element: <div>Transactions</div>,
-      },
-      {
-        path: 'loan-application',
-        element: <MobileLoanApplicationPage />,
-      },
-      {
-        path: 'loan-application/:planId',
-        element: <MobileLoanApplicationPage />,
-      },
-      {
-        path: 'loan-details/:loanId',
-        element: <LoanDetailsPage />,
-      },
-      {
-        path: 'diagnostics',
-        element: <MobileDiagnosticsPage />,
+        element: <div>Funds Management</div>,
       },
       {
         path: 'sfd-adhesion/:sfdId',
@@ -130,6 +154,18 @@ const routes: RouteObject[] = [
         element: <MobileLoanPlansPage />,
       },
       {
+        path: 'loan-application',
+        element: <MobileLoanApplicationPage />,
+      },
+      {
+        path: 'loan-application/:planId',
+        element: <MobileLoanApplicationPage />,
+      },
+      {
+        path: 'loan-details/:loanId',
+        element: <div>Loan Details</div>,
+      },
+      {
         path: 'my-loans',
         element: <MobileMyLoansPage />,
       },
@@ -140,14 +176,6 @@ const routes: RouteObject[] = [
       {
         path: 'transfers',
         element: <TransferPage />,
-      },
-      {
-        path: 'unauthorized',
-        element: <UnauthorizedPage />,
-      },
-      {
-        index: true,
-        element: <MobileApp />,
       },
     ],
   },
