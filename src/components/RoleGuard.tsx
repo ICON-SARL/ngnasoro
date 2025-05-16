@@ -28,13 +28,13 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
       // Convert enum to string if needed - safely using String() instead of toLowerCase
-      const roleString = typeof role === 'string' ? role : String(role).toLowerCase();
+      const roleString = String(role).toLowerCase();
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', roleString.toLowerCase());
+        .eq('role', roleString);
       
       if (error) {
         console.error('Error checking user role:', error);
@@ -68,13 +68,11 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         });
         
         // Convert requiredRole to string for comparison
-        const requiredRoleStr = typeof requiredRole === 'string' 
-          ? requiredRole 
-          : String(requiredRole);
+        const requiredRoleStr = String(requiredRole);
         
         // 1. Check from auth context
         if (userRole !== null) {
-          const userRoleStr = typeof userRole === 'string' ? userRole : String(userRole);
+          const userRoleStr = String(userRole);
           if (userRoleStr === requiredRoleStr) {
             access = true;
           }

@@ -38,13 +38,13 @@ const useAuth = () => {
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
       // Safely convert role to string
-      const roleString = typeof role === 'string' ? role : String(role).toLowerCase();
+      const roleString = String(role).toLowerCase();
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', roleString.toLowerCase());
+        .eq('role', roleString);
       
       if (error) {
         console.error('Error checking user role:', error);
