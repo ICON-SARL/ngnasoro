@@ -4,6 +4,22 @@ import { User, AuthContextProps, UserRole } from './auth/types';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
+// Helper function to convert string role to UserRole enum
+const stringToUserRole = (role: string): UserRole | null => {
+  switch(role.toLowerCase()) {
+    case 'admin':
+      return UserRole.Admin;
+    case 'sfd_admin':
+      return UserRole.SfdAdmin;
+    case 'client':
+      return UserRole.Client;
+    case 'user':
+      return UserRole.User;
+    default:
+      return null;
+  }
+};
+
 // Export the hook directly
 const useAuth = () => {
   const authContext = useAuthOriginal();
@@ -32,22 +48,6 @@ const useAuth = () => {
     } catch (err) {
       console.error('Error in checkRoleInDatabase:', err);
       return false;
-    }
-  };
-
-  // Helper function to convert string role to UserRole enum
-  const stringToUserRole = (role: string): UserRole | null => {
-    switch(role.toLowerCase()) {
-      case 'admin':
-        return UserRole.Admin;
-      case 'sfd_admin':
-        return UserRole.SfdAdmin;
-      case 'client':
-        return UserRole.Client;
-      case 'user':
-        return UserRole.User;
-      default:
-        return null;
     }
   };
 
