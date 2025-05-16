@@ -35,6 +35,22 @@ const useAuth = () => {
     }
   };
 
+  // Helper function to convert string role to UserRole enum
+  const stringToUserRole = (role: string): UserRole | null => {
+    switch(role.toLowerCase()) {
+      case 'admin':
+        return UserRole.Admin;
+      case 'sfd_admin':
+        return UserRole.SfdAdmin;
+      case 'client':
+        return UserRole.Client;
+      case 'user':
+        return UserRole.User;
+      default:
+        return null;
+    }
+  };
+
   useEffect(() => {
     const determineUserRole = async () => {
       const { user } = authContext;
@@ -45,15 +61,9 @@ const useAuth = () => {
         // 1. First check from session storage for persistence
         const storedRole = sessionStorage.getItem('user_role');
         if (storedRole) {
-          // Convert string to UserRole enum if it matches a valid role
-          if (storedRole === 'admin') {
-            setUserRole(UserRole.Admin);
-          } else if (storedRole === 'sfd_admin') {
-            setUserRole(UserRole.SfdAdmin);
-          } else if (storedRole === 'client') {
-            setUserRole(UserRole.Client);
-          } else if (storedRole === 'user') {
-            setUserRole(UserRole.User);
+          const roleEnum = stringToUserRole(storedRole);
+          if (roleEnum !== null) {
+            setUserRole(roleEnum);
           }
           
           setIsAdmin(storedRole === 'admin');
@@ -66,15 +76,9 @@ const useAuth = () => {
         // 2. Check from user metadata
         const metadataRole = user.app_metadata?.role;
         if (metadataRole) {
-          // Convert string to UserRole enum if it matches a valid role
-          if (metadataRole === 'admin') {
-            setUserRole(UserRole.Admin);
-          } else if (metadataRole === 'sfd_admin') {
-            setUserRole(UserRole.SfdAdmin);
-          } else if (metadataRole === 'client') {
-            setUserRole(UserRole.Client);
-          } else if (metadataRole === 'user') {
-            setUserRole(UserRole.User);
+          const roleEnum = stringToUserRole(metadataRole);
+          if (roleEnum !== null) {
+            setUserRole(roleEnum);
           }
           
           setIsAdmin(metadataRole === 'admin');
