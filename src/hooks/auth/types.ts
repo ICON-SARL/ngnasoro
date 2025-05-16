@@ -21,7 +21,7 @@ export interface AuthContextProps {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  userRole: UserRole | string;
+  userRole: UserRole | null;
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isClient: boolean;

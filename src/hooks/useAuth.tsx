@@ -6,7 +6,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to convert string role to UserRole enum
 const stringToUserRole = (role: string): UserRole | null => {
-  switch(role.toLowerCase()) {
+  switch(role?.toLowerCase()) {
     case 'admin':
       return UserRole.Admin;
     case 'sfd_admin':
