@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -58,7 +59,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(userRoleEnum);
           
           // Set role flags
-          setIsAdmin(userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin);
+          if (userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
           setIsSfdAdmin(userRoleEnum === UserRole.SfdAdmin);
           setIsClient(userRoleEnum === UserRole.Client);
           
@@ -93,7 +98,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(userRoleEnum);
           
           // Set role flags
-          setIsAdmin(userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin);
+          if (userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin) {
+            setIsAdmin(true);
+          } else {
+            setIsAdmin(false);
+          }
           setIsSfdAdmin(userRoleEnum === UserRole.SfdAdmin);
           setIsClient(userRoleEnum === UserRole.Client);
         } else {
@@ -231,10 +240,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return { error };
       }
       
-      return { data };
+      return { data, error: null };
     } catch (error) {
       console.error('Error in signUp:', error);
-      return { error };
+      return { error, data: null };
     }
   };
 
@@ -305,7 +314,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Promise.resolve();
   };
 
-  const setActiveSfdId = (sfdId: string) => {
+  // Function to update active SFD ID
+  const updateActiveSfdId = (sfdId: string) => {
     setActiveSfdId(sfdId);
   };
 
@@ -318,7 +328,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isSfdAdmin,
     isClient,
     activeSfdId,
-    setActiveSfdId,
+    setActiveSfdId: updateActiveSfdId,
     signIn,
     signUp,
     signOut,

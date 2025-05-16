@@ -28,9 +28,9 @@ export interface AuthContextProps {
   isClient: boolean;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string) => void;
-  signIn: (email: string, password: string) => Promise<{ error: any; data?: any }>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error: any; data?: any }>;
-  signOut: () => Promise<{ error: any }>;
+  signIn: (email: string, password: string) => Promise<{ error?: any; data?: any }>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<{ error?: any; data?: any }>;
+  signOut: () => Promise<{ error?: any }>;
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;

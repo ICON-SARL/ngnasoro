@@ -68,14 +68,14 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
           metadata: user.app_metadata
         });
         
-        // Convert requiredRole to string for comparison if it's an enum
+        // Convert requiredRole to string for comparison
         const requiredRoleStr = typeof requiredRole === 'string' 
           ? requiredRole 
-          : requiredRole.toString();
+          : String(requiredRole);
         
         // 1. Check from auth context
         if (userRole !== null) {
-          const userRoleStr = typeof userRole === 'string' ? userRole : userRole.toString();
+          const userRoleStr = typeof userRole === 'string' ? userRole : String(userRole);
           if (userRoleStr === requiredRoleStr) {
             access = true;
           }
