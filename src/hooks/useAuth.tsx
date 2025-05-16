@@ -7,7 +7,7 @@ import { supabase } from '@/integrations/supabase/client';
 // Export the hook directly
 const useAuth = () => {
   const authContext = useAuthOriginal();
-  const [userRole, setUserRole] = useState<string | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSfdAdmin, setIsSfdAdmin] = useState(false);
   const [isClient, setIsClient] = useState(false);
@@ -45,7 +45,7 @@ const useAuth = () => {
         // 1. First check from session storage for persistence
         const storedRole = sessionStorage.getItem('user_role');
         if (storedRole) {
-          setUserRole(storedRole);
+          setUserRole(storedRole as UserRole);
           setIsAdmin(storedRole === 'admin');
           setIsSfdAdmin(storedRole === 'sfd_admin');
           setIsClient(storedRole === 'client');
@@ -56,7 +56,7 @@ const useAuth = () => {
         // 2. Check from user metadata
         const metadataRole = user.app_metadata?.role;
         if (metadataRole) {
-          setUserRole(metadataRole);
+          setUserRole(metadataRole as UserRole);
           setIsAdmin(metadataRole === 'admin');
           setIsSfdAdmin(metadataRole === 'sfd_admin');
           setIsClient(metadataRole === 'client');
@@ -71,7 +71,7 @@ const useAuth = () => {
           // Check for the most privileged roles first
           const isUserAdmin = await checkRoleInDatabase(user.id, 'admin');
           if (isUserAdmin) {
-            setUserRole('admin');
+            setUserRole(UserRole.Admin);
             setIsAdmin(true);
             sessionStorage.setItem('user_role', 'admin');
             setIsCheckingRole(false);
@@ -80,7 +80,7 @@ const useAuth = () => {
           
           const isUserSfdAdmin = await checkRoleInDatabase(user.id, 'sfd_admin');
           if (isUserSfdAdmin) {
-            setUserRole('sfd_admin');
+            setUserRole(UserRole.SfdAdmin);
             setIsSfdAdmin(true);
             sessionStorage.setItem('user_role', 'sfd_admin');
             setIsCheckingRole(false);
@@ -89,7 +89,7 @@ const useAuth = () => {
           
           const isUserClient = await checkRoleInDatabase(user.id, 'client');
           if (isUserClient) {
-            setUserRole('client');
+            setUserRole(UserRole.Client);
             setIsClient(true);
             sessionStorage.setItem('user_role', 'client');
             setIsCheckingRole(false);
@@ -97,11 +97,11 @@ const useAuth = () => {
           }
           
           // Default to 'user' if no specific role found
-          setUserRole('user');
+          setUserRole(UserRole.User);
           sessionStorage.setItem('user_role', 'user');
         } catch (error) {
           console.error('Error determining user role:', error);
-          setUserRole('user'); // Default fallback
+          setUserRole(UserRole.User); // Default fallback
         }
       } else {
         // No user, clear roles
