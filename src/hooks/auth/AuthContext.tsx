@@ -59,7 +59,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(userRoleEnum);
           
           // Set role flags
-          if (userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin) {
+          if (userRoleEnum === UserRole.Admin) {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);
@@ -98,7 +98,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUserRole(userRoleEnum);
           
           // Set role flags
-          if (userRoleEnum === UserRole.Admin || userRoleEnum === UserRole.SuperAdmin) {
+          if (userRoleEnum === UserRole.Admin) {
             setIsAdmin(true);
           } else {
             setIsAdmin(false);
