@@ -35,3 +35,17 @@ export interface AuthContextProps {
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
 }
+
+// Define the SFD Association types
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  userSfd?: any;
+}

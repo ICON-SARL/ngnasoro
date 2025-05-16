@@ -44,15 +44,14 @@ const useAuth = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', roleString.toLowerCase())
-        .maybeSingle();
+        .eq('role', roleString.toLowerCase());
       
       if (error) {
         console.error('Error checking user role:', error);
         return false;
       }
       
-      return !!data; // Return true if data exists
+      return !!data && data.length > 0; // Return true if data exists
     } catch (err) {
       console.error('Error in checkRoleInDatabase:', err);
       return false;
