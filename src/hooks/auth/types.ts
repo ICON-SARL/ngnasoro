@@ -11,8 +11,8 @@ export interface User extends SupabaseUser {
 
 // Update the UserRole enum to use unique string values
 export enum UserRole {
-  SuperAdmin = 'admin',
   Admin = 'admin',
+  SuperAdmin = 'admin',
   SfdAdmin = 'sfd_admin',
   Client = 'client',
   User = 'user'
@@ -34,18 +34,4 @@ export interface AuthContextProps {
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
-}
-
-// Define the SFD Association types
-export interface AssociateSfdParams {
-  userId: string;
-  sfdId: string;
-  isDefault?: boolean;
-  makeDefault?: boolean;
-}
-
-export interface AssociateSfdResult {
-  success: boolean;
-  error?: string;
-  userSfd?: any;
 }

@@ -5,10 +5,13 @@ import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 // Helper function to convert string role to UserRole enum
-const stringToUserRole = (role: string): UserRole | null => {
+const stringToUserRole = (role: string | null | undefined): UserRole | null => {
   if (!role) return null;
   
-  switch(role?.toLowerCase()) {
+  // Make sure we convert to lowercase for consistent comparison
+  const normalizedRole = role.toLowerCase();
+  
+  switch(normalizedRole) {
     case 'admin':
       return UserRole.Admin;
     case 'sfd_admin':
@@ -34,7 +37,8 @@ const useAuth = () => {
   // Function to check role in database
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
-      const roleString = typeof role === 'string' ? role : String(role);
+      // Safely convert role to string
+      const roleString = typeof role === 'string' ? role : String(role).toLowerCase();
       
       const { data, error } = await supabase
         .from('user_roles')
