@@ -27,14 +27,15 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   // Function to check for role in database
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
-      // Convert enum to string safely
+      // Convert role to string and lowercase for consistency in database queries
       const roleString = String(role).toLowerCase();
       
+      // Use a more dynamic approach for role checking
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', roleString as any); // Use type assertion here to bypass type checking
+        .filter('role', 'eq', roleString);
       
       if (error) {
         console.error('Error checking user role:', error);
