@@ -69,7 +69,9 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         const requiredRoleStr = String(requiredRole);
         
         // 1. Check from auth context
-        if (userRole === requiredRole || (typeof userRole === 'string' && userRole === requiredRoleStr)) {
+        if (userRole === requiredRole || 
+            (typeof userRole === 'string' && userRole === requiredRoleStr) || 
+            (typeof requiredRole === 'string' && userRole?.toString() === requiredRoleStr)) {
           access = true;
         }
         // 2. Check from user metadata
