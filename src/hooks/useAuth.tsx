@@ -45,7 +45,17 @@ const useAuth = () => {
         // 1. First check from session storage for persistence
         const storedRole = sessionStorage.getItem('user_role');
         if (storedRole) {
-          setUserRole(storedRole as UserRole);
+          // Convert string to UserRole enum if it matches a valid role
+          if (storedRole === 'admin') {
+            setUserRole(UserRole.Admin);
+          } else if (storedRole === 'sfd_admin') {
+            setUserRole(UserRole.SfdAdmin);
+          } else if (storedRole === 'client') {
+            setUserRole(UserRole.Client);
+          } else if (storedRole === 'user') {
+            setUserRole(UserRole.User);
+          }
+          
           setIsAdmin(storedRole === 'admin');
           setIsSfdAdmin(storedRole === 'sfd_admin');
           setIsClient(storedRole === 'client');
@@ -56,7 +66,17 @@ const useAuth = () => {
         // 2. Check from user metadata
         const metadataRole = user.app_metadata?.role;
         if (metadataRole) {
-          setUserRole(metadataRole as UserRole);
+          // Convert string to UserRole enum if it matches a valid role
+          if (metadataRole === 'admin') {
+            setUserRole(UserRole.Admin);
+          } else if (metadataRole === 'sfd_admin') {
+            setUserRole(UserRole.SfdAdmin);
+          } else if (metadataRole === 'client') {
+            setUserRole(UserRole.Client);
+          } else if (metadataRole === 'user') {
+            setUserRole(UserRole.User);
+          }
+          
           setIsAdmin(metadataRole === 'admin');
           setIsSfdAdmin(metadataRole === 'sfd_admin');
           setIsClient(metadataRole === 'client');

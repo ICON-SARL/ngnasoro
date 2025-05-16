@@ -66,23 +66,24 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         });
         
         // Check all possible sources for the role
+        const requiredRoleStr = String(requiredRole);
         
         // 1. Check from auth context
         if (userRole === requiredRole) {
           access = true;
         }
         // 2. Check from user metadata
-        else if (user.app_metadata?.role === requiredRole) {
+        else if (user.app_metadata?.role === requiredRoleStr) {
           access = true;
         }
         // 3. Check from session storage (for persistence)
-        else if (getStoredRole() === requiredRole) {
+        else if (getStoredRole() === requiredRoleStr) {
           access = true;
         }
         // 4. Check from database (most reliable but slowest)
-        else if (await checkRoleInDatabase(user.id, String(requiredRole))) {
+        else if (await checkRoleInDatabase(user.id, requiredRoleStr)) {
           // If found in database, store for future checks
-          sessionStorage.setItem('user_role', String(requiredRole));
+          sessionStorage.setItem('user_role', requiredRoleStr);
           access = true;
         }
         
