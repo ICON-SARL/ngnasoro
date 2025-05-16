@@ -17,6 +17,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -33,6 +34,7 @@ export function SfdLoginForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -42,11 +44,39 @@ export function SfdLoginForm() {
     },
   });
 
+  // Clean up auth state before login
+  const cleanupAuthState = () => {
+    // Clear any saved auth data
+    Object.keys(localStorage).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        localStorage.removeItem(key);
+      }
+    });
+    
+    Object.keys(sessionStorage || {}).forEach((key) => {
+      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
+        sessionStorage.removeItem(key);
+      }
+    });
+  };
+
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
+      // Clean up any previous auth state
+      cleanupAuthState();
+      
+      // Try to sign out globally first to ensure clean state
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (e) {
+        // Ignore errors here, just trying to clean up
+        console.log('Pre-signout error (can be ignored):', e);
+      }
+
+      // Now attempt to sign in
       const { data, error } = await supabase.auth.signInWithPassword({
         email: values.email,
         password: values.password,
@@ -55,6 +85,8 @@ export function SfdLoginForm() {
       if (error) throw error;
 
       if (data?.user) {
+        console.log("User authenticated:", data.user);
+        
         // Check if user has SFD admin role
         const { data: roleData, error: roleError } = await supabase
           .from('user_roles')
@@ -68,7 +100,10 @@ export function SfdLoginForm() {
           throw new Error("Erreur lors de la vérification des autorisations");
         }
 
-        if (!roleData) {
+        // Check if the user has the SFD admin role either in metadata or database
+        const isSfdAdmin = data.user.app_metadata?.role === 'sfd_admin' || !!roleData;
+        
+        if (!isSfdAdmin) {
           throw new Error("Vous n'avez pas les droits d'administrateur SFD nécessaires");
         }
 
@@ -87,14 +122,27 @@ export function SfdLoginForm() {
         if (!sfdData?.sfd_id) {
           throw new Error("Aucune SFD associée à votre compte");
         }
+        
+        // Store the user role for persistence
+        sessionStorage.setItem('user_role', 'sfd_admin');
+        sessionStorage.setItem('active_sfd_id', sfdData.sfd_id);
+        
+        toast({
+          title: "Connexion réussie",
+          description: "Bienvenue dans votre espace administrateur SFD",
+        });
 
         console.log("Login successful, redirecting to dashboard");
-        // Redirect to SFD dashboard
         navigate('/agency-dashboard');
       }
     } catch (err: any) {
       console.error("Login error:", err);
       setError(err.message || "Erreur lors de la connexion. Veuillez vérifier vos identifiants.");
+      toast({
+        title: "Erreur de connexion",
+        description: err.message || "Veuillez vérifier vos identifiants",
+        variant: "destructive",
+      });
     } finally {
       setIsLoading(false);
     }

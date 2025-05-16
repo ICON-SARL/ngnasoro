@@ -6,109 +6,98 @@ import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { UserRole } from '@/hooks/auth/types';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 interface RoleGuardProps {
   requiredRole: UserRole | string;
   children: React.ReactNode;
+  fallbackPath?: string;
 }
 
-const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
-  const { user, loading, isAdmin, isSfdAdmin, isClient, userRole } = useAuth();
+const RoleGuard: React.FC<RoleGuardProps> = ({ 
+  requiredRole, 
+  children, 
+  fallbackPath = '/access-denied'
+}) => {
+  const { user, loading, userRole } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
+  const [isCheckingRole, setIsCheckingRole] = useState(true);
   const location = useLocation();
 
-  useEffect(() => {
-    // Check if user exists in the auth context
-    if (!user) {
-      setHasAccess(false);
-      return;
-    }
-
-    console.log('RoleGuard checking:', { 
-      userRole,
-      requiredRole,
-      isAdmin,
-      isSfdAdmin,
-      isClient,
-      userMetadata: user.app_metadata,
-      path: location.pathname
-    });
-    
-    // Map string roles to equivalent values for consistency
-    const normalizeRole = (role: string | UserRole): string => {
-      if (typeof role === 'string') {
-        return role.toLowerCase();
+  // Function to check for role in database
+  const checkRoleInDatabase = async (userId: string, role: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId)
+        .eq('role', role.toLowerCase())
+        .maybeSingle();
+      
+      if (error) {
+        console.error('Error checking user role:', error);
+        return false;
       }
-      return String(role).toLowerCase();
+      
+      return !!data; // Return true if data exists
+    } catch (err) {
+      console.error('Error in checkRoleInDatabase:', err);
+      return false;
+    }
+  };
+  
+  // Check for role from session storage (for persistence)
+  const getStoredRole = (): string | null => {
+    return sessionStorage.getItem('user_role');
+  };
+
+  useEffect(() => {
+    const checkAccess = async () => {
+      // Default to no access
+      let access = false;
+      
+      // If not loading and we have a user, check role
+      if (!loading && user) {
+        console.log('RoleGuard checking access for:', { 
+          userRole,
+          requiredRole,
+          path: location.pathname,
+          metadata: user.app_metadata
+        });
+        
+        // Check all possible sources for the role
+        
+        // 1. Check from auth context
+        if (userRole === requiredRole) {
+          access = true;
+        }
+        // 2. Check from user metadata
+        else if (user.app_metadata?.role === requiredRole) {
+          access = true;
+        }
+        // 3. Check from session storage (for persistence)
+        else if (getStoredRole() === requiredRole) {
+          access = true;
+        }
+        // 4. Check from database (most reliable but slowest)
+        else if (await checkRoleInDatabase(user.id, String(requiredRole))) {
+          // If found in database, store for future checks
+          sessionStorage.setItem('user_role', String(requiredRole));
+          access = true;
+        }
+        
+        console.log(`Access for ${requiredRole}: ${access}`);
+      }
+      
+      setHasAccess(access);
+      setIsCheckingRole(false);
     };
     
-    const normalizedRequiredRole = normalizeRole(requiredRole);
-    const normalizedUserRole = normalizeRole(userRole);
-    
-    // Super admins have access to everything except specific client routes
-    if (isAdmin) {
-      if (normalizedRequiredRole === 'client') {
-        // Admins can't access client-only routes
-        setHasAccess(false);
-      } else {
-        // Admins can access everything else
-        setHasAccess(true);
-      }
-      return;
-    }
-    
-    // SFD admins can access their specific routes and certain shared routes
-    if (isSfdAdmin && (
-      normalizedRequiredRole === 'sfd_admin' ||
-      normalizedRequiredRole === 'sfd_user'
-    )) {
-      setHasAccess(true);
-      return;
-    }
-    
-    // Clients can only access client routes
-    if (isClient && (
-      normalizedRequiredRole === 'client' ||
-      normalizedRequiredRole === 'user'
-    )) {
-      setHasAccess(true);
-      return;
-    }
-    
-    // Allow users with 'user' role to access client pages for registration process
-    if (normalizedUserRole === 'user' && (
-      normalizedRequiredRole === 'client'
-    )) {
-      setHasAccess(true);
-      return;
-    }
-    
-    // Check for exact role match
-    const permitted = normalizedUserRole === normalizedRequiredRole;
-    
-    setHasAccess(permitted);
-    
-    // Log access denied attempts
-    if (!permitted) {
-      logAuditEvent(
-        AuditLogCategory.DATA_ACCESS,
-        'role_check_failure',
-        {
-          required_role: requiredRole,
-          user_role: userRole,
-          normalized_user_role: normalizedUserRole,
-          normalized_required_role: normalizedRequiredRole,
-          timestamp: new Date().toISOString()
-        },
-        user.id,
-        AuditLogSeverity.WARNING,
-        'failure'
-      ).catch(err => console.error('Error logging audit event:', err));
-    }
-  }, [user, requiredRole, location.pathname, userRole, isAdmin, isSfdAdmin, isClient]);
+    checkAccess();
+  }, [user, loading, requiredRole, userRole, location.pathname]);
 
-  if (loading || hasAccess === null) {
-    // Still checking permissions
+  // Still loading auth or checking role
+  if (loading || isCheckingRole) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="animate-spin rounded-full h-8 w-8 text-primary mr-2" />
@@ -117,33 +106,46 @@ const RoleGuard: React.FC<RoleGuardProps> = ({ requiredRole, children }) => {
     );
   }
 
+  // No user at all - redirect to auth
   if (!user) {
-    // User not authenticated, redirect to login
     return (
       <Navigate 
-        to="/auth" 
+        to={`/sfd/auth`} 
         state={{ from: location.pathname }} 
         replace 
       />
     );
   }
 
-  // Don't redirect if on agency-dashboard - this prevents the infinite redirect loop
-  if (!hasAccess && location.pathname !== '/agency-dashboard') {
-    // User doesn't have the required role, redirect to access denied
+  // User exists but doesn't have required role
+  if (user && !hasAccess) {
+    // Log access attempt
+    logAuditEvent(
+      AuditLogCategory.ACCESS_CONTROL,
+      'role_access_denied',
+      {
+        required_role: requiredRole,
+        user_role: userRole || user.app_metadata?.role || 'unknown',
+        path: location.pathname
+      },
+      user.id,
+      AuditLogSeverity.WARNING,
+      'failure'
+    ).catch(e => console.error('Error logging audit event:', e));
+    
     return (
       <Navigate 
-        to="/access-denied" 
+        to={fallbackPath} 
         state={{ 
-          requiredRole,
-          from: location.pathname 
+          from: location.pathname,
+          requiredRole 
         }} 
         replace 
       />
     );
   }
 
-  // User has permission or is on agency-dashboard, render children
+  // User has the required role or is admin
   return <>{children}</>;
 };
 

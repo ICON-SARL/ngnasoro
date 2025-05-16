@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   Users, 
@@ -8,23 +8,51 @@ import {
   Receipt, 
   Settings,
   UserPlus,
-  Landmark
+  Landmark,
+  LogOut
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import { useToast } from '@/hooks/use-toast';
 
 export const SfdHeader: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth(); 
   const { activeSfdId, sfdData } = useSfdDataAccess();
+  const { toast } = useToast();
   
   // Find the active SFD from sfdData using activeSfdId
   const activeSfd = sfdData.find(sfd => sfd.id === activeSfdId);
   
   const isActive = (path: string) => {
-    return location.pathname === path;
+    return location.pathname.includes(path);
+  };
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+      // Clear any local storage auth related data
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('supabase.auth.') || key.includes('sb-')) {
+          localStorage.removeItem(key);
+        }
+      });
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      navigate('/sfd/auth');
+    } catch (error) {
+      console.error('Logout error:', error);
+      toast({
+        title: "Erreur",
+        description: "Un problème est survenu lors de la déconnexion",
+        variant: "destructive"
+      });
+    }
   };
   
   const navItems = [
@@ -75,11 +103,22 @@ export const SfdHeader: React.FC = () => {
               </div>
             )}
             
-            <Avatar>
-              <AvatarFallback className="bg-[#0D6A51] text-white">
-                {user?.email?.charAt(0).toUpperCase() || "U"}
-              </AvatarFallback>
-            </Avatar>
+            <div className="flex items-center gap-3">
+              <Avatar>
+                <AvatarFallback className="bg-[#0D6A51] text-white">
+                  {user?.email?.charAt(0).toUpperCase() || "U"}
+                </AvatarFallback>
+              </Avatar>
+              
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={handleLogout} 
+                className="text-gray-500 hover:text-red-500"
+              >
+                <LogOut className="h-5 w-5" />
+              </Button>
+            </div>
           </div>
         </div>
       </div>

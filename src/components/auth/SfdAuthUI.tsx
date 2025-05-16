@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate, useLocation, Link } from 'react-router-dom';
 import Logo from './Logo';
-import LoginForm from '@/components/auth/login/LoginForm';
+import { SfdLoginForm } from '@/components/sfd/auth/SfdLoginForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 
@@ -13,6 +13,30 @@ const SfdAuthUI = () => {
   const location = useLocation();
   const [authSuccess, setAuthSuccess] = useState(false);
   const [authError, setAuthError] = useState<string | null>(null);
+  
+  // Function to check if the user is an SFD admin
+  const checkSfdAdminStatus = async (userId: string) => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      // Check for sfd_admin role in user_roles table
+      const { data, error } = await supabase
+        .from('user_roles')
+        .select('*')
+        .eq('user_id', userId)
+        .eq('role', 'sfd_admin')
+        .maybeSingle();
+      
+      if (error) {
+        console.error("Error checking SFD admin status:", error);
+        return false;
+      }
+      
+      return !!data; // Return true if data exists, false otherwise
+    } catch (err) {
+      console.error("Error in checkSfdAdminStatus:", err);
+      return false;
+    }
+  };
   
   useEffect(() => {
     const hash = location.hash;
@@ -28,29 +52,26 @@ const SfdAuthUI = () => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && !loading) {
-      console.log("SfdAuthUI - User detected:", user);
-      console.log("SfdAuthUI - User role:", user.app_metadata?.role);
-      
-      // Verifier le rôle directement depuis les métadonnées
-      const userRole = user.app_metadata?.role;
-      
-      if (userRole === 'sfd_admin') {
-        navigate('/agency-dashboard');
-      } else {
-        // Si on a un rôle mais pas celui de sfd_admin, on affiche une erreur
-        if (userRole) {
-          setAuthError(`Accès refusé. Vous n'avez pas le rôle d'administrateur SFD (rôle actuel: ${userRole}).`);
+    const checkAndRedirect = async () => {
+      if (user && !loading) {
+        console.log("SfdAuthUI - User detected:", user);
+        
+        // Check if user is an SFD admin, either from metadata or from database
+        const isSfdAdmin = user.app_metadata?.role === 'sfd_admin' || await checkSfdAdminStatus(user.id);
+        
+        if (isSfdAdmin) {
+          // Save the role in session storage to help with persistence
+          sessionStorage.setItem('user_role', 'sfd_admin');
+          navigate('/agency-dashboard');
         } else {
-          // Si pas de rôle défini, rediriger vers l'auth appropriée
-          if (userRole === 'admin') {
-            navigate('/admin/auth');
-          } else {
-            navigate('/auth');
-          }
+          // If not an SFD admin, show error
+          const currentRole = user.app_metadata?.role || 'utilisateur standard';
+          setAuthError(`Accès refusé. Vous n'avez pas le rôle d'administrateur SFD (rôle actuel: ${currentRole}).`);
         }
       }
-    }
+    };
+    
+    checkAndRedirect();
   }, [user, loading, navigate]);
 
   if (authSuccess) {
@@ -89,11 +110,7 @@ const SfdAuthUI = () => {
             </div>
           )}
           
-          <LoginForm 
-            adminMode={false} 
-            isSfdAdmin={true}
-            onError={setAuthError}
-          />
+          <SfdLoginForm />
           
           <div className="mt-4 text-center pb-6 flex flex-col gap-2">
             <Link 
