@@ -28,7 +28,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
       // Convert enum to string if needed
-      const roleString = typeof role === 'string' ? role : role;
+      const roleString = typeof role === 'string' ? role : role.toString();
       
       const { data, error } = await supabase
         .from('user_roles')
@@ -71,11 +71,11 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         // Convert requiredRole to string for comparison if it's an enum
         const requiredRoleStr = typeof requiredRole === 'string' 
           ? requiredRole 
-          : requiredRole;
+          : requiredRole.toString();
         
         // 1. Check from auth context
         if (userRole !== null) {
-          const userRoleStr = typeof userRole === 'string' ? userRole : userRole;
+          const userRoleStr = typeof userRole === 'string' ? userRole : userRole.toString();
           if (userRoleStr === requiredRoleStr) {
             access = true;
           }

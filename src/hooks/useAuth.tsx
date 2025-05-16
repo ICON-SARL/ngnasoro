@@ -34,7 +34,7 @@ const useAuth = () => {
   // Function to check role in database
   const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
-      const roleString = typeof role === 'string' ? role : role;
+      const roleString = typeof role === 'string' ? role : role.toString();
       
       const { data, error } = await supabase
         .from('user_roles')
