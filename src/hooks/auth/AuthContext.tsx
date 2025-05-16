@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -18,7 +17,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string>(UserRole.User);
+  const [userRole, setUserRole] = useState<UserRole>(UserRole.User);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
@@ -38,9 +37,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
         // Extract role from user metadata if available
         if (newSession?.user) {
-          const role = newSession.user.app_metadata?.role || UserRole.User;
-          console.log('Setting role from auth change:', role);
-          setUserRole(role);
+          const roleString = newSession.user.app_metadata?.role || UserRole.User;
+          console.log('Setting role from auth change:', roleString);
+          
+          // Convert string role to enum value
+          const roleEnum = stringToUserRole(roleString);
+          setUserRole(roleEnum || UserRole.User);
         } else {
           setUserRole(UserRole.User);
         }
@@ -54,9 +56,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(currentSession?.user as User || null);
       
       if (currentSession?.user) {
-        const role = currentSession.user.app_metadata?.role || UserRole.User;
-        console.log('Setting initial role:', role);
-        setUserRole(role);
+        const roleString = currentSession.user.app_metadata?.role || UserRole.User;
+        console.log('Setting initial role:', roleString);
+        
+        // Convert string role to enum value
+        const roleEnum = stringToUserRole(roleString);
+        setUserRole(roleEnum || UserRole.User);
       }
       
       setLoading(false);
@@ -76,6 +81,22 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
+
+  // Helper function to convert string role to UserRole enum
+  const stringToUserRole = (role: string): UserRole | null => {
+    switch(role?.toLowerCase()) {
+      case 'admin':
+        return UserRole.Admin;
+      case 'sfd_admin':
+        return UserRole.SfdAdmin;
+      case 'client':
+        return UserRole.Client;
+      case 'user':
+        return UserRole.User;
+      default:
+        return null;
+    }
+  };
 
   // Save active SFD ID to local storage whenever it changes
   useEffect(() => {
@@ -147,7 +168,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Promise.resolve();
   };
 
-  const value = {
+  const value: AuthContextProps = {
     user,
     session,
     loading,
@@ -167,3 +188,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
+
+// Helper function to convert string role to UserRole enum
+function stringToUserRole(role: string): UserRole | null {
+  if (!role) return null;
+  
+  switch(role.toLowerCase()) {
+    case 'admin':
+      return UserRole.Admin;
+    case 'sfd_admin':
+      return UserRole.SfdAdmin;
+    case 'client':
+      return UserRole.Client;
+    case 'user':
+      return UserRole.User;
+    default:
+      return null;
+  }
+}

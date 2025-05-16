@@ -25,13 +25,16 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const location = useLocation();
 
   // Function to check for role in database
-  const checkRoleInDatabase = async (userId: string, role: string): Promise<boolean> => {
+  const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
     try {
+      // Convert enum to string if needed
+      const roleString = typeof role === 'string' ? role : role.toString();
+      
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', role.toLowerCase())
+        .eq('role', roleString.toLowerCase())
         .maybeSingle();
       
       if (error) {
@@ -65,14 +68,17 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
           metadata: user.app_metadata
         });
         
-        // Check all possible sources for the role
-        const requiredRoleStr = String(requiredRole);
+        // Convert requiredRole to string for comparison if it's an enum
+        const requiredRoleStr = typeof requiredRole === 'string' 
+          ? requiredRole 
+          : requiredRole.toString();
         
         // 1. Check from auth context
-        if (userRole === requiredRole || 
-            (typeof userRole === 'string' && userRole === requiredRoleStr) || 
-            (typeof requiredRole === 'string' && userRole?.toString() === requiredRoleStr)) {
-          access = true;
+        if (userRole !== null) {
+          const userRoleStr = userRole.toString();
+          if (userRoleStr === requiredRoleStr) {
+            access = true;
+          }
         }
         // 2. Check from user metadata
         else if (user.app_metadata?.role === requiredRoleStr) {
