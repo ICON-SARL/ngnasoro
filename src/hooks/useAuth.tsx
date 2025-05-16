@@ -21,6 +21,7 @@ const stringToUserRole = (role: string | null | undefined): UserRole | null => {
     case 'user':
       return UserRole.User;
     default:
+      console.log(`Unknown role type: ${role}`);
       return null;
   }
 };
@@ -35,24 +36,28 @@ const useAuth = () => {
   const [isCheckingRole, setIsCheckingRole] = useState(true);
 
   // Function to check role in database
-  const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
+  const checkRoleInDatabase = async (userId: string, role: string): Promise<boolean> => {
     try {
-      // Convert role to string and lowercase for consistency
-      const roleString = String(role).toLowerCase();
+      console.log(`Checking database for role: '${role}' for user ${userId}`);
       
-      // Use a more dynamic approach for role checking
+      // Convert role to string and lowercase for consistency
+      const roleString = role.toLowerCase();
+      
+      // Use a direct query approach
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .filter('role', 'eq', roleString);
+        .eq('user_id', userId);
       
       if (error) {
         console.error('Error checking user role:', error);
         return false;
       }
       
-      return !!data && data.length > 0; // Return true if data exists
+      console.log('Database roles found:', data);
+      
+      // Check if any of the returned roles match the required role
+      return data.some(r => r.role.toLowerCase() === roleString);
     } catch (err) {
       console.error('Error in checkRoleInDatabase:', err);
       return false;
@@ -64,19 +69,22 @@ const useAuth = () => {
       const { user } = authContext;
       
       if (user) {
+        console.log('Determining user role for:', user);
+
         // Check role from multiple sources in order of reliability
         
         // 1. First check from session storage for persistence
         const storedRole = sessionStorage.getItem('user_role');
         if (storedRole) {
+          console.log('Found role in session storage:', storedRole);
           const roleEnum = stringToUserRole(storedRole);
           if (roleEnum !== null) {
             setUserRole(roleEnum);
           }
           
-          setIsAdmin(storedRole === 'admin');
-          setIsSfdAdmin(storedRole === 'sfd_admin');
-          setIsClient(storedRole === 'client');
+          setIsAdmin(storedRole.toLowerCase() === 'admin');
+          setIsSfdAdmin(storedRole.toLowerCase() === 'sfd_admin');
+          setIsClient(storedRole.toLowerCase() === 'client');
           setIsCheckingRole(false);
           return;
         }
@@ -84,14 +92,15 @@ const useAuth = () => {
         // 2. Check from user metadata
         const metadataRole = user.app_metadata?.role;
         if (metadataRole) {
+          console.log('Found role in metadata:', metadataRole);
           const roleEnum = stringToUserRole(metadataRole);
           if (roleEnum !== null) {
             setUserRole(roleEnum);
           }
           
-          setIsAdmin(metadataRole === 'admin');
-          setIsSfdAdmin(metadataRole === 'sfd_admin');
-          setIsClient(metadataRole === 'client');
+          setIsAdmin(metadataRole.toLowerCase() === 'admin');
+          setIsSfdAdmin(metadataRole.toLowerCase() === 'sfd_admin');
+          setIsClient(metadataRole.toLowerCase() === 'client');
           // Store for future use
           sessionStorage.setItem('user_role', metadataRole);
           setIsCheckingRole(false);
@@ -100,9 +109,23 @@ const useAuth = () => {
         
         // 3. Check from database
         try {
+          console.log('Checking roles from database...');
+          // Get all roles for the user
+          const { data: userRoles, error } = await supabase
+            .from('user_roles')
+            .select('role')
+            .eq('user_id', user.id);
+            
+          if (error) {
+            console.error('Error fetching user roles:', error);
+            setIsCheckingRole(false);
+            return;
+          }
+          
+          console.log('Found user roles in database:', userRoles);
+          
           // Check for the most privileged roles first
-          const isUserAdmin = await checkRoleInDatabase(user.id, 'admin');
-          if (isUserAdmin) {
+          if (userRoles.some(r => r.role.toLowerCase() === 'admin')) {
             setUserRole(UserRole.Admin);
             setIsAdmin(true);
             sessionStorage.setItem('user_role', 'admin');
@@ -110,8 +133,7 @@ const useAuth = () => {
             return;
           }
           
-          const isUserSfdAdmin = await checkRoleInDatabase(user.id, 'sfd_admin');
-          if (isUserSfdAdmin) {
+          if (userRoles.some(r => r.role.toLowerCase() === 'sfd_admin')) {
             setUserRole(UserRole.SfdAdmin);
             setIsSfdAdmin(true);
             sessionStorage.setItem('user_role', 'sfd_admin');
@@ -119,8 +141,7 @@ const useAuth = () => {
             return;
           }
           
-          const isUserClient = await checkRoleInDatabase(user.id, 'client');
-          if (isUserClient) {
+          if (userRoles.some(r => r.role.toLowerCase() === 'client')) {
             setUserRole(UserRole.Client);
             setIsClient(true);
             sessionStorage.setItem('user_role', 'client');
@@ -137,6 +158,7 @@ const useAuth = () => {
         }
       } else {
         // No user, clear roles
+        console.log('No user found, clearing roles');
         setUserRole(null);
         setIsAdmin(false);
         setIsSfdAdmin(false);

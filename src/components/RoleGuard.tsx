@@ -25,24 +25,28 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const location = useLocation();
 
   // Function to check for role in database
-  const checkRoleInDatabase = async (userId: string, role: UserRole | string): Promise<boolean> => {
+  const checkRoleInDatabase = async (userId: string, role: string): Promise<boolean> => {
     try {
-      // Convert role to string and lowercase for consistency in database queries
-      const roleString = String(role).toLowerCase();
+      console.log(`Checking database for role: '${role}' for user ${userId}`);
       
-      // Use a more dynamic approach for role checking
+      // Convert role to string and lowercase for consistency in database queries
+      const roleString = role.toLowerCase();
+      
+      // Use a direct query approach
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .filter('role', 'eq', roleString);
+        .eq('user_id', userId);
       
       if (error) {
         console.error('Error checking user role:', error);
         return false;
       }
       
-      return !!data && data.length > 0; // Return true if data exists
+      console.log('Database roles found:', data);
+      
+      // Check if any of the returned roles match the required role
+      return data.some(r => r.role.toLowerCase() === roleString);
     } catch (err) {
       console.error('Error in checkRoleInDatabase:', err);
       return false;
@@ -69,31 +73,35 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         });
         
         // Convert requiredRole to string for comparison
-        const requiredRoleStr = String(requiredRole);
+        const requiredRoleStr = String(requiredRole).toLowerCase();
         
         // 1. Check from auth context
         if (userRole !== null) {
-          const userRoleStr = String(userRole);
+          const userRoleStr = String(userRole).toLowerCase();
+          console.log(`Comparing user role '${userRoleStr}' with required role '${requiredRoleStr}'`);
           if (userRoleStr === requiredRoleStr) {
             access = true;
           }
         }
         // 2. Check from user metadata
-        else if (user.app_metadata?.role === requiredRoleStr) {
+        else if (user.app_metadata?.role && String(user.app_metadata.role).toLowerCase() === requiredRoleStr) {
+          console.log('Access granted via app_metadata');
           access = true;
         }
         // 3. Check from session storage (for persistence)
-        else if (getStoredRole() === requiredRoleStr) {
+        else if (getStoredRole()?.toLowerCase() === requiredRoleStr) {
+          console.log('Access granted via session storage');
           access = true;
         }
         // 4. Check from database (most reliable but slowest)
         else if (await checkRoleInDatabase(user.id, requiredRoleStr)) {
+          console.log('Access granted via database check');
           // If found in database, store for future checks
           sessionStorage.setItem('user_role', requiredRoleStr);
           access = true;
         }
         
-        console.log(`Access for ${requiredRole}: ${access}`);
+        console.log(`Final access decision for ${requiredRole}: ${access}`);
       }
       
       setHasAccess(access);
@@ -117,7 +125,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   if (!user) {
     return (
       <Navigate 
-        to={`/sfd/auth`} 
+        to={`/auth`} 
         state={{ from: location.pathname }} 
         replace 
       />
@@ -139,6 +147,11 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
       AuditLogSeverity.WARNING,
       'failure'
     ).catch(e => console.error('Error logging audit event:', e));
+    
+    console.log(`Access denied - redirecting to ${fallbackPath}`, {
+      requiredRole,
+      userRole: userRole || user.app_metadata?.role || 'unknown'
+    });
     
     return (
       <Navigate 
