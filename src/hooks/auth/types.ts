@@ -9,6 +9,7 @@ export interface User extends SupabaseUser {
   sfd_id?: string;
 }
 
+// Update the UserRole enum to use unique string values
 export enum UserRole {
   SuperAdmin = 'admin',
   Admin = 'admin',

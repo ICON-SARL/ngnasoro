@@ -21,10 +21,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
   const [biometricEnabled, setBiometricEnabled] = useState(false);
 
-  // Derived state for role checks - fixed logic
-  const isAdmin = userRole === UserRole.SuperAdmin || userRole === UserRole.Admin || userRole === 'admin';
-  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === 'sfd_admin';
-  const isClient = userRole === UserRole.Client || userRole === 'client';
+  // Derived state for role checks - use the actual enum values for comparison
+  const isAdmin = userRole === UserRole.Admin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin;
+  const isClient = userRole === UserRole.Client;
 
   useEffect(() => {
     // Set up auth state change listener
@@ -81,22 +81,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       subscription.unsubscribe();
     };
   }, []);
-
-  // Helper function to convert string role to UserRole enum
-  const stringToUserRole = (role: string): UserRole | null => {
-    switch(role?.toLowerCase()) {
-      case 'admin':
-        return UserRole.Admin;
-      case 'sfd_admin':
-        return UserRole.SfdAdmin;
-      case 'client':
-        return UserRole.Client;
-      case 'user':
-        return UserRole.User;
-      default:
-        return null;
-    }
-  };
 
   // Save active SFD ID to local storage whenever it changes
   useEffect(() => {
