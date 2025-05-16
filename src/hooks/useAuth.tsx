@@ -44,7 +44,7 @@ const useAuth = () => {
         .from('user_roles')
         .select('role')
         .eq('user_id', userId)
-        .eq('role', roleString);
+        .eq('role', roleString as any); // Use type assertion to bypass strict type checking
       
       if (error) {
         console.error('Error checking user role:', error);
