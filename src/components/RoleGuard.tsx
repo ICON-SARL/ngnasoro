@@ -121,7 +121,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   if (user && !hasAccess) {
     // Log access attempt
     logAuditEvent(
-      AuditLogCategory.ACCESS_CONTROL,
+      AuditLogCategory.DATA_ACCESS,
       'role_access_denied',
       {
         required_role: requiredRole,
