@@ -33,7 +33,6 @@ const transferFormSchema = z.object({
 
 interface TransferFormValues extends z.infer<typeof transferFormSchema> {}
 
-// Adding a small fix for the description property
 export function TransferForm() {
   const { accounts, transferFunds } = useSfdAccounts();
   const { toast } = useToast();
@@ -98,7 +97,7 @@ export function TransferForm() {
                 <SelectContent>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {getAccountName(account)} ({formatCurrency(account.balance, account.currency)})
+                      {getAccountName(account)} ({formatCurrency(account.balance)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -122,7 +121,7 @@ export function TransferForm() {
                 <SelectContent>
                   {accounts.map((account) => (
                     <SelectItem key={account.id} value={account.id}>
-                      {getAccountName(account)} ({formatCurrency(account.balance, account.currency)})
+                      {getAccountName(account)} ({formatCurrency(account.balance)})
                     </SelectItem>
                   ))}
                 </SelectContent>
