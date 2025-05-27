@@ -1,7 +1,7 @@
 
 import React from 'react';
 import AuthUI from '@/components/AuthUI';
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 interface LoginPageProps {
   isSfdAdmin?: boolean;
@@ -10,14 +10,9 @@ interface LoginPageProps {
 const LoginPage: React.FC<LoginPageProps> = ({ isSfdAdmin = false }) => {
   const location = useLocation();
   
-  // Check if we're coming from splash screen
-  const fromSplash = location.state?.fromSplash === true;
+  // Allow direct access to auth page without splash screen requirement
+  // This prevents redirect loops and allows users to access login directly
   
-  // If user directly accesses /auth without seeing splash, redirect to splash
-  if (!fromSplash) {
-    return <Navigate to="/" replace />;
-  }
-
   return <AuthUI initialMode={isSfdAdmin ? 'sfd_admin' : 'default'} />;
 };
 

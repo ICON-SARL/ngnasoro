@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
+import { handleRobustSignOut } from '@/utils/auth/authCleanup';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LogoutButtonProps {
   variant?: 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
@@ -39,19 +41,13 @@ const LogoutButton: React.FC<LogoutButtonProps> = ({
         description: "Veuillez patienter..."
       });
       
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
+      // Use the robust sign out function
+      await handleRobustSignOut(supabase, navigate);
       
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès"
       });
-      
-      // Redirect directly to the auth page instead of forcing a full page reload
-      navigate(redirectPath);
     } catch (error: any) {
       console.error('Erreur lors de la déconnexion:', error);
       setIsLoggingOut(false);

@@ -18,6 +18,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useToast } from '@/hooks/use-toast';
+import { cleanupAuthState } from '@/utils/auth/authCleanup';
 
 const formSchema = z.object({
   email: z.string().email({
@@ -44,28 +45,12 @@ export function SfdLoginForm() {
     },
   });
 
-  // Clean up auth state before login
-  const cleanupAuthState = () => {
-    // Clear any saved auth data
-    Object.keys(localStorage).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        localStorage.removeItem(key);
-      }
-    });
-    
-    Object.keys(sessionStorage || {}).forEach((key) => {
-      if (key.startsWith('supabase.auth.') || key.includes('sb-')) {
-        sessionStorage.removeItem(key);
-      }
-    });
-  };
-
   const onSubmit = async (values: FormValues) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      // Clean up any previous auth state
+      // Clean up any previous auth state before login
       cleanupAuthState();
       
       // Try to sign out globally first to ensure clean state

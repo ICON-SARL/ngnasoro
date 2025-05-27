@@ -4,6 +4,8 @@ import { LogOut } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { handleRobustSignOut } from '@/utils/auth/authCleanup';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AdminLogoutProps {
   variant?: 'default' | 'secondary' | 'destructive' | 'outline' | 'ghost' | 'link';
@@ -34,19 +36,13 @@ const AdminLogout: React.FC<AdminLogoutProps> = ({
       // Force immediate UI update to show loading state
       await new Promise(resolve => setTimeout(resolve, 0));
       
-      const { error } = await signOut();
-      
-      if (error) {
-        throw error;
-      }
+      // Use the robust sign out function
+      await handleRobustSignOut(supabase);
       
       toast({
         title: "Déconnexion réussie",
         description: "Vous avez été déconnecté avec succès",
       });
-      
-      // Force a full page reload to clear any remaining state
-      window.location.href = '/auth';
     } catch (error: any) {
       console.error('Logout error:', error);
       setIsLoggingOut(false);

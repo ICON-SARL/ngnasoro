@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
+import { cleanupAuthState } from '@/utils/auth/authCleanup';
 
 export const useLoginForm = (
   adminMode: boolean = false, 
@@ -48,6 +49,9 @@ export const useLoginForm = (
     setErrorMessage(null);
     
     try {
+      // Clean up auth state before attempting login
+      cleanupAuthState();
+      
       console.log('Tentative de connexion avec:', { email, adminMode, isSfdAdmin });
       const result = await signIn(email, password);
       

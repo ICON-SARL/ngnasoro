@@ -5,6 +5,7 @@ import { Session, User } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { useToast } from '@/hooks/use-toast';
+import { cleanupAuthState, handleRobustSignOut } from '@/utils/auth/authCleanup';
 
 interface AuthContextProps {
   user: User | null;
@@ -122,6 +123,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Clean up any existing auth state before signing in
+      cleanupAuthState();
+      
+      // Try to sign out globally first to ensure clean state
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        // Ignore errors here, just trying to clean up
+        console.log('Pre-signout cleanup (can be ignored):', err);
+      }
+
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
@@ -175,40 +187,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signOut = async () => {
     try {
-      console.log('AuthProvider - Signing out user');
-      const userId = user?.id; // Capture user ID before signout
+      console.log('AuthProvider - Starting robust sign out');
       
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
       
-      // Call Supabase signOut method
-      const result = await supabase.auth.signOut();
+      // Use the robust sign out function
+      await handleRobustSignOut(supabase);
       
-      if (result.error) {
-        console.error('Error during signOut:', result.error);
-        toast({
-          title: "Erreur de déconnexion",
-          description: result.error.message || "Une erreur s'est produite lors de la déconnexion",
-          variant: "destructive"
-        });
-      } else {
-        console.log('AuthProvider - SignOut successful');
-        // Clear local state immediately to avoid UI inconsistencies
-        setUser(null);
-        setSession(null);
-        
-        toast({
-          title: "Déconnexion réussie",
-          description: "Vous avez été déconnecté avec succès"
-        });
-        
-        // Force a full page reload to clear any remaining state
-        window.location.href = '/auth';
-      }
+      // Clear local state immediately
+      setUser(null);
+      setSession(null);
       
-      return result;
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      return { error: null };
     } catch (error) {
       console.error('Exception during signOut:', error);
       toast({
