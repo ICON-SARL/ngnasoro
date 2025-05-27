@@ -6,7 +6,6 @@ import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { UserRole } from '@/hooks/auth/types';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 interface RoleGuardProps {
   requiredRole: UserRole | string;
@@ -19,56 +18,59 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   children, 
   fallbackPath = '/access-denied'
 }) => {
-  const { user, loading, userRole } = useAuth();
+  const { user, loading, userRole, isCheckingRole } = useAuth();
   const [hasAccess, setHasAccess] = useState<boolean | null>(null);
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
   const location = useLocation();
 
   useEffect(() => {
     const checkAccess = async () => {
       console.log('RoleGuard: Starting access check', {
         loading,
+        isCheckingRole,
         user: !!user,
         userRole,
         requiredRole,
         path: location.pathname
       });
 
-      if (!loading && user) {
-        try {
-          // Use database as single source of truth
-          const { data: userRoles, error } = await supabase
-            .from('user_roles')
-            .select('role')
-            .eq('user_id', user.id);
-          
-          if (error) {
-            console.error('RoleGuard: Error checking user role:', error);
-            setHasAccess(false);
-            setIsCheckingRole(false);
-            return;
-          }
-          
-          console.log('RoleGuard: Database roles found:', userRoles);
-          
-          const requiredRoleStr = String(requiredRole).toLowerCase();
-          const hasRole = userRoles.some(r => r.role === requiredRoleStr);
-          
-          console.log(`RoleGuard: Access check result for ${requiredRole}: ${hasRole}`);
-          setHasAccess(hasRole);
-        } catch (err) {
-          console.error('RoleGuard: Error in access check:', err);
+      if (!loading && !isCheckingRole) {
+        if (!user) {
           setHasAccess(false);
+          return;
         }
-      } else if (!loading && !user) {
-        setHasAccess(false);
+
+        const requiredRoleStr = String(requiredRole).toLowerCase();
+        const userRoleStr = String(userRole).toLowerCase();
+        
+        console.log('RoleGuard: Role comparison', {
+          userRole: userRoleStr,
+          requiredRole: requiredRoleStr,
+          match: userRoleStr === requiredRoleStr
+        });
+        
+        const hasRole = userRoleStr === requiredRoleStr;
+        setHasAccess(hasRole);
+        
+        if (!hasRole) {
+          console.log('RoleGuard: Access denied, logging event');
+          logAuditEvent(
+            AuditLogCategory.DATA_ACCESS,
+            'role_access_denied',
+            {
+              required_role: requiredRole,
+              user_role: userRole || 'unknown',
+              path: location.pathname
+            },
+            user.id,
+            AuditLogSeverity.WARNING,
+            'failure'
+          ).catch(e => console.error('Error logging audit event:', e));
+        }
       }
-      
-      setIsCheckingRole(false);
     };
     
     checkAccess();
-  }, [user, loading, requiredRole, location.pathname]);
+  }, [user, loading, isCheckingRole, userRole, requiredRole, location.pathname]);
 
   // Still loading auth or checking role
   if (loading || isCheckingRole) {
@@ -85,31 +87,25 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
     console.log('RoleGuard: No user found, redirecting to auth');
     return (
       <Navigate 
-        to={`/sfd/auth`} 
+        to="/auth" 
         state={{ from: location.pathname }} 
         replace 
       />
     );
   }
 
+  // Access check not completed yet
+  if (hasAccess === null) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="animate-spin rounded-full h-8 w-8 text-primary mr-2" />
+        <span>Vérification des autorisations...</span>
+      </div>
+    );
+  }
+
   // User exists but doesn't have required role
-  if (user && !hasAccess) {
-    console.log('RoleGuard: Access denied, logging event');
-    
-    // Log access attempt
-    logAuditEvent(
-      AuditLogCategory.DATA_ACCESS,
-      'role_access_denied',
-      {
-        required_role: requiredRole,
-        user_role: userRole || 'unknown',
-        path: location.pathname
-      },
-      user.id,
-      AuditLogSeverity.WARNING,
-      'failure'
-    ).catch(e => console.error('Error logging audit event:', e));
-    
+  if (!hasAccess) {
     console.log(`RoleGuard: Access denied - redirecting to ${fallbackPath}`, {
       requiredRole,
       userRole: userRole || 'unknown'

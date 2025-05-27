@@ -16,12 +16,13 @@ const MobileFlowPage: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut, isAdmin, isSfdAdmin, isClient } = useAuth();
+  const { user, loading, signOut, isAdmin, isSfdAdmin, isClient, isCheckingRole } = useAuth();
 
   // Check if user is authenticated and redirect appropriately
   useEffect(() => {
     console.log('MobileFlowPage: Auth state check', {
       loading,
+      isCheckingRole,
       user: !!user,
       isAdmin,
       isSfdAdmin,
@@ -29,7 +30,7 @@ const MobileFlowPage: React.FC = () => {
       pathname: location.pathname
     });
 
-    if (!loading) {
+    if (!loading && !isCheckingRole) {
       if (!user) {
         console.log('MobileFlowPage: No user, redirecting to auth');
         toast({
@@ -37,7 +38,7 @@ const MobileFlowPage: React.FC = () => {
           description: "Vous devez être connecté pour accéder à cette page.",
           variant: "destructive",
         });
-        navigate('/sfd/auth');
+        navigate('/auth');
         return;
       }
       
@@ -73,18 +74,18 @@ const MobileFlowPage: React.FC = () => {
           description: "Votre rôle n'est pas reconnu pour cette interface.",
           variant: "destructive",
         });
-        navigate('/sfd/auth', { replace: true });
+        navigate('/auth', { replace: true });
         return;
       }
     }
-  }, [user, loading, navigate, toast, location.pathname, isAdmin, isSfdAdmin, isClient]);
+  }, [user, loading, isCheckingRole, navigate, toast, location.pathname, isAdmin, isSfdAdmin, isClient]);
 
   // Handle logout
   const handleLogout = async () => {
     try {
       console.log('MobileFlowPage: Starting logout');
       await signOut();
-      navigate('/sfd/auth', { replace: true });
+      navigate('/auth', { replace: true });
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt !",
@@ -103,7 +104,7 @@ const MobileFlowPage: React.FC = () => {
     setMenuOpen(!menuOpen);
   };
 
-  if (loading) {
+  if (loading || isCheckingRole) {
     console.log('MobileFlowPage: Still loading...');
     return <div className="p-8 text-center">Chargement...</div>;
   }

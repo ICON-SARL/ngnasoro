@@ -1,21 +1,12 @@
 
-import { Session, User as SupabaseUser } from '@supabase/supabase-js';
+import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-// Extended User type that includes our custom properties
-export interface User extends SupabaseUser {
-  full_name?: string;
-  avatar_url?: string;
-  phone?: string;
-  sfd_id?: string;
-}
+export type User = SupabaseUser;
 
-// Update the UserRole enum to use unique string values
 export enum UserRole {
   Admin = 'admin',
-  SuperAdmin = 'admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client',
-  User = 'user'
+  Client = 'client'
 }
 
 export interface AuthContextProps {
@@ -26,26 +17,13 @@ export interface AuthContextProps {
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isClient: boolean;
+  isCheckingRole?: boolean;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string) => void;
-  signIn: (email: string, password: string) => Promise<{ error?: any; data?: any }>;
-  signUp: (email: string, password: string, metadata?: any) => Promise<{ error?: any; data?: any }>;
-  signOut: () => Promise<{ error?: any }>;
+  signIn: (email: string, password: string) => Promise<any>;
+  signUp: (email: string, password: string, metadata?: any) => Promise<any>;
+  signOut: () => Promise<any>;
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
-}
-
-// Define the SFD Association types
-export interface AssociateSfdParams {
-  userId: string;
-  sfdId: string;
-  isDefault?: boolean;
-  makeDefault?: boolean;
-}
-
-export interface AssociateSfdResult {
-  success: boolean;
-  error?: string;
-  userSfd?: any;
 }

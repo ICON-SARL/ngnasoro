@@ -12,37 +12,19 @@ import UnauthorizedPage from './pages/UnauthorizedPage';
 import SfdClientsPage from './pages/SfdClientsPage';
 import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
+import LoginPage from './pages/LoginPage';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
 const router = createBrowserRouter([
-  // Main app routes
+  // Auth routes (default entry point)
   {
     path: '/',
-    element: <App />,
-    children: [
-      {
-        index: true,
-        element: <div>Welcome to the App</div>,
-      },
-      {
-        path: 'auth',
-        element: <div>Authentication Page</div>,
-      },
-      {
-        path: 'dashboard',
-        element: <div>Dashboard Page</div>,
-      },
-      {
-        path: 'admin',
-        children: [
-          {
-            path: 'loan-plans',
-            element: <div>Admin Loan Plans</div>,
-          },
-        ],
-      },
-    ],
+    element: <LoginPage />,
+  },
+  {
+    path: '/auth',
+    element: <LoginPage />,
   },
   
   // Super Admin routes
@@ -143,10 +125,14 @@ const router = createBrowserRouter([
     ),
   },
   
-  // Auth routes
+  // SFD Auth routes
   {
     path: '/sfd/auth',
     element: <SfdLoginPage />,
+  },
+  {
+    path: '/admin/auth',
+    element: <LoginPage isSfdAdmin={false} />,
   },
   {
     path: '/unauthorized',
@@ -157,11 +143,19 @@ const router = createBrowserRouter([
     element: <UnauthorizedPage />,
   },
   
-  // Mobile routes
+  // Mobile routes for clients
   {
     path: '/mobile-flow',
-    element: <MobileFlowPage />,
+    element: (
+      <RoleGuard requiredRole="client" fallbackPath="/access-denied">
+        <MobileFlowPage />
+      </RoleGuard>
+    ),
     children: [
+      {
+        path: 'main',
+        element: <MobileRouter />,
+      },
       {
         path: 'dashboard',
         element: <MobileRouter />,
