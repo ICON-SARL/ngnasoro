@@ -39,10 +39,13 @@ export interface AssociateSfdParams {
   userId: string;
   sfdId: string;
   role?: string;
+  isDefault?: boolean;
+  makeDefault?: boolean;
 }
 
 export interface AssociateSfdResult {
   success: boolean;
   error?: string;
   data?: any;
+  userSfd?: any;
 }

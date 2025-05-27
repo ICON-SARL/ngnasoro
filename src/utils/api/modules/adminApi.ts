@@ -18,7 +18,7 @@ export const adminApi = {
       if (existingAssoc) {
         return {
           success: true,
-          userSfd: existingAssoc
+          data: existingAssoc
         };
       }
       
@@ -43,7 +43,7 @@ export const adminApi = {
       
       return {
         success: true,
-        userSfd: data
+        data: data
       };
     } catch (error: any) {
       console.error('Error in associateUserWithSfd:', error);
