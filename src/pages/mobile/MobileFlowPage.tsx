@@ -15,12 +15,20 @@ const MobileFlowPage: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut } = useAuth();
+  const { user, loading, signOut, userRole } = useAuth();
 
   // Check if user is authenticated
   useEffect(() => {
+    console.log('MobileFlowPage: Auth state check', {
+      loading,
+      user: !!user,
+      userRole,
+      pathname: location.pathname
+    });
+
     if (!loading) {
       if (!user) {
+        console.log('MobileFlowPage: No user, redirecting to auth');
         toast({
           title: "Accès refusé",
           description: "Vous devez être connecté pour accéder à cette page.",
@@ -30,10 +38,13 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Get the user role and redirect if needed
+      // Get the user role
       const role = user.app_metadata?.role;
+      console.log('MobileFlowPage: Detected user role:', { role, userRole });
       
+      // Allow admin users to access but redirect them to their dashboards
       if (role === 'admin') {
+        console.log('MobileFlowPage: Admin user detected, redirecting to admin dashboard');
         toast({
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur.",
@@ -43,6 +54,7 @@ const MobileFlowPage: React.FC = () => {
       } 
       
       if (role === 'sfd_admin') {
+        console.log('MobileFlowPage: SFD admin detected, redirecting to SFD dashboard');
         toast({
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur SFD.",
@@ -50,12 +62,22 @@ const MobileFlowPage: React.FC = () => {
         navigate('/agency-dashboard');
         return;
       }
+
+      // Allow both 'user' and 'client' roles to access mobile flow
+      if (role === 'user' || role === 'client' || userRole === 'Client') {
+        console.log('MobileFlowPage: Valid mobile user role detected, allowing access');
+        // User has valid mobile role, allow access
+      } else {
+        console.log('MobileFlowPage: Unknown role, allowing access as fallback for mobile');
+        // For mobile flow, be permissive and allow access by default
+      }
     }
-  }, [user, loading, navigate, toast]);
+  }, [user, loading, navigate, toast, location.pathname, userRole]);
 
   // Handle logout
   const handleLogout = async () => {
     try {
+      console.log('MobileFlowPage: Starting logout');
       await signOut();
       navigate('/auth');
       toast({
@@ -63,7 +85,7 @@ const MobileFlowPage: React.FC = () => {
         description: "À bientôt !",
       });
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error('MobileFlowPage: Logout error:', error);
       toast({
         title: "Erreur de déconnexion",
         description: "Impossible de vous déconnecter.",
@@ -77,9 +99,11 @@ const MobileFlowPage: React.FC = () => {
   };
 
   if (loading) {
+    console.log('MobileFlowPage: Still loading...');
     return <div className="p-8 text-center">Chargement...</div>;
   }
 
+  console.log('MobileFlowPage: Rendering mobile interface');
   return (
     <div className="min-h-screen bg-white pb-16">
       <FloatingMenuButton onClick={toggleMenu} />

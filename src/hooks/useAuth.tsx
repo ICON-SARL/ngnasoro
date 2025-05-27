@@ -4,12 +4,13 @@ import { User, AuthContextProps, UserRole } from './auth/types';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
-// Helper function to convert string role to UserRole enum
+// Helper function to convert string role to UserRole enum with better mapping
 const stringToUserRole = (role: string | null | undefined): UserRole | null => {
   if (!role) return null;
   
   // Make sure we convert to lowercase for consistent comparison
   const normalizedRole = role.toLowerCase();
+  console.log('useAuth: Converting role:', { original: role, normalized: normalizedRole });
   
   switch(normalizedRole) {
     case 'admin':
@@ -19,10 +20,12 @@ const stringToUserRole = (role: string | null | undefined): UserRole | null => {
     case 'client':
       return UserRole.Client;
     case 'user':
-      return UserRole.User;
+      // Map 'user' to 'Client' for mobile app compatibility
+      console.log('useAuth: Mapping user role to Client for mobile compatibility');
+      return UserRole.Client;
     default:
-      console.log(`Unknown role type: ${role}`);
-      return null;
+      console.log(`useAuth: Unknown role type: ${role}, defaulting to Client for mobile compatibility`);
+      return UserRole.Client; // Default to Client for mobile users
   }
 };
 
@@ -38,28 +41,29 @@ const useAuth = () => {
   // Function to check role in database
   const checkRoleInDatabase = async (userId: string, role: string): Promise<boolean> => {
     try {
-      console.log(`Checking database for role: '${role}' for user ${userId}`);
+      console.log(`useAuth: Checking database for role: '${role}' for user ${userId}`);
       
-      // Convert role to string and lowercase for consistency
       const roleString = role.toLowerCase();
       
-      // Use a direct query approach
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
       
       if (error) {
-        console.error('Error checking user role:', error);
+        console.error('useAuth: Error checking user role:', error);
         return false;
       }
       
-      console.log('Database roles found:', data);
+      console.log('useAuth: Database roles found:', data);
       
-      // Check if any of the returned roles match the required role
-      return data.some(r => r.role.toLowerCase() === roleString);
+      // Check if any of the returned roles match OR if user has 'user' role and we're looking for 'client'
+      const hasExactRole = data.some(r => r.role.toLowerCase() === roleString);
+      const hasUserRoleForClient = roleString === 'client' && data.some(r => r.role.toLowerCase() === 'user');
+      
+      return hasExactRole || hasUserRoleForClient;
     } catch (err) {
-      console.error('Error in checkRoleInDatabase:', err);
+      console.error('useAuth: Error in checkRoleInDatabase:', err);
       return false;
     }
   };
@@ -68,23 +72,31 @@ const useAuth = () => {
     const determineUserRole = async () => {
       const { user } = authContext;
       
-      if (user) {
-        console.log('Determining user role for:', user);
+      console.log('useAuth: Determining user role for:', { 
+        user: !!user, 
+        userId: user?.id,
+        metadata: user?.app_metadata 
+      });
 
+      if (user) {
         // Check role from multiple sources in order of reliability
         
         // 1. First check from session storage for persistence
         const storedRole = sessionStorage.getItem('user_role');
         if (storedRole) {
-          console.log('Found role in session storage:', storedRole);
+          console.log('useAuth: Found role in session storage:', storedRole);
           const roleEnum = stringToUserRole(storedRole);
           if (roleEnum !== null) {
             setUserRole(roleEnum);
           }
           
-          setIsAdmin(storedRole.toLowerCase() === 'admin');
-          setIsSfdAdmin(storedRole.toLowerCase() === 'sfd_admin');
-          setIsClient(storedRole.toLowerCase() === 'client');
+          const isAdminUser = storedRole.toLowerCase() === 'admin';
+          const isSfdAdminUser = storedRole.toLowerCase() === 'sfd_admin';
+          const isClientUser = storedRole.toLowerCase() === 'client' || storedRole.toLowerCase() === 'user';
+          
+          setIsAdmin(isAdminUser);
+          setIsSfdAdmin(isSfdAdminUser);
+          setIsClient(isClientUser);
           setIsCheckingRole(false);
           return;
         }
@@ -92,37 +104,42 @@ const useAuth = () => {
         // 2. Check from user metadata
         const metadataRole = user.app_metadata?.role;
         if (metadataRole) {
-          console.log('Found role in metadata:', metadataRole);
+          console.log('useAuth: Found role in metadata:', metadataRole);
           const roleEnum = stringToUserRole(metadataRole);
           if (roleEnum !== null) {
             setUserRole(roleEnum);
           }
           
-          setIsAdmin(metadataRole.toLowerCase() === 'admin');
-          setIsSfdAdmin(metadataRole.toLowerCase() === 'sfd_admin');
-          setIsClient(metadataRole.toLowerCase() === 'client');
-          // Store for future use
-          sessionStorage.setItem('user_role', metadataRole);
+          const isAdminUser = metadataRole.toLowerCase() === 'admin';
+          const isSfdAdminUser = metadataRole.toLowerCase() === 'sfd_admin';
+          const isClientUser = metadataRole.toLowerCase() === 'client' || metadataRole.toLowerCase() === 'user';
+          
+          setIsAdmin(isAdminUser);
+          setIsSfdAdmin(isSfdAdminUser);
+          setIsClient(isClientUser);
+          
+          // Store for future use, mapping 'user' to 'client'
+          const roleToStore = metadataRole.toLowerCase() === 'user' ? 'client' : metadataRole;
+          sessionStorage.setItem('user_role', roleToStore);
           setIsCheckingRole(false);
           return;
         }
         
         // 3. Check from database
         try {
-          console.log('Checking roles from database...');
-          // Get all roles for the user
+          console.log('useAuth: Checking roles from database...');
           const { data: userRoles, error } = await supabase
             .from('user_roles')
             .select('role')
             .eq('user_id', user.id);
             
           if (error) {
-            console.error('Error fetching user roles:', error);
+            console.error('useAuth: Error fetching user roles:', error);
             setIsCheckingRole(false);
             return;
           }
           
-          console.log('Found user roles in database:', userRoles);
+          console.log('useAuth: Found user roles in database:', userRoles);
           
           // Check for the most privileged roles first
           if (userRoles.some(r => r.role.toLowerCase() === 'admin')) {
@@ -149,16 +166,29 @@ const useAuth = () => {
             return;
           }
           
-          // Default to 'user' if no specific role found
-          setUserRole(UserRole.User);
-          sessionStorage.setItem('user_role', 'user');
+          // If user has 'user' role, map it to client for mobile compatibility
+          if (userRoles.some(r => r.role.toLowerCase() === 'user')) {
+            console.log('useAuth: Mapping database user role to client');
+            setUserRole(UserRole.Client);
+            setIsClient(true);
+            sessionStorage.setItem('user_role', 'client');
+            setIsCheckingRole(false);
+            return;
+          }
+          
+          // Default to Client if no specific role found (for mobile compatibility)
+          console.log('useAuth: No specific role found, defaulting to Client');
+          setUserRole(UserRole.Client);
+          setIsClient(true);
+          sessionStorage.setItem('user_role', 'client');
         } catch (error) {
-          console.error('Error determining user role:', error);
-          setUserRole(UserRole.User); // Default fallback
+          console.error('useAuth: Error determining user role:', error);
+          setUserRole(UserRole.Client); // Default fallback
+          setIsClient(true);
         }
       } else {
         // No user, clear roles
-        console.log('No user found, clearing roles');
+        console.log('useAuth: No user found, clearing roles');
         setUserRole(null);
         setIsAdmin(false);
         setIsSfdAdmin(false);

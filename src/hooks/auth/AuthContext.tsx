@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Session } from '@supabase/supabase-js';
@@ -11,7 +10,10 @@ import { User, AuthContextProps, UserRole } from './types';
 function stringToUserRole(role: string): UserRole | null {
   if (!role) return null;
   
-  switch(role.toLowerCase()) {
+  const normalizedRole = role.toLowerCase();
+  console.log('Converting role:', { original: role, normalized: normalizedRole });
+  
+  switch(normalizedRole) {
     case 'admin':
       return UserRole.Admin;
     case 'sfd_admin':
@@ -19,9 +21,12 @@ function stringToUserRole(role: string): UserRole | null {
     case 'client':
       return UserRole.Client;
     case 'user':
-      return UserRole.User;
+      // Map 'user' to 'Client' for mobile app compatibility
+      console.log('Mapping user role to Client for mobile compatibility');
+      return UserRole.Client;
     default:
-      return null;
+      console.log(`Unknown role type: ${role}, defaulting to Client`);
+      return UserRole.Client; // Default fallback for mobile users
   }
 }
 
@@ -52,27 +57,29 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setSession(data.session);
         setUser(data.session?.user || null);
         
-        // Set user role
+        // Set user role with improved mapping
         if (data.session?.user) {
           const role = data.session.user.app_metadata?.role;
+          console.log('User metadata role:', role);
+          
           const userRoleEnum = stringToUserRole(role);
           setUserRole(userRoleEnum);
           
-          // Set role flags
-          if (userRoleEnum === UserRole.Admin) {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
-          setIsSfdAdmin(userRoleEnum === UserRole.SfdAdmin);
-          setIsClient(userRoleEnum === UserRole.Client);
+          // Set role flags with improved logic
+          const isAdminUser = userRoleEnum === UserRole.Admin;
+          const isSfdAdminUser = userRoleEnum === UserRole.SfdAdmin;
+          const isClientUser = userRoleEnum === UserRole.Client;
           
-          console.log('Loaded user data:', {
-            id: data.session.user.id,
-            email: data.session.user.email,
-            role: role,
-            userRoleEnum: userRoleEnum,
-            metadata: data.session.user.app_metadata,
+          setIsAdmin(isAdminUser);
+          setIsSfdAdmin(isSfdAdminUser);
+          setIsClient(isClientUser);
+          
+          console.log('Role mapping result:', {
+            originalRole: role,
+            mappedRole: userRoleEnum,
+            isAdmin: isAdminUser,
+            isSfdAdmin: isSfdAdminUser,
+            isClient: isClientUser
           });
         }
       } catch (err) {
@@ -94,17 +101,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Update user role when auth state changes
         if (newSession?.user) {
           const role = newSession.user.app_metadata?.role;
+          console.log('Auth change - User role:', role);
+          
           const userRoleEnum = stringToUserRole(role);
           setUserRole(userRoleEnum);
           
           // Set role flags
-          if (userRoleEnum === UserRole.Admin) {
-            setIsAdmin(true);
-          } else {
-            setIsAdmin(false);
-          }
-          setIsSfdAdmin(userRoleEnum === UserRole.SfdAdmin);
-          setIsClient(userRoleEnum === UserRole.Client);
+          const isAdminUser = userRoleEnum === UserRole.Admin;
+          const isSfdAdminUser = userRoleEnum === UserRole.SfdAdmin;
+          const isClientUser = userRoleEnum === UserRole.Client;
+          
+          setIsAdmin(isAdminUser);
+          setIsSfdAdmin(isSfdAdminUser);
+          setIsClient(isClientUser);
+          
+          console.log('Auth change - Role mapping:', {
+            originalRole: role,
+            mappedRole: userRoleEnum,
+            isAdmin: isAdminUser,
+            isSfdAdmin: isSfdAdminUser,
+            isClient: isClientUser
+          });
         } else {
           setUserRole(null);
           setIsAdmin(false);
@@ -250,14 +267,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signOut = async () => {
     try {
       console.log('AuthProvider - Signing out user');
-      const userId = user?.id; // Capture user ID before signout
+      const userId = user?.id;
       
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
       
-      // Call Supabase signOut method
       const result = await supabase.auth.signOut();
       
       if (result.error) {
@@ -269,7 +285,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         });
       } else {
         console.log('AuthProvider - SignOut successful');
-        // Clear local state immediately to avoid UI inconsistencies
         setUser(null);
         setSession(null);
         
@@ -278,7 +293,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           description: "Vous avez été déconnecté avec succès"
         });
         
-        // Force a full page reload to clear any remaining state
         window.location.href = '/auth';
       }
       
@@ -314,7 +328,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return Promise.resolve();
   };
 
-  // Function to update active SFD ID
   const updateActiveSfdId = (sfdId: string) => {
     setActiveSfdId(sfdId);
   };
