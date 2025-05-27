@@ -4,6 +4,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
+import { UserRole } from '@/hooks/auth/types';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -63,8 +64,8 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
 
-      // Allow both 'user' and 'client' roles to access mobile flow
-      if (role === 'user' || role === 'client' || userRole === 'Client') {
+      // Allow both 'user' and 'client' roles to access mobile flow - Fix the enum comparison
+      if (role === 'user' || role === 'client' || userRole === UserRole.Client) {
         console.log('MobileFlowPage: Valid mobile user role detected, allowing access');
         // User has valid mobile role, allow access
       } else {
