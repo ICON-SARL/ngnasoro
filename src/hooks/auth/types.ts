@@ -1,7 +1,12 @@
 
 import { User as SupabaseUser, Session } from '@supabase/supabase-js';
 
-export type User = SupabaseUser;
+// Extension du type User de Supabase pour inclure les propriétés additionnelles
+export interface User extends SupabaseUser {
+  full_name?: string;
+  avatar_url?: string;
+  sfd_id?: string;
+}
 
 export enum UserRole {
   Admin = 'admin',
@@ -27,4 +32,17 @@ export interface AuthContextProps {
   refreshSession: () => Promise<void>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
+}
+
+// Types pour l'association SFD
+export interface AssociateSfdParams {
+  userId: string;
+  sfdId: string;
+  role?: string;
+}
+
+export interface AssociateSfdResult {
+  success: boolean;
+  error?: string;
+  data?: any;
 }

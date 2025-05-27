@@ -1,12 +1,11 @@
-
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session, User } from '@supabase/supabase-js';
+import { Session, User as SupabaseUser } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { useToast } from '@/hooks/use-toast';
 import { cleanupAuthState, handleRobustSignOut } from '@/utils/auth/authCleanup';
-import { UserRole, AuthContextProps } from './types';
+import { UserRole, AuthContextProps, User } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -24,6 +23,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const isAdmin = userRole === UserRole.Admin;
   const isSfdAdmin = userRole === UserRole.SfdAdmin;
   const isClient = userRole === UserRole.Client;
+
+  // Function to enhance user with additional properties
+  const enhanceUser = (supabaseUser: SupabaseUser): User => {
+    return {
+      ...supabaseUser,
+      full_name: supabaseUser.user_metadata?.full_name || '',
+      avatar_url: supabaseUser.user_metadata?.avatar_url,
+      sfd_id: supabaseUser.app_metadata?.sfd_id || supabaseUser.user_metadata?.sfd_id
+    };
+  };
 
   // Function to fetch user role from database
   const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
@@ -52,28 +61,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Function to sync metadata with database role
-  const syncUserMetadata = async (user: User, dbRole: UserRole) => {
-    try {
-      const currentMetaRole = user.app_metadata?.role;
-      if (currentMetaRole !== dbRole) {
-        console.log('Syncing metadata - DB role:', dbRole, 'Meta role:', currentMetaRole);
-        
-        // Update metadata via admin function if needed
-        const { error } = await supabase.rpc('sync_user_metadata', {
-          user_id: user.id,
-          new_role: dbRole
-        });
-        
-        if (error) {
-          console.error('Error syncing metadata:', error);
-        }
-      }
-    } catch (err) {
-      console.error('Exception syncing metadata:', err);
-    }
-  };
-
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -85,21 +72,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
         
         setSession(data.session);
-        setUser(data.session?.user || null);
         
         if (data.session?.user) {
+          const enhancedUser = enhanceUser(data.session.user);
+          setUser(enhancedUser);
+          
           console.log('Initial session user:', {
-            id: data.session.user.id,
-            email: data.session.user.email,
-            role: data.session.user.app_metadata?.role,
+            id: enhancedUser.id,
+            email: enhancedUser.email,
+            role: enhancedUser.app_metadata?.role,
           });
           
           // Fetch role from database as source of truth
-          const dbRole = await fetchUserRole(data.session.user.id);
+          const dbRole = await fetchUserRole(enhancedUser.id);
           if (dbRole) {
             setUserRole(dbRole);
-            await syncUserMetadata(data.session.user, dbRole);
           }
+        } else {
+          setUser(null);
         }
       } catch (err) {
         console.error('Error in auth initialization:', err);
@@ -114,23 +104,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('Auth state change event:', event);
-        setUser(newSession?.user || null);
-        setSession(newSession);
         
         if (newSession?.user) {
+          const enhancedUser = enhanceUser(newSession.user);
+          setUser(enhancedUser);
+          setSession(newSession);
+          
           console.log('Auth state changed:', {
             event,
-            userId: newSession.user.id,
-            role: newSession.user.app_metadata?.role,
+            userId: enhancedUser.id,
+            role: enhancedUser.app_metadata?.role,
           });
           
           // Fetch role from database
-          const dbRole = await fetchUserRole(newSession.user.id);
+          const dbRole = await fetchUserRole(enhancedUser.id);
           if (dbRole) {
             setUserRole(dbRole);
-            await syncUserMetadata(newSession.user, dbRole);
           }
         } else {
+          setUser(null);
+          setSession(newSession);
           setUserRole(null);
           setActiveSfdId(null);
         }
@@ -319,7 +312,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
       
       setSession(data.session);
-      setUser(data.session?.user || null);
+      if (data.session?.user) {
+        const enhancedUser = enhanceUser(data.session.user);
+        setUser(enhancedUser);
+      } else {
+        setUser(null);
+      }
     } catch (error) {
       console.error('Error refreshing session:', error);
     }
