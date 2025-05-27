@@ -23,4 +23,10 @@ module.exports = {
     '!src/index.tsx',
     '!src/main.tsx',
   ],
+  extensionsToTreatAsEsm: ['.ts', '.tsx'],
+  globals: {
+    'ts-jest': {
+      useESM: true,
+    },
+  },
 };
