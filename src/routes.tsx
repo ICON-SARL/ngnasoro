@@ -11,6 +11,7 @@ import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import SfdClientsPage from './pages/SfdClientsPage';
 import LoansPage from './pages/LoansPage';
+import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
@@ -42,6 +43,16 @@ const router = createBrowserRouter([
         ],
       },
     ],
+  },
+  
+  // Super Admin routes
+  {
+    path: '/super-admin-dashboard',
+    element: (
+      <RoleGuard requiredRole="admin">
+        <SuperAdminDashboard />
+      </RoleGuard>
+    ),
   },
   
   // SFD Admin routes
