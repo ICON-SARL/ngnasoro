@@ -11,7 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 const UnauthorizedPage = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAdmin, isSfdAdmin, isClient } = useAuth();
   const { toast } = useToast();
   const from = location.state?.from || '/';
 
@@ -42,15 +42,20 @@ const UnauthorizedPage = () => {
   };
 
   const handleGoToDashboard = () => {
-    const role = user?.app_metadata?.role;
-    
-    if (role === 'admin') {
+    if (isAdmin) {
       navigate('/super-admin-dashboard', { replace: true });
-    } else if (role === 'sfd_admin') {
+    } else if (isSfdAdmin) {
       navigate('/agency-dashboard', { replace: true });
     } else {
       navigate('/mobile-flow/main', { replace: true });
     }
+  };
+
+  const getRoleDisplay = () => {
+    if (isAdmin) return 'Administrateur';
+    if (isSfdAdmin) return 'Administrateur SFD';
+    if (isClient) return 'Client';
+    return 'Non défini';
   };
 
   return (
@@ -67,7 +72,7 @@ const UnauthorizedPage = () => {
         {user && (
           <div className="text-sm text-gray-500 mb-6 p-4 bg-gray-100 rounded">
             <p><strong>Utilisateur:</strong> {user.email}</p>
-            <p><strong>Rôle:</strong> {user.app_metadata?.role || 'Non défini'}</p>
+            <p><strong>Rôle:</strong> {getRoleDisplay()}</p>
           </div>
         )}
         

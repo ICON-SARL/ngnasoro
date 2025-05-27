@@ -16,14 +16,16 @@ const MobileFlowPage: React.FC = () => {
   const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut, userRole } = useAuth();
+  const { user, loading, signOut, isAdmin, isSfdAdmin, isClient } = useAuth();
 
-  // Check if user is authenticated
+  // Check if user is authenticated and redirect appropriately
   useEffect(() => {
     console.log('MobileFlowPage: Auth state check', {
       loading,
       user: !!user,
-      userRole,
+      isAdmin,
+      isSfdAdmin,
+      isClient,
       pathname: location.pathname
     });
 
@@ -39,12 +41,8 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Get the user role
-      const role = user.app_metadata?.role;
-      console.log('MobileFlowPage: Detected user role:', { role, userRole });
-      
       // Redirect admin users to their appropriate dashboards immediately
-      if (role === 'admin') {
+      if (isAdmin) {
         console.log('MobileFlowPage: Admin user detected, redirecting to admin dashboard');
         toast({
           title: "Redirection",
@@ -54,7 +52,7 @@ const MobileFlowPage: React.FC = () => {
         return;
       } 
       
-      if (role === 'sfd_admin') {
+      if (isSfdAdmin) {
         console.log('MobileFlowPage: SFD admin detected, redirecting to SFD dashboard');
         toast({
           title: "Redirection",
@@ -64,9 +62,9 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
 
-      // Allow both 'user' and 'client' roles to access mobile flow
-      if (role === 'user' || role === 'client' || userRole === UserRole.Client) {
-        console.log('MobileFlowPage: Valid mobile user role detected, allowing access');
+      // Allow clients to access mobile flow
+      if (isClient) {
+        console.log('MobileFlowPage: Client user detected, allowing access');
         // User has valid mobile role, allow access
       } else {
         console.log('MobileFlowPage: Unknown role, redirecting to auth for clarity');
@@ -79,7 +77,7 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
     }
-  }, [user, loading, navigate, toast, location.pathname, userRole]);
+  }, [user, loading, navigate, toast, location.pathname, isAdmin, isSfdAdmin, isClient]);
 
   // Handle logout
   const handleLogout = async () => {
