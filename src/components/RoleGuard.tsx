@@ -43,14 +43,15 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
       
       console.log('RoleGuard: Database roles found:', data);
       
-      // Check if any of the returned roles match the required role OR if user has 'user' role and we need 'client'
+      // Check if any of the returned roles match the required role
       const hasExactRole = data.some(r => r.role.toLowerCase() === roleString);
-      const hasUserRoleForClient = roleString === 'client' && data.some(r => r.role.toLowerCase() === 'user');
+      // For admin access, also check if user has 'admin' role
+      const hasAdminRole = roleString === 'admin' && data.some(r => r.role.toLowerCase() === 'admin');
       
-      const result = hasExactRole || hasUserRoleForClient;
+      const result = hasExactRole || hasAdminRole;
       console.log('RoleGuard: Database check result:', { 
         hasExactRole, 
-        hasUserRoleForClient, 
+        hasAdminRole, 
         finalResult: result 
       });
       
@@ -91,10 +92,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         // Convert requiredRole to string for comparison
         const requiredRoleStr = String(requiredRole).toLowerCase();
         
-        // Special case: Allow users with 'user' role to access mobile features requiring 'client' role
-        const isMobileClientAccess = requiredRoleStr === 'client' && location.pathname.startsWith('/mobile-flow');
-        
-        // 1. Check from auth context
+        // 1. Check from auth context (userRole from useAuth)
         if (userRole !== null) {
           const userRoleStr = String(userRole).toLowerCase();
           console.log(`RoleGuard: Comparing user role '${userRoleStr}' with required role '${requiredRoleStr}'`);
@@ -102,8 +100,10 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
           if (userRoleStr === requiredRoleStr) {
             console.log('RoleGuard: Access granted via auth context exact match');
             access = true;
-          } else if (isMobileClientAccess && userRoleStr === 'client') {
-            console.log('RoleGuard: Access granted via mobile client compatibility');
+          }
+          // Special case for admin access
+          else if (requiredRoleStr === 'admin' && userRoleStr === 'admin') {
+            console.log('RoleGuard: Access granted via admin role match');
             access = true;
           }
         }
@@ -116,8 +116,10 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
           if (metadataRole === requiredRoleStr) {
             console.log('RoleGuard: Access granted via app_metadata');
             access = true;
-          } else if (isMobileClientAccess && metadataRole === 'user') {
-            console.log('RoleGuard: Access granted via metadata user->client mapping for mobile');
+          }
+          // Special case for admin in metadata
+          else if (requiredRoleStr === 'admin' && metadataRole === 'admin') {
+            console.log('RoleGuard: Access granted via metadata admin role');
             access = true;
           }
         }
@@ -130,8 +132,10 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
           if (storedRole === requiredRoleStr) {
             console.log('RoleGuard: Access granted via session storage');
             access = true;
-          } else if (isMobileClientAccess && storedRole === 'user') {
-            console.log('RoleGuard: Access granted via stored user->client mapping for mobile');
+          }
+          // Special case for admin in storage
+          else if (requiredRoleStr === 'admin' && storedRole === 'admin') {
+            console.log('RoleGuard: Access granted via stored admin role');
             access = true;
           }
         }
@@ -145,14 +149,6 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
             // Store for future checks
             sessionStorage.setItem('user_role', requiredRoleStr);
             access = true;
-          } else if (isMobileClientAccess) {
-            // For mobile access, also try checking for 'user' role in database
-            const userRoleInDb = await checkRoleInDatabase(user.id, 'user');
-            if (userRoleInDb) {
-              console.log('RoleGuard: Access granted via database user->client mapping for mobile');
-              sessionStorage.setItem('user_role', 'client'); // Store as client for consistency
-              access = true;
-            }
           }
         }
         
