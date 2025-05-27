@@ -49,7 +49,7 @@ const router = createBrowserRouter([
   {
     path: '/super-admin-dashboard',
     element: (
-      <RoleGuard requiredRole="admin">
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
         <SuperAdminDashboard />
       </RoleGuard>
     ),
@@ -59,7 +59,7 @@ const router = createBrowserRouter([
   {
     path: '/agency-dashboard',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <div className="min-h-screen bg-gray-50">
           <SfdHeader />
           <div className="container mx-auto px-4 py-6">
@@ -73,7 +73,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-clients',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <SfdClientsPage />
       </RoleGuard>
     ),
@@ -81,7 +81,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-loans',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <LoansPage />
       </RoleGuard>
     ),
@@ -89,7 +89,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-transactions',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <div className="min-h-screen bg-gray-50">
           <SfdHeader />
           <div className="container mx-auto px-4 py-6">
@@ -103,7 +103,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-adhesion-requests',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <div className="min-h-screen bg-gray-50">
           <SfdHeader />
           <div className="container mx-auto px-4 py-6">
@@ -117,7 +117,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-subsidy-requests',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <div className="min-h-screen bg-gray-50">
           <SfdHeader />
           <div className="container mx-auto px-4 py-6">
@@ -131,7 +131,7 @@ const router = createBrowserRouter([
   {
     path: '/sfd-settings',
     element: (
-      <RoleGuard requiredRole="sfd_admin">
+      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
         <div className="min-h-screen bg-gray-50">
           <SfdHeader />
           <div className="container mx-auto px-4 py-6">

@@ -35,7 +35,7 @@ const MobileFlowPage: React.FC = () => {
           description: "Vous devez être connecté pour accéder à cette page.",
           variant: "destructive",
         });
-        navigate('/auth');
+        navigate('/sfd/auth');
         return;
       }
       
@@ -43,14 +43,14 @@ const MobileFlowPage: React.FC = () => {
       const role = user.app_metadata?.role;
       console.log('MobileFlowPage: Detected user role:', { role, userRole });
       
-      // Allow admin users to access but redirect them to their dashboards
+      // Redirect admin users to their appropriate dashboards immediately
       if (role === 'admin') {
         console.log('MobileFlowPage: Admin user detected, redirecting to admin dashboard');
         toast({
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur.",
         });
-        navigate('/super-admin-dashboard');
+        navigate('/super-admin-dashboard', { replace: true });
         return;
       } 
       
@@ -60,17 +60,23 @@ const MobileFlowPage: React.FC = () => {
           title: "Redirection",
           description: "Vous êtes connecté en tant qu'administrateur SFD.",
         });
-        navigate('/agency-dashboard');
+        navigate('/agency-dashboard', { replace: true });
         return;
       }
 
-      // Allow both 'user' and 'client' roles to access mobile flow - Fix the enum comparison
+      // Allow both 'user' and 'client' roles to access mobile flow
       if (role === 'user' || role === 'client' || userRole === UserRole.Client) {
         console.log('MobileFlowPage: Valid mobile user role detected, allowing access');
         // User has valid mobile role, allow access
       } else {
-        console.log('MobileFlowPage: Unknown role, allowing access as fallback for mobile');
-        // For mobile flow, be permissive and allow access by default
+        console.log('MobileFlowPage: Unknown role, redirecting to auth for clarity');
+        toast({
+          title: "Rôle non reconnu",
+          description: "Votre rôle n'est pas reconnu pour cette interface.",
+          variant: "destructive",
+        });
+        navigate('/sfd/auth', { replace: true });
+        return;
       }
     }
   }, [user, loading, navigate, toast, location.pathname, userRole]);
@@ -80,7 +86,7 @@ const MobileFlowPage: React.FC = () => {
     try {
       console.log('MobileFlowPage: Starting logout');
       await signOut();
-      navigate('/auth');
+      navigate('/sfd/auth', { replace: true });
       toast({
         title: "Déconnexion réussie",
         description: "À bientôt !",
