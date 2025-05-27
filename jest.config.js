@@ -2,11 +2,13 @@
 module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'jsdom',
-  moduleNameMapper: {
+  moduleNameMapping: {
     '^@/(.*)$': '<rootDir>/src/$1',
   },
   transform: {
-    '^.+\\.(ts|tsx)$': 'ts-jest',
+    '^.+\\.(ts|tsx)$': ['ts-jest', {
+      tsconfig: 'tsconfig.json',
+    }],
   },
   testMatch: [
     '**/tests/unit/**/*.test.(ts|tsx)',
@@ -21,9 +23,7 @@ module.exports = {
     '!src/index.tsx',
     '!src/main.tsx',
   ],
-  globals: {
-    'ts-jest': {
-      tsconfig: 'tsconfig.json',
-    },
+  moduleNameMapping: {
+    '^@/(.*)$': '<rootDir>/src/$1',
   },
 };

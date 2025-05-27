@@ -1,7 +1,6 @@
 
 // Jest setup file
 import '@testing-library/jest-dom';
-import 'whatwg-fetch';
 
 // Global mocks
 Object.defineProperty(window, 'matchMedia', {
