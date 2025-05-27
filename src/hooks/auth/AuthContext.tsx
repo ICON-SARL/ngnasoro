@@ -1,11 +1,12 @@
 
 import React, { useState, useEffect, useContext, createContext } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Session } from '@supabase/supabase-js';
+import { Session, User } from '@supabase/supabase-js';
 import { logAuditEvent } from '@/utils/audit/auditLogger';
 import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTypes';
 import { useToast } from '@/hooks/use-toast';
-import { User, AuthContextProps, UserRole } from './types';
+import { cleanupAuthState, handleRobustSignOut } from '@/utils/auth/authCleanup';
+import { UserRole, AuthContextProps } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
@@ -14,146 +15,124 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [userRole, setUserRole] = useState<UserRole | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [isSfdAdmin, setIsSfdAdmin] = useState(false);
-  const [isClient, setIsClient] = useState(false);
-  const [isCheckingRole, setIsCheckingRole] = useState(true);
+  const [isCheckingRole, setIsCheckingRole] = useState(false);
   const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
-  const [biometricEnabled, setBiometricEnabled] = useState<boolean>(false);
+  const [biometricEnabled, setBiometricEnabled] = useState(false);
   const { toast } = useToast();
 
-  // Helper function to convert string role to UserRole enum
-  const stringToUserRole = (role: string | null | undefined): UserRole | null => {
-    if (!role) return null;
-    
-    const normalizedRole = role.toLowerCase();
-    console.log('AuthContext: Converting role:', { original: role, normalized: normalizedRole });
-    
-    switch(normalizedRole) {
-      case 'admin':
-        return UserRole.Admin;
-      case 'sfd_admin':
-        return UserRole.SfdAdmin;
-      case 'client':
-      case 'user':
-        return UserRole.Client;
-      default:
-        console.log(`AuthContext: Unknown role type: ${role}, defaulting to Client`);
-        return UserRole.Client;
-    }
-  };
+  // Helper functions to check user roles
+  const isAdmin = userRole === UserRole.Admin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin;
+  const isClient = userRole === UserRole.Client;
 
-  // Determine user role using database as single source of truth
-  const determineUserRole = async (userId: string) => {
-    console.log('AuthContext: Determining user role for:', userId);
-    setIsCheckingRole(true);
-
+  // Function to fetch user role from database
+  const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
     try {
-      // Check roles from database first
-      const { data: userRoles, error } = await supabase
+      setIsCheckingRole(true);
+      console.log('Fetching role for user:', userId);
+      
+      const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId);
-        
+        .eq('user_id', userId)
+        .single();
+
       if (error) {
-        console.error('AuthContext: Error fetching user roles:', error);
-        // Default to Client if error
-        setUserRole(UserRole.Client);
-        setIsClient(true);
-        setIsAdmin(false);
-        setIsSfdAdmin(false);
-        return;
+        console.error('Error fetching user role:', error);
+        return null;
       }
-      
-      console.log('AuthContext: Found user roles in database:', userRoles);
-      
-      // Check for the most privileged roles first
-      if (userRoles.some(r => r.role === 'admin')) {
-        console.log('AuthContext: Setting admin role');
-        setUserRole(UserRole.Admin);
-        setIsAdmin(true);
-        setIsSfdAdmin(false);
-        setIsClient(false);
-        sessionStorage.setItem('user_role', 'admin');
-      } else if (userRoles.some(r => r.role === 'sfd_admin')) {
-        console.log('AuthContext: Setting sfd_admin role');
-        setUserRole(UserRole.SfdAdmin);
-        setIsAdmin(false);
-        setIsSfdAdmin(true);
-        setIsClient(false);
-        sessionStorage.setItem('user_role', 'sfd_admin');
-      } else if (userRoles.some(r => ['client', 'user'].includes(r.role))) {
-        console.log('AuthContext: Setting client role');
-        setUserRole(UserRole.Client);
-        setIsAdmin(false);
-        setIsSfdAdmin(false);
-        setIsClient(true);
-        sessionStorage.setItem('user_role', 'client');
-      } else {
-        // Default to Client if no specific role found
-        console.log('AuthContext: No specific role found, defaulting to Client');
-        setUserRole(UserRole.Client);
-        setIsAdmin(false);
-        setIsSfdAdmin(false);
-        setIsClient(true);
-        sessionStorage.setItem('user_role', 'client');
-      }
-    } catch (error) {
-      console.error('AuthContext: Error determining user role:', error);
-      setUserRole(UserRole.Client);
-      setIsClient(true);
-      setIsAdmin(false);
-      setIsSfdAdmin(false);
+
+      console.log('User role from database:', data?.role);
+      return data?.role as UserRole || null;
+    } catch (err) {
+      console.error('Exception fetching user role:', err);
+      return null;
     } finally {
       setIsCheckingRole(false);
     }
   };
 
+  // Function to sync metadata with database role
+  const syncUserMetadata = async (user: User, dbRole: UserRole) => {
+    try {
+      const currentMetaRole = user.app_metadata?.role;
+      if (currentMetaRole !== dbRole) {
+        console.log('Syncing metadata - DB role:', dbRole, 'Meta role:', currentMetaRole);
+        
+        // Update metadata via admin function if needed
+        const { error } = await supabase.rpc('sync_user_metadata', {
+          user_id: user.id,
+          new_role: dbRole
+        });
+        
+        if (error) {
+          console.error('Error syncing metadata:', error);
+        }
+      }
+    } catch (err) {
+      console.error('Exception syncing metadata:', err);
+    }
+  };
+
   useEffect(() => {
-    const fetchSession = async () => {
+    const initializeAuth = async () => {
       try {
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('AuthContext: Error fetching session:', error);
+          console.error('Error fetching session:', error);
           return;
         }
         
         setSession(data.session);
         setUser(data.session?.user || null);
         
-        // Determine user role if user exists
         if (data.session?.user) {
-          await determineUserRole(data.session.user.id);
+          console.log('Initial session user:', {
+            id: data.session.user.id,
+            email: data.session.user.email,
+            role: data.session.user.app_metadata?.role,
+          });
+          
+          // Fetch role from database as source of truth
+          const dbRole = await fetchUserRole(data.session.user.id);
+          if (dbRole) {
+            setUserRole(dbRole);
+            await syncUserMetadata(data.session.user, dbRole);
+          }
         }
       } catch (err) {
-        console.error('AuthContext: Error in auth session fetching:', err);
+        console.error('Error in auth initialization:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchSession();
+    initializeAuth();
 
     // Listen for auth changes
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('AuthContext: Auth state change event:', event);
+        console.log('Auth state change event:', event);
         setUser(newSession?.user || null);
         setSession(newSession);
         
-        // Update user role when auth state changes
         if (newSession?.user) {
-          setTimeout(() => {
-            determineUserRole(newSession.user.id);
-          }, 0);
+          console.log('Auth state changed:', {
+            event,
+            userId: newSession.user.id,
+            role: newSession.user.app_metadata?.role,
+          });
+          
+          // Fetch role from database
+          const dbRole = await fetchUserRole(newSession.user.id);
+          if (dbRole) {
+            setUserRole(dbRole);
+            await syncUserMetadata(newSession.user, dbRole);
+          }
         } else {
           setUserRole(null);
-          setIsAdmin(false);
-          setIsSfdAdmin(false);
-          setIsClient(false);
-          setIsCheckingRole(false);
-          sessionStorage.removeItem('user_role');
+          setActiveSfdId(null);
         }
         
         setLoading(false);
@@ -205,10 +184,18 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signIn = async (email: string, password: string) => {
     try {
+      cleanupAuthState();
+      
+      try {
+        await supabase.auth.signOut({ scope: 'global' });
+      } catch (err) {
+        console.log('Pre-signout cleanup (can be ignored):', err);
+      }
+
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        console.error('AuthContext: Sign in error:', result.error);
+        console.error('Sign in error:', result.error);
         toast({
           title: "Erreur de connexion",
           description: result.error.message || "Impossible de se connecter",
@@ -232,10 +219,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           console.error('Error logging failed login:', logError);
         }
       } else if (result.data.user) {
-        console.log('AuthContext: Login successful:', {
+        console.log('Login successful:', {
           userId: result.data.user.id,
           role: result.data.user.app_metadata?.role,
-          metadata: result.data.user.app_metadata,
         });
         
         toast({
@@ -246,7 +232,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       return result;
     } catch (error) {
-      console.error('AuthContext: Error signing in:', error);
+      console.error('Error signing in:', error);
       toast({
         title: "Erreur de connexion",
         description: "Une erreur inattendue s'est produite",
@@ -258,66 +244,63 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const signUp = async (email: string, password: string, metadata?: any) => {
     try {
-      const { data, error } = await supabase.auth.signUp({
+      const result = await supabase.auth.signUp({
         email,
         password,
         options: {
-          data: metadata
+          data: metadata || {}
         }
       });
       
-      if (error) {
-        console.error('AuthContext: Sign up error:', error);
-        return { error };
+      if (result.error) {
+        toast({
+          title: "Erreur d'inscription",
+          description: result.error.message,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: "Inscription réussie",
+          description: "Veuillez vérifier votre email pour confirmer votre compte",
+        });
       }
       
-      return { data, error: null };
+      return result;
     } catch (error) {
-      console.error('AuthContext: Error in signUp:', error);
-      return { error, data: null };
+      console.error('Error signing up:', error);
+      toast({
+        title: "Erreur d'inscription",
+        description: "Une erreur inattendue s'est produite",
+        variant: "destructive"
+      });
+      return { error };
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('AuthContext: Signing out user');
-      const userId = user?.id;
+      console.log('AuthContext - Starting robust sign out');
       
       toast({
         title: "Déconnexion en cours",
         description: "Veuillez patienter..."
       });
       
-      const result = await supabase.auth.signOut();
+      await handleRobustSignOut(supabase);
       
-      if (result.error) {
-        console.error('AuthContext: Error during signOut:', result.error);
-        toast({
-          title: "Erreur de déconnexion",
-          description: result.error.message || "Une erreur s'est produite lors de la déconnexion",
-          variant: "destructive"
-        });
-      } else {
-        console.log('AuthContext: SignOut successful');
-        setUser(null);
-        setSession(null);
-        setUserRole(null);
-        setIsAdmin(false);
-        setIsSfdAdmin(false);
-        setIsClient(false);
-        sessionStorage.removeItem('user_role');
-        
-        toast({
-          title: "Déconnexion réussie",
-          description: "Vous avez été déconnecté avec succès"
-        });
-        
-        window.location.href = '/auth';
-      }
+      setUser(null);
+      setSession(null);
+      setUserRole(null);
+      setActiveSfdId(null);
       
-      return result;
+      toast({
+        title: "Déconnexion réussie",
+        description: "Vous avez été déconnecté avec succès"
+      });
+      
+      return { error: null };
     } catch (error) {
-      console.error('AuthContext: Exception during signOut:', error);
+      console.error('Exception during signOut:', error);
       toast({
         title: "Erreur de déconnexion",
         description: "Une erreur inattendue s'est produite",
@@ -331,27 +314,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
-        console.error('AuthContext: Error refreshing session:', error);
+        console.error('Error refreshing session:', error);
         return;
       }
       
       setSession(data.session);
       setUser(data.session?.user || null);
     } catch (error) {
-      console.error('AuthContext: Error refreshing session:', error);
+      console.error('Error refreshing session:', error);
     }
   };
 
   const toggleBiometricAuth = async () => {
     setBiometricEnabled(!biometricEnabled);
-    return Promise.resolve();
+    toast({
+      title: biometricEnabled ? "Biométrie désactivée" : "Biométrie activée",
+      description: biometricEnabled ? "L'authentification biométrique a été désactivée" : "L'authentification biométrique a été activée"
+    });
   };
 
-  const updateActiveSfdId = (sfdId: string) => {
-    setActiveSfdId(sfdId);
-  };
-
-  const value: AuthContextProps = {
+  const value = {
     user,
     session,
     loading,
@@ -361,7 +343,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     isClient,
     isCheckingRole,
     activeSfdId,
-    setActiveSfdId: updateActiveSfdId,
+    setActiveSfdId,
     signIn,
     signUp,
     signOut,

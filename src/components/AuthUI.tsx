@@ -62,16 +62,15 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
       console.log('Authenticated user:', user);
       console.log('User role from auth context:', userRole);
       
-      // Get user role from app_metadata
-      const role = user.app_metadata?.role;
-      console.log('User role from metadata:', role);
-      
       // Redirect based on role
-      if (role === UserRole.SuperAdmin || role === 'admin') {
+      if (userRole === UserRole.Admin) {
         navigate('/super-admin-dashboard');
-      } else if (role === UserRole.SfdAdmin || role === 'sfd_admin') {
+      } else if (userRole === UserRole.SfdAdmin) {
         navigate('/agency-dashboard');
+      } else if (userRole === UserRole.Client) {
+        navigate('/mobile-flow/main');
       } else {
+        // Default user role - redirect to mobile flow for now
         navigate('/mobile-flow/main');
       }
     }

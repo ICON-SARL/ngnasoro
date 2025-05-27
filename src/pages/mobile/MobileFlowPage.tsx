@@ -4,7 +4,6 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { MobileRouter } from '@/components/Router';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { UserRole } from '@/hooks/auth/types';
 import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import MobileNavigation from '@/components/MobileNavigation';
@@ -13,19 +12,16 @@ const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [showWelcome, setShowWelcome] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   
-  const { user, loading, signOut, isAdmin, isSfdAdmin, isClient, isCheckingRole } = useAuth();
+  const { user, loading, signOut, isClient, isCheckingRole } = useAuth();
 
-  // Check if user is authenticated and redirect appropriately
+  // Check if user is authenticated and has client role
   useEffect(() => {
     console.log('MobileFlowPage: Auth state check', {
       loading,
       isCheckingRole,
       user: !!user,
-      isAdmin,
-      isSfdAdmin,
       isClient,
       pathname: location.pathname
     });
@@ -42,43 +38,22 @@ const MobileFlowPage: React.FC = () => {
         return;
       }
       
-      // Redirect admin users to their appropriate dashboards immediately
-      if (isAdmin) {
-        console.log('MobileFlowPage: Admin user detected, redirecting to admin dashboard');
-        toast({
-          title: "Redirection",
-          description: "Vous êtes connecté en tant qu'administrateur.",
-        });
-        navigate('/super-admin-dashboard', { replace: true });
-        return;
-      } 
-      
-      if (isSfdAdmin) {
-        console.log('MobileFlowPage: SFD admin detected, redirecting to SFD dashboard');
-        toast({
-          title: "Redirection",
-          description: "Vous êtes connecté en tant qu'administrateur SFD.",
-        });
-        navigate('/agency-dashboard', { replace: true });
-        return;
-      }
-
       // Allow clients to access mobile flow
       if (isClient) {
         console.log('MobileFlowPage: Client user detected, allowing access');
-        // User has valid mobile role, allow access
+        // User has valid client role, allow access
       } else {
-        console.log('MobileFlowPage: Unknown role, redirecting to auth for clarity');
+        console.log('MobileFlowPage: User does not have client role, redirecting to auth');
         toast({
-          title: "Rôle non reconnu",
-          description: "Votre rôle n'est pas reconnu pour cette interface.",
+          title: "Accès refusé",
+          description: "Cette interface est réservée aux clients.",
           variant: "destructive",
         });
         navigate('/auth', { replace: true });
         return;
       }
     }
-  }, [user, loading, isCheckingRole, navigate, toast, location.pathname, isAdmin, isSfdAdmin, isClient]);
+  }, [user, loading, isCheckingRole, navigate, toast, location.pathname, isClient]);
 
   // Handle logout
   const handleLogout = async () => {

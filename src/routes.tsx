@@ -1,6 +1,5 @@
 
 import { createBrowserRouter } from 'react-router-dom';
-import App from './App';
 import { MobileRouter } from './components/Router';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
@@ -17,14 +16,24 @@ import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
 const router = createBrowserRouter([
-  // Auth routes (default entry point)
+  // Default entry point - redirect to auth
   {
     path: '/',
     element: <LoginPage />,
   },
+  
+  // Auth routes
   {
     path: '/auth',
     element: <LoginPage />,
+  },
+  {
+    path: '/admin/auth',
+    element: <LoginPage isSfdAdmin={false} />,
+  },
+  {
+    path: '/sfd/auth',
+    element: <SfdLoginPage />,
   },
   
   // Super Admin routes
@@ -125,25 +134,7 @@ const router = createBrowserRouter([
     ),
   },
   
-  // SFD Auth routes
-  {
-    path: '/sfd/auth',
-    element: <SfdLoginPage />,
-  },
-  {
-    path: '/admin/auth',
-    element: <LoginPage isSfdAdmin={false} />,
-  },
-  {
-    path: '/unauthorized',
-    element: <UnauthorizedPage />,
-  },
-  {
-    path: '/access-denied',
-    element: <UnauthorizedPage />,
-  },
-  
-  // Mobile routes for clients
+  // Mobile client routes
   {
     path: '/mobile-flow',
     element: (
@@ -197,6 +188,16 @@ const router = createBrowserRouter([
         element: <MobileRouter />,
       }
     ],
+  },
+  
+  // Error pages
+  {
+    path: '/unauthorized',
+    element: <UnauthorizedPage />,
+  },
+  {
+    path: '/access-denied',
+    element: <UnauthorizedPage />,
   },
 ]);
 

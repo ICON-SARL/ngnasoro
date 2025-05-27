@@ -35,6 +35,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
 
       if (!loading && !isCheckingRole) {
         if (!user) {
+          console.log('RoleGuard: No user found');
           setHasAccess(false);
           return;
         }
@@ -73,7 +74,7 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   }, [user, loading, isCheckingRole, userRole, requiredRole, location.pathname]);
 
   // Still loading auth or checking role
-  if (loading || isCheckingRole) {
+  if (loading || isCheckingRole || hasAccess === null) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="animate-spin rounded-full h-8 w-8 text-primary mr-2" />
@@ -91,16 +92,6 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         state={{ from: location.pathname }} 
         replace 
       />
-    );
-  }
-
-  // Access check not completed yet
-  if (hasAccess === null) {
-    return (
-      <div className="flex justify-center items-center min-h-screen">
-        <Loader2 className="animate-spin rounded-full h-8 w-8 text-primary mr-2" />
-        <span>Vérification des autorisations...</span>
-      </div>
     );
   }
 

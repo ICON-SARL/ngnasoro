@@ -6,7 +6,8 @@ export type User = SupabaseUser;
 export enum UserRole {
   Admin = 'admin',
   SfdAdmin = 'sfd_admin',
-  Client = 'client'
+  Client = 'client',
+  User = 'user'
 }
 
 export interface AuthContextProps {
@@ -17,7 +18,7 @@ export interface AuthContextProps {
   isAdmin: boolean;
   isSfdAdmin: boolean;
   isClient: boolean;
-  isCheckingRole?: boolean;
+  isCheckingRole: boolean;
   activeSfdId: string | null;
   setActiveSfdId: (sfdId: string) => void;
   signIn: (email: string, password: string) => Promise<any>;
