@@ -9,6 +9,14 @@ import { UserRole, AuthContextProps, User } from './types';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
+// Hiérarchie des rôles (du plus élevé au plus bas)
+const ROLE_HIERARCHY = {
+  [UserRole.Admin]: 4,
+  [UserRole.SfdAdmin]: 3,
+  [UserRole.Client]: 2,
+  [UserRole.User]: 1
+};
+
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
@@ -28,34 +36,123 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const enhanceUser = (supabaseUser: SupabaseUser): User => {
     return {
       ...supabaseUser,
-      full_name: supabaseUser.user_metadata?.full_name || '',
-      avatar_url: supabaseUser.user_metadata?.avatar_url,
+      full_name: supabaseUser.user_metadata?.full_name || supabaseUser.app_metadata?.full_name || '',
+      avatar_url: supabaseUser.user_metadata?.avatar_url || supabaseUser.app_metadata?.avatar_url,
       sfd_id: supabaseUser.app_metadata?.sfd_id || supabaseUser.user_metadata?.sfd_id
     };
   };
 
-  // Function to fetch user role from database
+  // Fonction pour obtenir le rôle le plus élevé
+  const getHighestRole = (roles: string[]): UserRole => {
+    if (roles.length === 0) return UserRole.User;
+    
+    let highestRole = UserRole.User;
+    let highestPriority = 0;
+    
+    roles.forEach(role => {
+      const normalizedRole = role as UserRole;
+      const priority = ROLE_HIERARCHY[normalizedRole] || 0;
+      if (priority > highestPriority) {
+        highestPriority = priority;
+        highestRole = normalizedRole;
+      }
+    });
+    
+    return highestRole;
+  };
+
+  // Fonction pour synchroniser les métadonnées utilisateur
+  const syncUserMetadata = async (userId: string, role: UserRole): Promise<void> => {
+    try {
+      console.log('Synchronizing user metadata for role:', role);
+      
+      // Mettre à jour les métadonnées dans auth.users
+      const { error } = await supabase.auth.admin.updateUserById(userId, {
+        app_metadata: { role }
+      });
+      
+      if (error) {
+        console.error('Error updating user metadata:', error);
+      } else {
+        console.log('User metadata synchronized successfully');
+      }
+    } catch (err) {
+      console.error('Exception synchronizing user metadata:', err);
+    }
+  };
+
+  // Fonction pour nettoyer les rôles en doublon
+  const cleanupDuplicateRoles = async (userId: string, primaryRole: UserRole): Promise<void> => {
+    try {
+      console.log('Cleaning up duplicate roles for user:', userId, 'Primary role:', primaryRole);
+      
+      // Si l'utilisateur a un rôle spécifique (admin, sfd_admin, client), supprimer le rôle 'user'
+      if (primaryRole !== UserRole.User) {
+        const { error } = await supabase
+          .from('user_roles')
+          .delete()
+          .eq('user_id', userId)
+          .eq('role', 'user');
+        
+        if (error) {
+          console.error('Error cleaning up duplicate roles:', error);
+        } else {
+          console.log('Duplicate user roles cleaned up successfully');
+        }
+      }
+    } catch (err) {
+      console.error('Exception cleaning up duplicate roles:', err);
+    }
+  };
+
+  // Function to fetch user role from database with improved logic
   const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
     try {
       setIsCheckingRole(true);
-      console.log('Fetching role for user:', userId);
+      console.log('Fetching roles for user:', userId);
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', userId)
-        .single();
+        .eq('user_id', userId);
 
       if (error) {
-        console.error('Error fetching user role:', error);
+        console.error('Error fetching user roles:', error);
         return null;
       }
 
-      console.log('User role from database:', data?.role);
-      return data?.role as UserRole || null;
+      if (!data || data.length === 0) {
+        console.log('No roles found for user, assigning default user role');
+        
+        // Assigner le rôle par défaut 'user'
+        const { error: insertError } = await supabase
+          .from('user_roles')
+          .insert({ user_id: userId, role: 'user' });
+        
+        if (insertError) {
+          console.error('Error inserting default role:', insertError);
+        }
+        
+        return UserRole.User;
+      }
+
+      const roles = data.map(r => r.role);
+      console.log('User roles from database:', roles);
+      
+      // Obtenir le rôle le plus élevé
+      const primaryRole = getHighestRole(roles);
+      console.log('Primary role determined:', primaryRole);
+      
+      // Synchroniser les métadonnées et nettoyer les doublons en arrière-plan
+      setTimeout(async () => {
+        await syncUserMetadata(userId, primaryRole);
+        await cleanupDuplicateRoles(userId, primaryRole);
+      }, 0);
+      
+      return primaryRole;
     } catch (err) {
       console.error('Exception fetching user role:', err);
-      return null;
+      return UserRole.User;
     } finally {
       setIsCheckingRole(false);
     }
@@ -64,10 +161,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('Starting auth initialization...');
+        
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
           console.error('Error fetching session:', error);
+          setLoading(false);
           return;
         }
         
@@ -87,12 +187,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const dbRole = await fetchUserRole(enhancedUser.id);
           if (dbRole) {
             setUserRole(dbRole);
+            console.log('User role set to:', dbRole);
           }
         } else {
           setUser(null);
+          setUserRole(null);
         }
       } catch (err) {
         console.error('Error in auth initialization:', err);
+        toast({
+          title: "Erreur d'authentification",
+          description: "Une erreur est survenue lors de l'initialisation. Veuillez rafraîchir la page.",
+          variant: "destructive"
+        });
       } finally {
         setLoading(false);
       }
@@ -120,6 +227,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const dbRole = await fetchUserRole(enhancedUser.id);
           if (dbRole) {
             setUserRole(dbRole);
+            console.log('User role updated to:', dbRole);
           }
         } else {
           setUser(null);

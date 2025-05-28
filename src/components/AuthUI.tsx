@@ -34,6 +34,7 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
     if (loading) {
       timeoutId = setTimeout(() => {
         setAuthTimeout(true);
+        console.log('Auth timeout detected after 10 seconds');
       }, 10000); // 10 seconds timeout
     } else {
       setAuthTimeout(false);
@@ -58,23 +59,42 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   }, [location, navigate]);
   
   useEffect(() => {
-    if (user && !loading) {
-      console.log('Authenticated user:', user);
-      console.log('User role from auth context:', userRole);
+    if (user && !loading && userRole) {
+      console.log('AuthUI: Authenticated user detected:', {
+        userId: user.id,
+        email: user.email,
+        role: userRole,
+        metadata: user.app_metadata
+      });
       
-      // Redirect based on role
-      if (userRole === UserRole.Admin) {
-        navigate('/super-admin-dashboard');
-      } else if (userRole === UserRole.SfdAdmin) {
-        navigate('/agency-dashboard');
-      } else if (userRole === UserRole.Client) {
-        navigate('/mobile-flow/main');
-      } else {
-        // Default user role - redirect to mobile flow for now
-        navigate('/mobile-flow/main');
-      }
+      // Redirection intelligente basée sur le rôle
+      const redirectTo = (() => {
+        switch (userRole) {
+          case UserRole.Admin:
+            return '/super-admin-dashboard';
+          case UserRole.SfdAdmin:
+            return '/agency-dashboard';
+          case UserRole.Client:
+            return '/mobile-flow/main';
+          case UserRole.User:
+          default:
+            return '/mobile-flow/main';
+        }
+      })();
+      
+      console.log('AuthUI: Redirecting to:', redirectTo);
+      
+      toast({
+        title: "Connexion réussie",
+        description: `Bienvenue ! Redirection vers votre espace...`,
+      });
+      
+      // Petit délai pour permettre à l'utilisateur de voir le message
+      setTimeout(() => {
+        navigate(redirectTo, { replace: true });
+      }, 1000);
     }
-  }, [user, userRole, loading, navigate, location.pathname, toast]);
+  }, [user, userRole, loading, navigate, toast]);
   
   useEffect(() => {
     // Check if we're on a specific page to set authentication mode
@@ -97,6 +117,7 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
   const handleRetry = () => {
     setAuthTimeout(false);
     setAuthError(null);
+    console.log('Retrying authentication...');
     window.location.reload();
   };
   
@@ -122,7 +143,10 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
             <AlertTriangle className="h-10 w-10" />
           </div>
           <h1 className="text-2xl font-bold text-amber-700 mb-3">Connexion trop longue</h1>
-          <p className="mt-2 text-gray-600 mb-6">La vérification de votre session prend plus de temps que prévu. Vérifiez votre connexion internet et réessayez.</p>
+          <p className="mt-2 text-gray-600 mb-6">
+            La vérification de votre session prend plus de temps que prévu. 
+            Vérifiez votre connexion internet et réessayez.
+          </p>
           <Button 
             onClick={handleRetry} 
             className="mx-auto flex items-center gap-2"
@@ -130,6 +154,17 @@ const AuthUI: React.FC<AuthUIProps> = ({ initialMode = 'default' }) => {
             <RefreshCw className="h-4 w-4" />
             Réessayer
           </Button>
+          
+          {/* Debug info en mode développement */}
+          {process.env.NODE_ENV === 'development' && (
+            <div className="mt-4 p-3 bg-gray-100 rounded text-xs text-left">
+              <p><strong>Debug Info:</strong></p>
+              <p>Loading: {loading.toString()}</p>
+              <p>User: {user ? 'Present' : 'None'}</p>
+              <p>Role: {userRole || 'None'}</p>
+              <p>Session: {session ? 'Present' : 'None'}</p>
+            </div>
+          )}
         </div>
       </div>
     );
