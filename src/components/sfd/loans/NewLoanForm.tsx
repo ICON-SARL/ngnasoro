@@ -361,10 +361,9 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
                 id="duration_months"
                 name="duration_months"
                 type="number"
-                value={formData.duration_months}
+                value={selectedPlan?.duration_months || formData.duration_months}
                 onChange={handleInputChange}
                 required
-                value={selectedPlan?.duration_months || formData.duration_months}
                 disabled
               />
               

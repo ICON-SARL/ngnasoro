@@ -18,11 +18,12 @@ export function useAdhesionRequests() {
       try {
         if (!user?.id) return [];
         
-        // Use RPC function to get adhesion requests
+        // Get adhesion requests directly from table
         const { data, error } = await supabase
-          .rpc('get_adhesion_request_by_user', { 
-            user_id_param: user.id 
-          });
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
         
         if (error) {
           console.error('Error fetching adhesion requests:', error);
@@ -78,11 +79,12 @@ export function useAdhesionRequests() {
         reference_number: `ADH-${Date.now().toString().substring(6)}`
       };
       
-      // Use RPC function to create an adhesion request
+      // Create adhesion request directly
       const { data: result, error } = await supabase
-        .rpc('create_client_adhesion_request', { 
-          adhesion_data: adhesionData
-        });
+        .from('client_adhesion_requests')
+        .insert(adhesionData)
+        .select()
+        .single();
       
       if (error) throw error;
       

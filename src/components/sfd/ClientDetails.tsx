@@ -187,28 +187,6 @@ const ClientDetails: React.FC<ClientDetailsProps> = ({
             </div>
           </div>
 
-          <div>
-            <h3 className="text-sm font-medium">Informations d'identification</h3>
-            <div className="text-sm space-y-2 mt-2">
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span>Type d'ID: {client?.id_type || 'Non renseigné'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <FileText className="h-4 w-4 text-muted-foreground" />
-                <span>Numéro d'ID: {client?.id_number || 'Non renseigné'}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                {getKycLevelBadge(client?.kyc_level || 'none')}
-                <span>Niveau KYC: {getKycLevelText(client?.kyc_level || 'none')}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <h3 className="text-sm font-medium">Notes</h3>
-          <p className="text-sm mt-2">{client?.notes || 'Aucune note'}</p>
         </div>
       </CardContent>
     </Card>

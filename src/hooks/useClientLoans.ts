@@ -195,7 +195,7 @@ export function useClientLoans() {
     mutationFn: async (notificationId: string) => {
       const { data, error } = await supabase
         .from('admin_notifications')
-        .update({ read: true })
+        .update({ is_read: true })
         .eq('id', notificationId)
         .select();
         

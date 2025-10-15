@@ -46,8 +46,7 @@ const ClientByPhoneSearch: React.FC = () => {
       user_id: client.user_id,
       sfd_id: '',
       status: 'pending',
-      created_at: new Date().toISOString(),
-      kyc_level: 0
+      created_at: new Date().toISOString()
     };
   };
 

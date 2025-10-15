@@ -5,22 +5,14 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 
-// Define the interface locally to avoid circular dependencies
+// Define the interface to match database schema
 export interface MobileMoneyWebhook {
   id: string;
-  provider: string;
-  reference_id: string;
-  phone_number: string;
-  amount: number;
-  status: string;
-  transaction_type: string;
-  is_verified: boolean;
-  user_id?: string;
-  account_id?: string;
+  operator: string;
+  event_type: string;
+  payload: any;
+  processed: boolean;
   created_at: string;
-  processed_at?: string;
-  raw_payload?: any;
-  signature?: string;
 }
 
 export function useUserMobileMoneyWebhooks() {
@@ -35,7 +27,6 @@ export function useUserMobileMoneyWebhooks() {
     const { data, error } = await supabase
       .from('mobile_money_webhooks')
       .select('*')
-      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -48,7 +39,7 @@ export function useUserMobileMoneyWebhooks() {
       return [];
     }
 
-    return data as MobileMoneyWebhook[];
+    return data || [];
   };
 
   // Requête

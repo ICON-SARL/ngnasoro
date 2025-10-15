@@ -51,7 +51,9 @@ export function useAvailableSfds(userId?: string) {
         
         // Récupérer les demandes d'adhésion en attente
         const { data: requests, error: requestsError } = await supabase
-          .rpc('get_adhesion_request_by_user', { user_id_param: userId });
+          .from('client_adhesion_requests')
+          .select('*')
+          .eq('user_id', userId);
           
         if (requestsError) {
           console.error('Error fetching adhesion requests:', requestsError);
@@ -125,7 +127,7 @@ export function useAvailableSfds(userId?: string) {
       // Get user details to provide full name
       const { data: userData, error: userError } = await supabase
         .from('profiles')
-        .select('full_name, email, phone')
+        .select('id, full_name, phone')
         .eq('id', userId)
         .single();
         
@@ -135,23 +137,22 @@ export function useAvailableSfds(userId?: string) {
       }
       
       const fullName = userData?.full_name || 'Utilisateur';
-      const email = userData?.email || null;
       const phone = phoneNumber || userData?.phone || null;
       
-      // Create the adhesion request with required full_name field
-      // Using RPC function to create client adhesion request
+      // Create the adhesion request directly
       const { data, error } = await supabase
-        .rpc('create_client_adhesion_request', {
-          adhesion_data: {
-            user_id: userId,
-            sfd_id: sfdId,
-            status: 'pending',
-            full_name: fullName,
-            email: email,
-            phone: phone,
-            reference_number: `ADH-${Date.now().toString().substring(6)}`
-          }
-        });
+        .from('client_adhesion_requests')
+        .insert({
+          user_id: userId,
+          sfd_id: sfdId,
+          status: 'pending',
+          full_name: fullName,
+          email: null,
+          phone: phone,
+          address: null
+        })
+        .select()
+        .single();
         
       if (error) {
         console.error('Error creating adhesion request:', error);

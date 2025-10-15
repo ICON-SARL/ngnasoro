@@ -6,19 +6,10 @@ export interface SfdClient {
   phone?: string | null;
   address?: string | null;
   created_at: string;
-  status: 'pending' | 'active' | 'rejected' | 'suspended' | 'validated';
-  kyc_level: number;
+  status: string;
   sfd_id: string;
-  profession?: string | null;
-  monthly_income?: number | null;
-  reference_number?: string | null;
-  id_type?: string | null;
-  id_number?: string | null;
-  notes?: string | null;
-  validated_at?: string | null;
   user_id?: string | null;
-  validated_by?: string | null;
-  client_code?: string | null;
+  updated_at?: string;
 }
 
 export interface Loan {
@@ -159,29 +150,20 @@ export interface LoanPayment {
 // Mobile money interfaces
 export interface MobileMoneySettings {
   id: string;
-  provider: string;
+  operator: string;
   api_key?: string;
-  api_url?: string;
-  webhook_secret: string;
+  api_secret?: string;
+  webhook_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  user_id?: string;
 }
 
 export interface MobileMoneyWebhook {
   id: string;
-  provider: string;
-  reference_id: string;
-  phone_number: string;
-  amount: number;
-  status: string;
-  transaction_type: string;
-  is_verified: boolean;
-  user_id?: string;
-  account_id?: string;
+  operator: string;
+  event_type: string;
+  payload: any;
+  processed: boolean;
   created_at: string;
-  processed_at?: string;
-  raw_payload?: any;
-  signature?: string;
 }

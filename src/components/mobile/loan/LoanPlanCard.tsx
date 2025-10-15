@@ -81,7 +81,7 @@ export const LoanPlanCard: React.FC<LoanPlanCardProps> = ({
             <Clock className="h-4 w-4 text-gray-500 mr-2" />
             <div className="text-sm">
               <p className="text-gray-500">Durée</p>
-              <p className="font-medium">{plan.min_duration} - {plan.max_duration} mois</p>
+              <p className="font-medium">{plan.duration_months} mois</p>
             </div>
           </div>
         </div>

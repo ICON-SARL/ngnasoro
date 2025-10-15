@@ -41,8 +41,8 @@ export function useLoansPage() {
           ...loan,
           client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
           reference: loan.id.substring(0, 8), // Create a reference from the ID if it doesn't exist
-          subsidy_amount: loan.subsidy_amount || 0,
-          subsidy_rate: loan.subsidy_rate || 0,
+          subsidy_amount: 0,
+          subsidy_rate: 0,
           id: loan.id,
           client_id: loan.client_id,
           sfd_id: loan.sfd_id,

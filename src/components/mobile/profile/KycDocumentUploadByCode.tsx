@@ -63,7 +63,7 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
       // Check if client exists with this code
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('*')
+        .select('id, full_name, phone, avatar_url, created_at, updated_at')
         .eq('client_code', formattedCode)
         .single();
 
@@ -90,8 +90,7 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
         // Une demande d'adhésion existe
         setClientData({
           ...profileData,
-          ...adhesionData,
-          email: profileData.email || adhesionData.email
+          ...adhesionData
         });
         setClientFound(true);
         toast({
@@ -120,10 +119,7 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
       }
 
       // Si on arrive ici, l'utilisateur existe mais n'a pas de demande d'adhésion ou n'est pas client SFD
-      setClientData({
-        ...profileData,
-        email: profileData.full_name // profiles table doesn't have email, use full_name as identifier
-      });
+      setClientData(profileData);
       setClientFound(true);
       toast({
         title: "Utilisateur trouvé",

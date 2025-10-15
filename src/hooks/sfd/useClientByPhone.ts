@@ -32,9 +32,9 @@ export function useClientByPhone() {
       
       try {
         // First check if the user exists with this phone number
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError} = await supabase
           .from('profiles')
-          .select('id, full_name, email, phone')
+          .select('id, full_name, phone')
           .eq('phone', phoneNumber)
           .single();
           
@@ -72,7 +72,7 @@ export function useClientByPhone() {
         return {
           user_id: userData.id,
           full_name: userData.full_name,
-          email: userData.email,
+          email: null,
           phone: phoneNumber,
           isNewClient: true
         } as ClientSearchResult;

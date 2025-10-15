@@ -149,7 +149,7 @@ export function useAdminCommunication() {
         
         const notifs = data || [];
         setNotifications(notifs);
-        setUnreadCount(notifs.filter(n => !n.read).length);
+        setUnreadCount(notifs.filter(n => !n.is_read).length);
         return notifs;
       }
       
@@ -168,7 +168,7 @@ export function useAdminCommunication() {
       
       const notifs = data || [];
       setNotifications(notifs);
-      setUnreadCount(notifs.filter(n => !n.read).length);
+      setUnreadCount(notifs.filter(n => !n.is_read).length);
       return notifs;
     } catch (err: any) {
       setError(err.message);
@@ -185,7 +185,7 @@ export function useAdminCommunication() {
     try {
       const { error } = await supabase
         .from('admin_notifications')
-        .update({ read: true })
+        .update({ is_read: true })
         .eq('id', notificationId);
         
       if (error) {
@@ -194,7 +194,7 @@ export function useAdminCommunication() {
       
       // Update local state
       setNotifications(prev => 
-        prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
+        prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n)
       );
       setUnreadCount(prev => Math.max(0, prev - 1));
       
@@ -217,12 +217,12 @@ export function useAdminCommunication() {
         
       if (!userProfile) return false;
       
-      // Update all notifications for this user or their role
+      // Update all notifications for this user
       const { error } = await supabase
         .from('admin_notifications')
-        .update({ read: true })
-        .or(`recipient_id.eq.${userId},recipient_role.eq.${userProfile.role}`)
-        .eq('read', false);
+        .update({ is_read: true })
+        .eq('user_id', userId)
+        .eq('is_read', false);
         
       if (error) {
         throw error;

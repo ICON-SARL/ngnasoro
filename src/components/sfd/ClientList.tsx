@@ -85,7 +85,7 @@ export const ClientList: React.FC<ClientListProps> = ({
               <TableCell className="font-medium">{client.full_name}</TableCell>
               <TableCell>{client.email}</TableCell>
               <TableCell>{client.phone}</TableCell>
-              <TableCell>{client.client_code || "Non assigné"}</TableCell>
+              
               <TableCell>{renderStatus(client.status)}</TableCell>
               <TableCell className="text-right">
                 {onViewClient && (

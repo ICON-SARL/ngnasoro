@@ -126,25 +126,6 @@ const ClientDetailView = () => {
                   <p className="mt-1">{client.address || 'Non définie'}</p>
                 </div>
                 
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Numéro d'identification</h4>
-                  <p className="mt-1">{client.id_number || 'Non défini'}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Type d'identification</h4>
-                  <p className="mt-1">{client.id_type || 'Non défini'}</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Niveau KYC</h4>
-                  <p className="mt-1">{client.kyc_level}/3</p>
-                </div>
-                
-                <div>
-                  <h4 className="text-sm font-medium text-gray-500">Notes</h4>
-                  <p className="mt-1">{client.notes || 'Aucune note'}</p>
-                </div>
               </div>
             </CardContent>
           </Card>
