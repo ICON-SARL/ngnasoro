@@ -1,21 +1,23 @@
 
 export interface Transaction {
   id: number | string;
-  name: string;
+  name?: string;  // Display name (use description as fallback)
   type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'reversal' | 'other';
   amount: number;
-  date: string;
+  date?: string;  // Display date (use created_at as fallback)
+  created_at?: string;
   status?: 'pending' | 'completed' | 'failed' | 'success' | 'flagged' | 'disputed' | 'reversed';
   description?: string;
   category?: string;
   reference?: string;
+  user_id?: string;
+  sfd_id?: string;
+  payment_method?: 'mobile_money' | 'cash' | 'bank_transfer' | 'check';
+  account_id?: string;
+  created_by?: string;
   reference_id?: string;
   avatar?: string | null;
   avatar_url?: string;
-  payment_method?: string;
-  created_at?: string;
-  user_id?: string;
-  sfd_id?: string;
   metadata?: {
     agency?: string;
     [key: string]: any;

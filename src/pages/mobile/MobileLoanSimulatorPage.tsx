@@ -14,10 +14,8 @@ interface LoanPlan {
   name: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
 }
 
 const MobileLoanSimulatorPage: React.FC = () => {
@@ -46,7 +44,7 @@ const MobileLoanSimulatorPage: React.FC = () => {
         
         setPlan(data);
         setLoanAmount(data.min_amount);
-        setDuration(data.min_duration);
+        setDuration(data.duration_months);
       } catch (error) {
         console.error('Erreur lors du chargement du plan de prêt:', error);
         toast({
@@ -74,8 +72,8 @@ const MobileLoanSimulatorPage: React.FC = () => {
     // Calcul des intérêts (sur la durée totale)
     const interest = (loanAmount * plan.interest_rate * duration) / (12 * 100);
     
-    // Calcul des frais (fixes, appliqués une seule fois)
-    const fees = (loanAmount * plan.fees) / 100;
+    // Frais doesn't exist, set to 0
+    const fees = 0;
     
     // Montant total à rembourser
     const totalAmount = loanAmount + interest + fees;
@@ -170,16 +168,16 @@ const MobileLoanSimulatorPage: React.FC = () => {
                 </div>
                 <Slider
                   id="duration"
-                  min={plan.min_duration}
-                  max={plan.max_duration}
+                  min={1}
+                  max={plan.duration_months}
                   step={1}
                   value={[duration]}
                   onValueChange={(values) => setDuration(values[0])}
                   className="mb-2"
                 />
                 <div className="flex justify-between text-xs text-muted-foreground">
-                  <span>{plan.min_duration} mois</span>
-                  <span>{plan.max_duration} mois</span>
+                  <span>1 mois</span>
+                  <span>{plan.duration_months} mois</span>
                 </div>
               </div>
             </div>
@@ -206,10 +204,10 @@ const MobileLoanSimulatorPage: React.FC = () => {
                   <Percent className="h-5 w-5 text-amber-600" />
                 </div>
                 <div>
-                  <p className="text-sm text-gray-500">Intérêts + Frais</p>
-                  <p className="font-semibold">{(interest + fees).toLocaleString(undefined, { maximumFractionDigits: 0 })} FCFA</p>
+                  <p className="text-sm text-gray-500">Intérêts</p>
+                  <p className="font-semibold">{interest.toLocaleString(undefined, { maximumFractionDigits: 0 })} FCFA</p>
                   <p className="text-xs text-gray-500">
-                    ({plan.interest_rate}% sur {duration} mois + {plan.fees}% de frais)
+                    ({plan.interest_rate}% sur {duration} mois)
                   </p>
                 </div>
               </div>

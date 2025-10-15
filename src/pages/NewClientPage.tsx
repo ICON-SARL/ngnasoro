@@ -68,10 +68,8 @@ const NewClientPage = () => {
         full_name: formData.full_name,
         email: formData.email || undefined,
         phone: formData.phone || undefined,
-        address: formData.address || undefined,
-        id_type: formData.id_type || undefined,
-        id_number: formData.id_number || undefined,
-        notes: formData.notes || undefined
+        address: formData.address || undefined
+        // id_type, id_number, and notes don't exist in sfd_clients table
       });
       
       navigate('/mobile-flow/clients');

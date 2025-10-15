@@ -112,7 +112,7 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
         console.log(`Récupération des données du profil pour l'utilisateur ${user.id}`);
         const { data: profile, error: profileError } = await supabase
           .from('profiles')
-          .select('full_name, email, phone')
+          .select('full_name, phone')
           .eq('id', user.id)
           .single();
           
@@ -125,7 +125,7 @@ const SfdAdhesionPage: React.FC<SfdAdhesionPageProps> = () => {
           setFormData({
             ...formData,
             fullName: profile.full_name || user?.user_metadata?.full_name || '',
-            email: profile.email || user?.email || '',
+            email: user?.email || '',  // email doesn't exist in profiles
             phone: profile.phone || user?.user_metadata?.phone || '',
           });
         } else {

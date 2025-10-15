@@ -138,7 +138,7 @@ export function useAdminCommunication() {
         const { data, error } = await supabase
           .from('admin_notifications')
           .select('*')
-          .eq('recipient_id', currentUserId)
+          .eq('user_id', currentUserId)  // Use user_id instead of recipient_id
           .order('created_at', { ascending: false });
         
         if (error) {

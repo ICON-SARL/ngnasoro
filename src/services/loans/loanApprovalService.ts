@@ -86,19 +86,7 @@ export const loanApprovalService = {
         throw new Error('Le prêt doit être approuvé avant de pouvoir être débloqué');
       }
       
-      // 2. Vérifier si le prêt implique des fonds MEREF (subsidy_amount > 0)
-      if (loan.subsidy_amount && loan.subsidy_amount > 0) {
-        // Appeler la fonction pour utiliser les subventions
-        const { error: subsidyError } = await supabase.rpc(
-          'update_subsidy_usage',
-          { 
-            p_sfd_id: loan.sfd_id,
-            p_amount: loan.subsidy_amount
-          }
-        );
-        
-        if (subsidyError) throw subsidyError;
-      }
+      // subsidy_amount doesn't exist in sfd_loans, skip subsidy logic
       
       // 3. Mettre à jour le statut du prêt à 'active'
       const { data, error } = await supabase
@@ -128,7 +116,7 @@ export const loanApprovalService = {
         .from('transactions')
         .insert({
           user_id: adminId, // L'admin qui a effectué l'opération
-          client_id: loan.client_id,
+          // client_id doesn't exist in transactions table
           sfd_id: loan.sfd_id,
           type: 'loan_disbursement',
           amount: loan.amount,

@@ -58,38 +58,7 @@ export function useSfdClientOperations() {
         
         const processedClients = await Promise.all((data || []).map(async (client: any) => {
           try {
-            if (client.user && 
-              client.user.profiles && 
-              client.user.profiles[0]?.client_code && 
-              !client.client_code) {
-              
-              console.log('Syncing client code from profile to client:', client.id);
-              
-              await supabase
-                .from('sfd_clients')
-                .update({ client_code: client.user.profiles[0].client_code })
-                .eq('id', client.id);
-                
-              return {
-                ...client,
-                client_code: client.user.profiles[0].client_code
-              };
-            }
-            
-            if (client.client_code && 
-                client.user && 
-                client.user.profiles && 
-                !client.user.profiles[0]?.client_code && 
-                client.user_id) {
-              
-              console.log('Syncing client code from client to profile:', client.user_id);
-              
-              await supabase
-                .from('profiles')
-                .update({ client_code: client.client_code })
-                .eq('id', client.user_id);
-            }
-            
+            // client_code doesn't exist in database, just return client as-is
             return client;
           } catch (err) {
             console.error('Error processing client:', err);
@@ -164,15 +133,6 @@ export function useSfdClientOperations() {
         
         if (existingSfdClient) {
           console.log('User is already a client in this SFD:', existingSfdClient);
-          
-          if (!existingSfdClient.client_code) {
-            await supabase
-              .from('sfd_clients')
-              .update({ client_code: userProfile.client_code })
-              .eq('id', existingSfdClient.id);
-              
-            return { ...existingSfdClient, client_code: userProfile.client_code };
-          }
           
           toast({
             title: "Client déjà enregistré",

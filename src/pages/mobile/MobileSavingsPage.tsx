@@ -124,8 +124,8 @@ const MobileSavingsPage: React.FC = () => {
             phone: user?.user_metadata?.phone || '',
             sfd_id: activeSfdId || '',
             status: 'pending',
-            kyc_level: 0,                // Adding missing property
-            created_at: new Date().toISOString()  // Adding missing property
+            created_at: new Date().toISOString()
+            // kyc_level doesn't exist in SfdClient type
           }}
           balance={selectedAccount?.balance || 0}
           onManageAccount={handleManageAccount}

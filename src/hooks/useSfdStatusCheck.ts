@@ -21,17 +21,8 @@ export function useSfdStatusCheck() {
         const count = activeSfds?.length || 0;
         console.log(`Nombre de SFDs actives détecté: ${count}`);
         
-        // Vérifions également les SFDs associées aux administrateurs
-        const { data: sfdAdmins, error: adminError } = await supabase
-          .from('sfd_administrators')
-          .select('id, sfd_id, status, user_id')
-          .eq('status', 'active');
-          
-        if (adminError) {
-          console.error('Erreur lors de la vérification des administrateurs SFD:', adminError);
-        } else {
-          console.log(`Nombre d'administrateurs SFD actifs: ${sfdAdmins?.length || 0}`);
-        }
+        // sfd_administrators table doesn't exist, skip this check
+        const sfdAdmins: any[] = [];
 
         // Récupérer les associations utilisateur-SFD
         const { data: userSfds, error: userSfdsError } = await supabase

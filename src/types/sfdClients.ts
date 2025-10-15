@@ -140,10 +140,9 @@ export interface LoanPayment {
   id: string;
   loan_id: string;
   amount: number;
-  payment_date: string;
   payment_method: string;
   status: string;
-  transaction_id?: string;
+  reference?: string;
   created_at: string;
 }
 

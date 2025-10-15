@@ -109,7 +109,7 @@ export function useSfdAccounts(sfdId?: string) {
             sfd_id: account.sfd_id,
             balance: account.balance || 0,
             currency: account.currency || 'FCFA',
-            last_updated: account.last_updated || new Date().toISOString(),
+            last_updated: account.updated_at || new Date().toISOString(),
             updated_at: account.updated_at || new Date().toISOString(),
             // The following properties might be missing from the database
             // so we provide defaults

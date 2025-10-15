@@ -27,7 +27,6 @@ export async function fetchLoanDetails(loanId: string | undefined): Promise<{
         disbursed_at,
         status,
         next_payment_date,
-        last_payment_date,
         sfd_id,
         client_id
       `)
@@ -40,10 +39,10 @@ export async function fetchLoanDetails(loanId: string | undefined): Promise<{
       return { loanDetails: null, loanStatus: null, error: 'Loan not found' };
     }
     
-    // Process loan details
+    // Process loan details (with fallback for missing purpose)
     const loanDetails: LoanDetails = {
-      loanType: data.purpose.includes('Micro') ? 'Microcrédit' : 'Prêt standard',
-      loanPurpose: data.purpose,
+      loanType: (data.purpose || '').includes('Micro') ? 'Microcrédit' : 'Prêt standard',
+      loanPurpose: data.purpose || 'Non spécifié',
       totalAmount: data.amount,
       disbursalDate: new Date(data.disbursed_at || Date.now()).toLocaleDateString('fr-FR', {
         year: 'numeric',
@@ -60,15 +59,15 @@ export async function fetchLoanDetails(loanId: string | undefined): Promise<{
       interestRate: data.interest_rate,
       status: data.status,
       disbursed: !!data.disbursed_at,
-      withdrawn: data.status === 'withdrawn'
+      withdrawn: data.status === 'rejected' // withdrawn is not a valid status
     };
     
-    // Get payment history
+    // Get payment history (payment_date doesn't exist, use created_at)
     const { data: paymentsData, error: paymentsError } = await supabase
       .from('loan_payments')
       .select('*')
       .eq('loan_id', loanId)
-      .order('payment_date', { ascending: false });
+      .order('created_at', { ascending: false });
       
     if (paymentsError) throw paymentsError;
     
@@ -115,7 +114,7 @@ export async function fetchLoanDetails(loanId: string | undefined): Promise<{
       lateFees,
       paymentHistory,
       disbursed: !!data.disbursed_at,
-      withdrawn: data.status === 'withdrawn'
+      withdrawn: data.status === 'rejected' // withdrawn is not a valid status
     };
     
     return { loanDetails, loanStatus, error: null };

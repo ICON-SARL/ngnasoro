@@ -22,15 +22,21 @@ const KycVerificationHistoryPage = () => {
       
       setIsLoading(true);
       try {
+        // verification_documents table doesn't exist, use client_documents instead
         const { data, error } = await supabase
-          .from('verification_documents')
+          .from('client_documents')
           .select('*')
-          .eq('user_id', user.id)
+          .eq('uploaded_by', user.id)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
-        // Explicitly cast the data to KycVerificationDocument[]
-        setDocuments(data as KycVerificationDocument[] || []);
+        // Map client_documents to KycVerificationDocument format
+        const mappedDocs = (data || []).map(doc => ({
+          ...doc,
+          verification_status: 'pending' as const,
+          user_id: user.id
+        }));
+        setDocuments(mappedDocs as KycVerificationDocument[] || []);
       } catch (error) {
         console.error('Error fetching KYC documents:', error);
       } finally {

@@ -58,12 +58,12 @@ export function useSfdStats(sfdId?: string) {
       
     if (rejectedError) console.error('Error fetching rejected credits:', rejectedError);
     
-    // Fetch subsidy balance
+    // Fetch subsidy balance (using amount instead of remaining_amount)
     const { data: subsidies, error: subsidiesError } = await supabase
       .from('sfd_subsidies')
-      .select('remaining_amount')
+      .select('amount')
       .eq('sfd_id', effectiveSfdId)
-      .eq('status', 'active');
+      .eq('status', 'approved');
       
     if (subsidiesError) console.error('Error fetching subsidies:', subsidiesError);
     
@@ -88,7 +88,7 @@ export function useSfdStats(sfdId?: string) {
     // Calculate totals
     const approvedCreditsAmount = (approvedCredits || []).reduce((sum, loan) => sum + (loan.amount || 0), 0);
     const rejectedCreditsAmount = (rejectedCredits || []).reduce((sum, loan) => sum + (loan.amount || 0), 0);
-    const subsidyBalance = (subsidies || []).reduce((sum, subsidy) => sum + (subsidy.remaining_amount || 0), 0);
+    const subsidyBalance = (subsidies || []).reduce((sum, subsidy) => sum + (subsidy.amount || 0), 0);
     
     return {
       approvedCreditsCount: approvedCredits?.length || 0,

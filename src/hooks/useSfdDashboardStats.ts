@@ -84,7 +84,7 @@ export const useSfdDashboardStats = (sfdId?: string) => {
         .from('sfd_loans')
         .select('amount')
         .eq('sfd_id', effectiveSfdId)
-        .in('status', ['active', 'approved', 'disbursed']);
+        .in('status', ['active', 'approved']);
         
       if (loansError) throw loansError;
       
