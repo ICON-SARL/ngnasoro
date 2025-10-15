@@ -48,13 +48,11 @@ export function useMerefLoanRequests() {
             id,
             amount,
             purpose,
-            duration_months,
             status,
-            meref_status,
-            meref_reference,
-            meref_feedback,
             created_at,
-            submitted_at,
+            reviewed_at,
+            reviewed_by,
+            rejection_reason,
             sfd_id,
             client_id
           `)
@@ -109,14 +107,13 @@ export function useMerefLoanRequests() {
           client_name: clientsMap[item.client_id] || 'Client inconnu',
           amount: item.amount,
           purpose: item.purpose,
-          duration_months: item.duration_months,
+          duration_months: 12, // Default value since column doesn't exist
           created_at: item.created_at,
-          submitted_at: item.submitted_at,
-          // Ensure status is cast to the correct type
+          submitted_at: item.reviewed_at,
           status: item.status as MerefLoanRequest['status'],
-          meref_status: item.meref_status as MerefLoanRequest['meref_status'],
-          meref_reference: item.meref_reference,
-          meref_feedback: item.meref_feedback
+          meref_status: (item.status === 'approved' ? 'approved' : item.status === 'rejected' ? 'rejected' : 'pending') as MerefLoanRequest['meref_status'],
+          meref_reference: `MEREF-${item.id.slice(0, 8)}`,
+          meref_feedback: item.rejection_reason
         }));
 
         return formattedData;

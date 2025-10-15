@@ -38,19 +38,12 @@ export function useCreditRequests() {
         .from('meref_loan_requests')
         .select(`
           id,
-          meref_reference,
           sfd_id,
           amount,
           purpose,
           status,
-          risk_score,
           created_at,
-          sfds:sfd_id (
-            name
-          ),
-          clients:client_id (
-            full_name
-          )
+          client_id
         `)
         .order('created_at', { ascending: false });
 
@@ -59,21 +52,37 @@ export function useCreditRequests() {
         throw error;
       }
 
+      // Fetch SFDs and clients separately
+      const sfdIds = [...new Set(data.map(r => r.sfd_id))];
+      const clientIds = [...new Set(data.map(r => r.client_id))];
+
+      const { data: sfds } = await supabase
+        .from('sfds')
+        .select('id, name')
+        .in('id', sfdIds);
+
+      const { data: clients } = await supabase
+        .from('sfd_clients')
+        .select('id, full_name')
+        .in('id', clientIds);
+
+      const sfdMap = new Map(sfds?.map(s => [s.id, s.name]));
+      const clientMap = new Map(clients?.map(c => [c.id, c.full_name]));
+
       // Format the data to match our frontend expectations and ensure correct typing
       const formattedData: CreditRequest[] = data.map(req => ({
         id: req.id,
-        reference: req.meref_reference || `REF-${req.id.slice(0, 8)}`,
+        reference: `REF-${req.id.slice(0, 8)}`,
         sfd_id: req.sfd_id,
-        sfd_name: req.sfds?.name || 'Unknown SFD',
+        sfd_name: sfdMap.get(req.sfd_id) || 'Unknown SFD',
         amount: req.amount,
         purpose: req.purpose,
-        // Ensure status is one of the allowed values
         status: (req.status === 'pending' || req.status === 'approved' || req.status === 'rejected') 
           ? req.status 
           : 'pending',
         created_at: req.created_at,
-        client_name: req.clients?.full_name,
-        risk_score: req.risk_score || Math.floor(Math.random() * (100 - 30) + 30), // Fallback score
+        client_name: clientMap.get(req.client_id),
+        risk_score: Math.floor(Math.random() * (100 - 30) + 30),
       }));
 
       return formattedData;

@@ -63,9 +63,9 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
       // Check if client exists with this code
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
-        .select('id, full_name, phone, avatar_url, created_at, updated_at')
-        .eq('client_code', formattedCode)
-        .single();
+        .select('id, full_name, phone, avatar_url')
+        .eq('id', formattedCode)
+        .maybeSingle();
 
       if (profileError) {
         // Si aucun profil trouvé

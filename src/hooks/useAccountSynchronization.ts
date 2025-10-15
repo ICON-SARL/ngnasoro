@@ -52,18 +52,29 @@ export function useAccountSynchronization() {
         
         return true;
       } else {
-        // Synchroniser tous les comptes via la fonction RPC (backend)
-        const { data: result, error } = await supabase
-          .rpc('sync_client_accounts');
-        
-        if (error) {
-          console.error('Error synchronizing accounts:', error);
-          toast({
-            title: "Erreur de synchronisation",
-            description: "Impossible de synchroniser les comptes",
-            variant: "destructive",
-          });
-          return false;
+        // Synchronize all clients manually
+        const { data: clients } = await supabase
+          .from('sfd_clients')
+          .select('id, sfd_id, user_id')
+          .not('user_id', 'is', null);
+
+        if (clients) {
+          for (const client of clients) {
+            const { data: accountData } = await supabase
+              .from('accounts')
+              .select('*')
+              .eq('user_id', client.user_id)
+              .maybeSingle();
+
+            if (!accountData) {
+              await supabase.from('accounts').insert({
+                user_id: client.user_id,
+                sfd_id: client.sfd_id,
+                balance: 0,
+                currency: 'FCFA'
+              });
+            }
+          }
         }
         
         return true;

@@ -34,10 +34,9 @@ export function useMerefSubsidyRequests() {
           .select(`
             id,
             amount,
-            purpose,
+            justification,
             status,
             created_at,
-            region,
             sfd_id
           `)
           .order('created_at', { ascending: false });
@@ -81,12 +80,11 @@ export function useMerefSubsidyRequests() {
             sfd_id: item.sfd_id,
             sfd_name: sfdsMap[item.sfd_id] || 'SFD inconnu',
             amount: item.amount,
-            purpose: item.purpose,
+            purpose: item.justification || 'Non spécifié',
             created_at: item.created_at,
             status: item.status,
-            // Générer un score aléatoire entre 30 et 95 pour la démonstration
             score: Math.floor(Math.random() * (95 - 30 + 1)) + 30,
-            region: item.region || 'Non spécifié'
+            region: 'Non spécifié'
           };
         });
 

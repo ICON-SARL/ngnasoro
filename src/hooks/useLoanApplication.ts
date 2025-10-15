@@ -90,7 +90,7 @@ export const useLoanApplication = (sfdId?: string) => {
         // Get selected loan plan to determine interest rate
         const { data: loanPlan, error: loanPlanError } = await supabase
           .from('sfd_loan_plans')
-          .select('interest_rate, fees')
+          .select('interest_rate')
           .eq('id', application.loan_plan_id)
           .single();
           
@@ -137,13 +137,13 @@ export const useLoanApplication = (sfdId?: string) => {
           throw new Error('Erreur lors de la création du prêt. Aucun identifiant retourné.');
         }
 
-        // Upload documents if provided
+        // Upload documents if provided (using client_documents table)
         if (application.documents?.length) {
           const documentPromises = application.documents.map(async (doc) => {
             const publicUrl = await uploadDocument(doc.file, loan.id, doc.type);
             
-            return supabase.from('loan_documents').insert({
-              loan_id: loan.id,
+            return supabase.from('client_documents').insert({
+              client_id: clientData.id,
               document_type: doc.type,
               document_url: publicUrl,
               uploaded_by: user.id

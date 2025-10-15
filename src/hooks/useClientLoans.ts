@@ -167,7 +167,7 @@ export function useClientLoans() {
       const { data: actualNotifications, error: notifError } = await supabase
         .from('admin_notifications')
         .select('*')
-        .eq('recipient_id', user?.id)
+        .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
         
       if (!notifError && actualNotifications && actualNotifications.length > 0) {
