@@ -61,11 +61,8 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         console.log('LoanPlansDisplay - Fetched raw plans:', data?.length);
         
-        // Filter to show only published plans
-        const publishedPlans = data?.filter(plan => plan.is_published === true) || [];
-        console.log('LoanPlansDisplay - Published plans:', publishedPlans.length);
-        
-        setLoanPlans(publishedPlans as LoanPlan[]);
+        // All active plans are considered published
+        setLoanPlans(data as LoanPlan[] || []);
       } catch (error) {
         console.error('Error in fetchLoanPlans:', error);
       } finally {

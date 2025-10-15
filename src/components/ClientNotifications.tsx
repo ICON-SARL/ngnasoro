@@ -11,7 +11,7 @@ import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
 
 const NotificationItem = ({ notification, markAsRead }: { notification: any, markAsRead: (id: string) => void }) => {
-  const [isRead, setIsRead] = useState(notification.read);
+  const [isRead, setIsRead] = useState(notification.is_read);
   const timeAgo = formatDistanceToNow(new Date(notification.created_at), { addSuffix: true, locale: fr });
   
   const handleMarkAsRead = async () => {
@@ -63,7 +63,7 @@ const ClientNotifications = () => {
   
   // Ensure notifications is an array before filtering
   const unreadNotifications = Array.isArray(notifications) 
-    ? notifications.filter(notification => !notification.read)
+    ? notifications.filter(notification => !notification.is_read)
     : [];
   
   return (

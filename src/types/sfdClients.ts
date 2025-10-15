@@ -85,13 +85,10 @@ export interface LoanPlan {
   interest_rate: number;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
-  fees: number;
+  duration_months: number;
   sfd_id: string;
   is_active: boolean;
-  is_published: boolean; // Added this property
-  requirements?: string[];
+  created_at?: string;
   sfds?: {
     name: string;
     logo_url?: string;

@@ -24,16 +24,21 @@ const KycDocumentList: React.FC<KycDocumentListProps> = ({ refreshKey = 0 }) => 
       setIsLoading(true);
       try {
         const { data, error } = await supabase
-          .from('verification_documents')
-          .select('id, document_type, document_url, verification_status, created_at, verified_at, verification_notes')
-          .eq('user_id', user.id)
+          .from('client_documents')
+          .select('*')
+          .eq('client_id', user.id)
           .order('created_at', { ascending: false });
           
         if (error) throw error;
         if (data) {
           const typedData = data.map(doc => ({
-            ...doc,
-            verification_status: doc.verification_status as KycVerificationDocument['verification_status']
+            id: doc.id,
+            document_type: doc.document_type,
+            document_url: doc.document_url,
+            verification_status: 'pending' as const,
+            created_at: doc.created_at,
+            verified_at: null,
+            verification_notes: null
           }));
           setDocuments(typedData);
         }

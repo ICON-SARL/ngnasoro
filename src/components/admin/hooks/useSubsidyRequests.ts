@@ -41,7 +41,15 @@ export function useSubsidyRequests() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as SubsidyRequest[];
+      
+      // Map the data to match SubsidyRequest type
+      return (data || []).map(item => ({
+        ...item,
+        purpose: item.justification || '',
+        priority: 'normal' as const,
+        requested_by: item.sfd_id,
+        alert_triggered: false
+      })) as SubsidyRequest[];
     }
   });
 
@@ -52,10 +60,18 @@ export function useSubsidyRequests() {
       const { data, error } = await supabase
         .from('subsidy_alert_thresholds')
         .select('*')
-        .order('threshold_amount', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) throw error;
-      return data as SubsidyThreshold[];
+      
+      // Map data to match SubsidyThreshold type
+      return (data || []).map(item => ({
+        id: item.id,
+        threshold_name: `Seuil ${item.low_threshold}`,
+        threshold_amount: item.low_threshold,
+        is_active: true,
+        created_at: item.created_at
+      })) as SubsidyThreshold[];
     }
   });
 

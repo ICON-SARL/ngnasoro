@@ -37,6 +37,7 @@ export async function creditClientAccount(params: {
   amount: number;
   adminId: string;
   description?: string;
+  sfdId?: string;
 }): Promise<boolean> {
   try {
     const { clientId, amount, adminId, description } = params;
@@ -65,6 +66,7 @@ export async function creditClientAccount(params: {
           .from('accounts')
           .insert({
             user_id: clientId,
+            sfd_id: params.sfdId || '00000000-0000-0000-0000-000000000000', // Default SFD ID
             balance: amount,
             currency: 'FCFA'
           });
@@ -96,12 +98,11 @@ export async function creditClientAccount(params: {
       .from('transactions')
       .insert({
         user_id: clientId,
+        sfd_id: params.sfdId || '00000000-0000-0000-0000-000000000000',
         amount: Math.abs(amount), // Toujours positif dans la transaction
         type: operationType,
-        name: description || operationName,
         description: description || `${operationName} par administrateur SFD`,
-        status: 'success',
-        payment_method: 'admin_operation'
+        status: 'completed'
       });
       
     if (transactionError) throw transactionError;

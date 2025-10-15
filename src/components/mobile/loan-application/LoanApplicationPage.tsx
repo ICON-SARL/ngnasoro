@@ -28,12 +28,10 @@ interface LoanPlan {
   description: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
-  requirements: string[];
   sfd_id: string;
+  is_active: boolean;
 }
 
 const formSchema = z.object({
@@ -146,7 +144,7 @@ const LoanApplicationPage: React.FC = () => {
       form.reset({
         ...form.getValues(),
         amount: Math.max(selectedPlan.min_amount, Math.min(form.getValues().amount, selectedPlan.max_amount)),
-        duration: Math.max(selectedPlan.min_duration, Math.min(form.getValues().duration, selectedPlan.max_duration)),
+        duration: selectedPlan.duration_months,
       });
     }
   }, [selectedPlan, form]);
@@ -162,9 +160,7 @@ const LoanApplicationPage: React.FC = () => {
       form.setValue('amount', Math.max(plan.min_amount, Math.min(currentAmount, plan.max_amount)));
     }
     
-    if (currentDuration < plan.min_duration || currentDuration > plan.max_duration) {
-      form.setValue('duration', Math.max(plan.min_duration, Math.min(currentDuration, plan.max_duration)));
-    }
+    form.setValue('duration', plan.duration_months);
   };
   
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
@@ -353,15 +349,15 @@ const LoanApplicationPage: React.FC = () => {
                             <FormItem>
                               <FormLabel>Durée (mois)</FormLabel>
                               <FormControl>
-                                <Input 
+                                 <Input 
                                   type="number" 
                                   {...field} 
-                                  min={selectedPlan.min_duration}
-                                  max={selectedPlan.max_duration}
+                                  value={selectedPlan.duration_months}
+                                  disabled
                                 />
                               </FormControl>
                               <FormDescription>
-                                Entre {selectedPlan.min_duration} et {selectedPlan.max_duration} mois
+                                Durée fixe: {selectedPlan.duration_months} mois
                               </FormDescription>
                               <FormMessage />
                             </FormItem>

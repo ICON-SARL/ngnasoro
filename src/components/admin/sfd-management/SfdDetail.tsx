@@ -140,7 +140,11 @@ export function SfdDetail({ selectedSfd, onEdit }: SfdDetailProps) {
             <div className="h-5 w-5 flex items-center justify-center mr-2">
               <span className="text-xs font-medium">%</span>
             </div>
-            <span>Taux de remboursement: {stats?.repayment_rate || 0}%</span>
+            <span>
+              Taux de remboursement: {stats?.total_disbursed && stats?.total_repaid 
+                ? ((stats.total_repaid / stats.total_disbursed) * 100).toFixed(1) 
+                : 0}%
+            </span>
           </div>
         </div>
       </div>

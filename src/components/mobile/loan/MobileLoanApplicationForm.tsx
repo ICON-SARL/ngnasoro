@@ -74,7 +74,7 @@ const MobileLoanApplicationForm: React.FC<MobileLoanApplicationFormProps> = ({ s
           loan_plan_id: selectedPlan.id,
           purpose: selectedPlan.name || 'Prêt',
           amount: selectedPlan.min_amount || 0,
-          duration_months: selectedPlan.min_duration || 0,
+          duration_months: selectedPlan.duration_months || 12,
         }));
       }
     }
@@ -218,20 +218,8 @@ const MobileLoanApplicationForm: React.FC<MobileLoanApplicationFormProps> = ({ s
     if (formData.loan_plan_id && loanPlans.length > 0) {
       const selectedPlan = loanPlans.find(plan => plan.id === formData.loan_plan_id);
       if (selectedPlan) {
-        const options = [];
-        const min = selectedPlan.min_duration || 1;
-        const max = selectedPlan.max_duration || 36;
-        
-        for (let i = min; i <= max; i += (i < 12 ? 3 : 6)) {
-          options.push(i);
-        }
-        
-        // Ensure max duration is included
-        if (!options.includes(max)) {
-          options.push(max);
-        }
-        
-        return options;
+        // Return only the plan's duration
+        return [selectedPlan.duration_months];
       }
     }
     

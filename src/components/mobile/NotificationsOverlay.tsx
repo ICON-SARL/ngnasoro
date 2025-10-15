@@ -10,10 +10,12 @@ interface Notification {
   id: string;
   title: string;
   message: string;
-  read: boolean;
+  is_read: boolean;
   created_at: string;
   type?: string;
   metadata?: any;
+  user_id?: string;
+  action_url?: string;
 }
 
 export function NotificationsOverlay() {
@@ -43,8 +45,8 @@ export function NotificationsOverlay() {
       const { data, error } = await supabase
         .from('admin_notifications')
         .select('*')
-        .eq('recipient_id', userId)
-        .eq('read', false)
+        .eq('user_id', userId)
+        .eq('is_read', false)
         .order('created_at', { ascending: false });
         
       if (!error && data) {
@@ -67,7 +69,7 @@ export function NotificationsOverlay() {
           event: 'INSERT', 
           schema: 'public', 
           table: 'admin_notifications',
-          filter: `recipient_id=eq.${userId}` 
+          filter: `user_id=eq.${userId}`
         }, 
         (payload) => {
           const newNotification = payload.new as Notification;
@@ -152,7 +154,7 @@ export function NotificationsOverlay() {
     
     await supabase
       .from('admin_notifications')
-      .update({ read: true })
+      .update({ is_read: true })
       .eq('id', id);
       
     setNotifications(prev => prev.filter(n => n.id !== id));

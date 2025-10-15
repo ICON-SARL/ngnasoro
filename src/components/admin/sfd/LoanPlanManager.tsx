@@ -24,12 +24,11 @@ interface LoanPlan {
   description: string | null;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
-  requirements: string[];
   is_active: boolean;
+  sfd_id: string;
+  created_at?: string;
 }
 
 const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
@@ -43,12 +42,10 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
     description: '',
     min_amount: 10000,
     max_amount: 500000,
-    min_duration: 1,
-    max_duration: 12,
+    duration_months: 12,
     interest_rate: 10,
-    fees: 2,
-    requirements: [],
-    is_active: true
+    is_active: true,
+    sfd_id: sfdId
   });
   
   const [newRequirement, setNewRequirement] = useState('');
@@ -86,12 +83,10 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
       description: '',
       min_amount: 10000,
       max_amount: 500000,
-      min_duration: 1,
-      max_duration: 12,
+      duration_months: 12,
       interest_rate: 10,
-      fees: 2,
-      requirements: [],
-      is_active: true
+      is_active: true,
+      sfd_id: sfdId
     });
     setNewRequirement('');
     setEditingPlanId(null);
@@ -184,12 +179,10 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
       description: plan.description || '',
       min_amount: plan.min_amount,
       max_amount: plan.max_amount,
-      min_duration: plan.min_duration,
-      max_duration: plan.max_duration,
+      duration_months: plan.duration_months,
       interest_rate: plan.interest_rate,
-      fees: plan.fees,
-      requirements: plan.requirements || [],
-      is_active: plan.is_active
+      is_active: plan.is_active,
+      sfd_id: plan.sfd_id
     });
     setEditingPlanId(plan.id);
   };
@@ -316,27 +309,13 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
                       </div>
                       <div>
                         <span className="text-muted-foreground">Durée:</span>{' '}
-                        {plan.min_duration} - {plan.max_duration} mois
+                        {plan.duration_months} mois
                       </div>
                       <div>
                         <span className="text-muted-foreground">Taux d'intérêt:</span>{' '}
                         {plan.interest_rate}%
                       </div>
-                      <div>
-                        <span className="text-muted-foreground">Frais:</span> {plan.fees}%
-                      </div>
                     </div>
-                    
-                    {plan.requirements && plan.requirements.length > 0 && (
-                      <div className="mt-3">
-                        <h4 className="text-xs font-medium text-muted-foreground mb-1">Conditions requises:</h4>
-                        <ul className="text-xs pl-4 space-y-1">
-                          {plan.requirements.map((req, idx) => (
-                            <li key={idx} className="list-disc">{req}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
                     
                     <div className="mt-4 flex justify-end">
                       <Button 
