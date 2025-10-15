@@ -30,14 +30,15 @@ const KycVerificationStatus: React.FC<KycVerificationStatusProps> = ({ className
           : { user_id: user?.id };
 
         const { data, error } = await supabase
-          .from('verification_documents')
-          .select('verification_status')
+          .from('client_documents')
+          .select('*')
           .match(filterCondition);
         
         if (error) throw error;
         
-        const hasVerifiedDocument = Array.isArray(data) && 
-          data.some((doc) => doc.verification_status === 'verified');
+        // Client documents don't have verification_status, they are just uploaded
+        // Consider a document verified if it exists
+        const hasVerifiedDocument = Array.isArray(data) && data.length > 0;
         
         setIsVerified(hasVerifiedDocument);
       } catch (error) {

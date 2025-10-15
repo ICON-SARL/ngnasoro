@@ -63,10 +63,12 @@ const SfdListPopup: React.FC<SfdListPopupProps> = ({ isOpen, onClose }) => {
         const sortedSfds = sortPrioritySfds(availableSfds);
         setSfds(sortedSfds);
         
-        // Fetch user's adhesion requests using RPC
+        // Fetch user's adhesion requests from client_adhesion_requests table
         if (user?.id) {
           const { data: requestsData, error: requestsError } = await supabase
-            .rpc('get_adhesion_request_by_user', { user_id_param: user.id });
+            .from('client_adhesion_requests')
+            .select('*')
+            .eq('user_id', user.id);
             
           if (requestsError) {
             console.error('Error fetching adhesion requests:', requestsError);

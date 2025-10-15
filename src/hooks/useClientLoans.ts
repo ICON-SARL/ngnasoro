@@ -31,7 +31,7 @@ interface LoanNotification {
   title: string;
   message: string;
   created_at: string;
-  read: boolean;
+  is_read: boolean;
   type: string;
   action_link?: string;
 }
@@ -182,7 +182,7 @@ export function useClientLoans() {
         title: `Prêt ${loan.status === 'approved' ? 'approuvé' : loan.status === 'rejected' ? 'rejeté' : 'mis à jour'}`,
         message: `Votre demande de prêt de ${loan.amount?.toLocaleString('fr-FR') || 0} FCFA a été ${loan.status === 'approved' ? 'approuvée' : loan.status === 'rejected' ? 'rejetée' : 'mise à jour'}.`,
         created_at: loan.created_at,
-        read: false,
+        is_read: false,
         type: `loan_${loan.status}`,
         action_link: `/mobile-flow/loan-details/${loan.id}`
       })) as LoanNotification[];

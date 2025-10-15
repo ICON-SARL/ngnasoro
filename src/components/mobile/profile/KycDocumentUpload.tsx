@@ -47,15 +47,25 @@ const KycDocumentUpload: React.FC<KycDocumentUploadProps> = ({ onUploadComplete 
         .from('kyc_documents')
         .getPublicUrl(fileName);
         
-      // 3. Record the document in the database
+      // 3. Record the document in the database (client_documents table)
+      // First get the client_id for this user
+      const { data: clientData, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('id')
+        .eq('user_id', user.id)
+        .maybeSingle();
+      
+      if (clientError) {
+        console.error('Error finding client:', clientError);
+      }
+      
       const { error } = await supabase
-        .from('verification_documents')
+        .from('client_documents')
         .insert({
-          user_id: user.id,
-          document_type: documentType,
+          client_id: clientData?.id || user.id,
+          document_type: documentType as 'identity' | 'proof_of_address' | 'bank_statement' | 'other',
           document_url: publicUrl,
-          verification_status: 'pending',
-          adhesion_request_id: user.id // Use user.id as adhesion_request_id as a fallback
+          uploaded_by: user.id
         });
         
       if (error) throw error;

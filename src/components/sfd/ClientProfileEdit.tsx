@@ -55,27 +55,16 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
 
         if (error) throw error;
 
-        // Handle kyc_level
-        let kycLevel: KycLevelType = data.kyc_level;
-        if (typeof data.kyc_level === 'number') {
-          // Keep as number
-          kycLevel = data.kyc_level;
-        } else if (typeof data.kyc_level === 'string') {
-          // Keep as string
-          kycLevel = data.kyc_level as 'none' | 'basic' | 'full';
-        } else {
-          kycLevel = 0; // Default to 0 if undefined
-        }
-
+        // sfd_clients table doesn't have kyc_level, id_type, id_number, notes
         setClient({
           full_name: data.full_name || '',
           email: data.email || '',
           phone: data.phone || '',
           address: data.address || '',
-          id_type: data.id_type || '',
-          id_number: data.id_number || '',
-          kyc_level: kycLevel,
-          notes: data.notes || ''
+          id_type: '', // Not in schema
+          id_number: '', // Not in schema
+          kyc_level: 0, // Not in schema
+          notes: '' // Not in schema
         });
       } catch (error: any) {
         console.error('Error fetching client:', error);
@@ -140,11 +129,8 @@ const ClientProfileEdit: React.FC<ClientProfileEditProps> = ({ clientId, onSaved
           full_name: client.full_name,
           email: client.email || null,
           phone: client.phone || null,
-          address: client.address || null,
-          id_type: client.id_type || null,
-          id_number: client.id_number || null,
-          kyc_level: kycLevelAsNumber, // Use the numeric version
-          notes: client.notes || null
+          address: client.address || null
+          // Note: id_type, id_number, kyc_level, notes are not in the sfd_clients schema
         })
         .eq('id', clientId);
 

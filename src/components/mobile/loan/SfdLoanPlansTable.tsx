@@ -157,7 +157,7 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
               </div>
               <div>
                 <p className="text-gray-500 text-xs">Durée:</p>
-                <p>{plan.min_duration} - {plan.max_duration} mois</p>
+                <p>{plan.duration_months} mois</p>
               </div>
             </div>
             

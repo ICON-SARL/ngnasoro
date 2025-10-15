@@ -11,12 +11,11 @@ interface LoanPlan {
   description: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
-  requirements: string[];
+  is_active: boolean;
   sfd_id: string;
+  created_at?: string;
 }
 
 interface LoanPlansSelectorProps {
@@ -116,7 +115,7 @@ const LoanPlansSelector: React.FC<LoanPlansSelectorProps> = ({
             </div>
             <div>
               <p className="text-muted-foreground">Durée:</p>
-              <p>{plan.min_duration} - {plan.max_duration} mois</p>
+              <p>{plan.duration_months} mois</p>
             </div>
           </div>
         </Card>

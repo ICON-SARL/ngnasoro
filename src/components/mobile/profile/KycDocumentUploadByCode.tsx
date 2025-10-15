@@ -81,19 +81,22 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
 
       // Vérifier si le client a une demande d'adhésion
       const { data: adhesionData, error: adhesionError } = await supabase
-        .rpc('get_adhesion_request_by_user', { user_id_param: profileData.id })
-        .single();
+        .from('client_adhesion_requests')
+        .select('*')
+        .eq('user_id', profileData.id)
+        .maybeSingle();
 
       if (!adhesionError && adhesionData) {
         // Une demande d'adhésion existe
         setClientData({
           ...profileData,
-          ...adhesionData
+          ...adhesionData,
+          email: profileData.email || adhesionData.email
         });
         setClientFound(true);
         toast({
           title: "Client trouvé",
-          description: `Demande d'adhésion trouvée pour ${profileData.full_name || profileData.email}`
+          description: `Demande d'adhésion trouvée pour ${profileData.full_name || adhesionData.full_name}`
         });
         return;
       }
@@ -117,11 +120,14 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
       }
 
       // Si on arrive ici, l'utilisateur existe mais n'a pas de demande d'adhésion ou n'est pas client SFD
-      setClientData(profileData);
+      setClientData({
+        ...profileData,
+        email: profileData.full_name // profiles table doesn't have email, use full_name as identifier
+      });
       setClientFound(true);
       toast({
         title: "Utilisateur trouvé",
-        description: `Utilisateur ${profileData.full_name || profileData.email} trouvé`
+        description: `Utilisateur ${profileData.full_name} trouvé`
       });
 
     } catch (error) {
@@ -175,16 +181,14 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
 
       if (!urlData) throw new Error("Could not get URL for uploaded file");
 
-      // Add document to verification_documents table
+      // Add document to client_documents table
       const { error: docError } = await supabase
-        .from('verification_documents')
+        .from('client_documents')
         .insert({
-          user_id: clientData.user_id || clientData.id,
-          adhesion_request_id: clientData.adhesion_request_id,
-          document_type: documentType,
+          client_id: clientData.id,
+          document_type: documentType as 'identity' | 'proof_of_address' | 'bank_statement' | 'other',
           document_url: urlData.publicUrl,
-          verification_status: 'pending',
-          client_code: formatClientCode(clientCode) // Save the client code with the document
+          uploaded_by: clientData.user_id || clientData.id
         });
 
       if (docError) throw docError;
@@ -242,8 +246,8 @@ const KycDocumentUploadByCode: React.FC<KycDocumentUploadByCodeProps> = ({ onUpl
         
         {clientFound === true && clientData && (
           <div className="p-3 border rounded-md bg-green-50">
-            <p className="text-sm font-medium">Client trouvé: {clientData.full_name || clientData.email || 'Utilisateur'}</p>
-            {clientData.email && <p className="text-xs text-gray-600">Email: {clientData.email}</p>}
+            <p className="text-sm font-medium">Client trouvé: {clientData.full_name || 'Utilisateur'}</p>
+            {clientData.phone && <p className="text-xs text-gray-600">Téléphone: {clientData.phone}</p>}
           </div>
         )}
       </div>

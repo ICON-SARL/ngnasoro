@@ -48,7 +48,7 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
     sfd_id: sfdId
   });
   
-  const [newRequirement, setNewRequirement] = useState('');
+  
   
   useEffect(() => {
     fetchLoanPlans();
@@ -88,7 +88,6 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
       is_active: true,
       sfd_id: sfdId
     });
-    setNewRequirement('');
     setEditingPlanId(null);
   };
   
@@ -104,23 +103,6 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
   
   const handleSwitchChange = (checked: boolean) => {
     setFormData(prev => ({ ...prev, is_active: checked }));
-  };
-  
-  const handleAddRequirement = () => {
-    if (newRequirement.trim()) {
-      setFormData(prev => ({
-        ...prev,
-        requirements: [...prev.requirements, newRequirement.trim()]
-      }));
-      setNewRequirement('');
-    }
-  };
-  
-  const handleRemoveRequirement = (index: number) => {
-    setFormData(prev => ({
-      ...prev, 
-      requirements: prev.requirements.filter((_, i) => i !== index)
-    }));
   };
   
   const handleSubmit = async (e: React.FormEvent) => {
@@ -419,28 +401,14 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="min_duration">Durée minimum (mois)</Label>
+                  <Label htmlFor="duration_months">Durée (mois)</Label>
                   <Input
-                    id="min_duration"
-                    name="min_duration"
+                    id="duration_months"
+                    name="duration_months"
                     type="number"
                     min="1"
                     step="1"
-                    value={formData.min_duration}
-                    onChange={handleNumberChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="max_duration">Durée maximum (mois)</Label>
-                  <Input
-                    id="max_duration"
-                    name="max_duration"
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={formData.max_duration}
+                    value={formData.duration_months}
                     onChange={handleNumberChange}
                     required
                   />
@@ -458,52 +426,6 @@ const LoanPlanManager = ({ sfdId }: { sfdId: string }) => {
                     onChange={handleNumberChange}
                     required
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <Label htmlFor="fees">Frais (%)</Label>
-                  <Input
-                    id="fees"
-                    name="fees"
-                    type="number"
-                    min="0"
-                    step="0.1"
-                    value={formData.fees}
-                    onChange={handleNumberChange}
-                    required
-                  />
-                </div>
-                
-                <div className="space-y-2 md:col-span-2">
-                  <Label>Conditions requises</Label>
-                  <div className="flex space-x-2">
-                    <Input
-                      placeholder="Ajouter une condition"
-                      value={newRequirement}
-                      onChange={(e) => setNewRequirement(e.target.value)}
-                    />
-                    <Button type="button" onClick={handleAddRequirement} variant="outline">
-                      Ajouter
-                    </Button>
-                  </div>
-                  
-                  {formData.requirements.length > 0 && (
-                    <div className="mt-3 space-y-2">
-                      {formData.requirements.map((req, index) => (
-                        <div key={index} className="flex items-center justify-between bg-muted p-2 rounded-md">
-                          <span className="text-sm">{req}</span>
-                          <Button
-                            type="button"
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleRemoveRequirement(index)}
-                          >
-                            <X className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
               </div>
               

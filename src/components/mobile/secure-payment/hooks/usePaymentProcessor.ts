@@ -93,14 +93,22 @@ export const usePaymentProcessor = ({
         
         // Add transaction record if payment successful
         if (data?.success && user) {
+          // Get the user's SFD association
+          const { data: userSfd } = await supabase
+            .from('user_sfds')
+            .select('sfd_id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+          
           const { error: txError } = await supabase
             .from('transactions')
             .insert({
               user_id: user.id,
-              name: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
+              sfd_id: userSfd?.sfd_id || '00000000-0000-0000-0000-000000000000',
               type: isWithdrawal ? 'withdrawal' : 'repayment',
               amount: isWithdrawal ? -amount : -amount,
-              date: new Date().toISOString()
+              description: isWithdrawal ? 'Retrait de fonds' : 'Remboursement de prêt',
+              payment_method: 'mobile_money' as const
             });
           
           if (txError) console.error('Transaction record error:', txError);
