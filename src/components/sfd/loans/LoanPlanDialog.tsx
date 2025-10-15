@@ -113,11 +113,8 @@ const LoanPlanDialog = ({
         description,
         min_amount: parseFloat(minAmount),
         max_amount: parseFloat(maxAmount),
-        min_duration: parseInt(minDuration),
-        max_duration: parseInt(maxDuration),
+        duration_months: parseInt(maxDuration),
         interest_rate: parseFloat(interestRate),
-        fees: parseFloat(fees),
-        requirements,
         sfd_id: activeSfdId
       };
       

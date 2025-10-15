@@ -2,7 +2,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import { MobileMoneyWebhook } from '@/types/sfdClients';
+
+interface MobileMoneyWebhook {
+  id: string;
+  operator: string;
+  event_type: string;
+  payload: any;
+  processed: boolean;
+  created_at: string;
+}
 
 export function useMobileMoneyWebhooks() {
   const { toast } = useToast();
@@ -31,37 +39,17 @@ export function useMobileMoneyWebhooks() {
 
   // Marquer un webhook comme traité
   const markWebhookAsProcessed = useMutation({
-    mutationFn: async ({ webhookId, accountId }: { webhookId: string; accountId: string }) => {
+    mutationFn: async ({ webhookId }: { webhookId: string }) => {
       const { data, error } = await supabase
         .from('mobile_money_webhooks')
         .update({
-          status: 'processed',
-          processed_at: new Date().toISOString(),
-          account_id: accountId
+          processed: true
         })
         .eq('id', webhookId)
         .select()
         .single();
 
       if (error) throw error;
-
-      // Créer une transaction pour mettre à jour le solde du compte
-      const webhook = data as MobileMoneyWebhook;
-      const { error: transactionError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: webhook.user_id,
-          amount: webhook.amount,
-          type: 'deposit',
-          name: `Dépôt ${webhook.provider}`,
-          description: `Transaction ${webhook.reference_id}`,
-          payment_method: webhook.provider,
-          reference_id: webhook.reference_id,
-          status: 'success'
-        });
-
-      if (transactionError) throw transactionError;
-
       return data as MobileMoneyWebhook;
     },
     onSuccess: () => {
@@ -80,15 +68,14 @@ export function useMobileMoneyWebhooks() {
     }
   });
 
-  // Marquer un webhook comme échoué
+  // Marquer un webhook comme échoué  
   const markWebhookAsFailed = useMutation({
     mutationFn: async ({ webhookId, reason }: { webhookId: string; reason: string }) => {
       const { data, error } = await supabase
         .from('mobile_money_webhooks')
         .update({
-          status: 'failed',
-          processed_at: new Date().toISOString(),
-          raw_payload: { failure_reason: reason }
+          processed: false,
+          payload: { failure_reason: reason }
         })
         .eq('id', webhookId)
         .select()

@@ -208,20 +208,23 @@ const LoanApplicationPage: React.FC = () => {
         clientId = clientData.id;
       }
       
-      const { data: loanData, error: loanError } = await supabase
-        .from('sfd_loans')
-        .insert({
-          client_id: clientId,
-          sfd_id: data.sfdId,
-          amount: data.amount,
-          duration_months: data.duration,
-          interest_rate: selectedPlan?.interest_rate || 5,
-          purpose: data.purpose,
-          monthly_payment: Math.round(monthlyPayment),
-          status: 'pending'
-        })
-        .select()
-        .single();
+      // Use edge function to create loan
+      const { data: loanData, error: loanError } = await supabase.functions
+        .invoke('loan-manager', {
+          body: {
+            action: 'create_loan',
+            data: {
+              client_id: clientId,
+              sfd_id: data.sfdId,
+              amount: data.amount,
+              duration_months: data.duration,
+              interest_rate: selectedPlan?.interest_rate || 5,
+              purpose: data.purpose,
+              monthly_payment: Math.round(monthlyPayment),
+              status: 'pending'
+            }
+          }
+        });
         
       if (loanError) throw loanError;
       

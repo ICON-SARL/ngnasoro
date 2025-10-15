@@ -14,6 +14,23 @@ interface LoanPlansDisplayProps {
   sfdId?: string;
 }
 
+interface DbLoanPlan {
+  id: string;
+  name: string;
+  description: string;
+  min_amount: number;
+  max_amount: number;
+  duration_months: number;
+  interest_rate: number;
+  is_active: boolean;
+  sfd_id: string;
+  created_at: string;
+  sfds?: {
+    name: string;
+    logo_url?: string;
+  };
+}
+
 export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: LoanPlansDisplayProps) {
   const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -61,8 +78,21 @@ export default function LoanPlansDisplay({ subsidizedOnly = false, sfdId }: Loan
         
         console.log('LoanPlansDisplay - Fetched raw plans:', data?.length);
         
-        // All active plans are considered published
-        setLoanPlans(data as LoanPlan[] || []);
+        // Map database plans to LoanPlan type
+        const mappedPlans: LoanPlan[] = (data as DbLoanPlan[] || []).map(plan => ({
+          id: plan.id,
+          name: plan.name,
+          description: plan.description,
+          min_amount: plan.min_amount,
+          max_amount: plan.max_amount,
+          duration_months: plan.duration_months,
+          interest_rate: plan.interest_rate,
+          is_active: plan.is_active,
+          sfd_id: plan.sfd_id,
+          created_at: plan.created_at,
+          sfds: plan.sfds
+        }));
+        setLoanPlans(mappedPlans);
       } catch (error) {
         console.error('Error in fetchLoanPlans:', error);
       } finally {

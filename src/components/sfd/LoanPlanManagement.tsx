@@ -17,12 +17,9 @@ interface LoanPlan {
   description: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
   is_active: boolean;
-  requirements: string[];
   sfd_id: string;
 }
 
@@ -137,7 +134,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                       {formatCurrency(plan.min_amount)} - {formatCurrency(plan.max_amount)}
                     </TableCell>
                     <TableCell>
-                      {plan.min_duration} - {plan.max_duration} mois
+                      {plan.duration_months} mois
                     </TableCell>
                     <TableCell>{plan.interest_rate}%</TableCell>
                     <TableCell>

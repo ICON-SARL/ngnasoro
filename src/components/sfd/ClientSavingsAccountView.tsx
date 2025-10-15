@@ -163,7 +163,7 @@ const ClientSavingsAccountView: React.FC<ClientSavingsAccountViewProps> = ({ cli
                 {account.balance.toLocaleString('fr-FR')} {account.currency || 'FCFA'}
               </div>
               <div className="mt-1 text-xs text-gray-500">
-                Dernière mise à jour: {format(new Date(account?.last_updated || Date.now()), 'PPP', { locale: fr })}
+                Dernière mise à jour: {format(new Date(account?.updated_at || Date.now()), 'PPP', { locale: fr })}
               </div>
             </div>
 

@@ -274,11 +274,8 @@ export function LoanAgreementManagement({ onRefresh }: LoanAgreementManagementPr
       const { error } = await supabase
         .from('sfd_loans')
         .update({
-          status: 'disbursed',
-          disbursed_at: new Date().toISOString(),
-          disbursement_reference: disbursementReference,
-          disbursement_status: 'completed',
-          disbursed: true
+          status: 'approved',
+          disbursed_at: new Date().toISOString()
         })
         .eq('id', typedLoan.id);
 

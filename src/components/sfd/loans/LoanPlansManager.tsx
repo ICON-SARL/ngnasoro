@@ -29,11 +29,8 @@ interface LoanPlan {
   description: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
-  requirements: string[];
   is_active: boolean;
   sfd_id: string;
 }
@@ -51,11 +48,8 @@ export default function LoanPlansManager() {
     description: '',
     min_amount: 10000,
     max_amount: 1000000,
-    min_duration: 1,
-    max_duration: 36,
+    duration_months: 36,
     interest_rate: 5.0,
-    fees: 1.0,
-    requirements: '',
     is_active: true
   });
   
@@ -138,11 +132,8 @@ export default function LoanPlansManager() {
       description: '',
       min_amount: 10000,
       max_amount: 1000000,
-      min_duration: 1,
-      max_duration: 36,
+      duration_months: 36,
       interest_rate: 5.0,
-      fees: 1.0,
-      requirements: '',
       is_active: true
     });
     setEditingPlan(null);
@@ -155,11 +146,8 @@ export default function LoanPlansManager() {
       description: plan.description || '',
       min_amount: plan.min_amount,
       max_amount: plan.max_amount,
-      min_duration: plan.min_duration,
-      max_duration: plan.max_duration,
+      duration_months: plan.duration_months,
       interest_rate: plan.interest_rate,
-      fees: plan.fees,
-      requirements: plan.requirements ? plan.requirements.join('\n') : '',
       is_active: plan.is_active
     });
     setOpenNewPlanDialog(true);
@@ -188,21 +176,13 @@ export default function LoanPlansManager() {
       return;
     }
     
-    const requirementsArray = formData.requirements
-      .split('\n')
-      .map(line => line.trim())
-      .filter(line => line !== '');
-    
     const planData = {
       name: formData.name,
       description: formData.description,
       min_amount: formData.min_amount,
       max_amount: formData.max_amount,
-      min_duration: formData.min_duration,
-      max_duration: formData.max_duration,
+      duration_months: formData.duration_months,
       interest_rate: formData.interest_rate,
-      fees: formData.fees,
-      requirements: requirementsArray,
       is_active: formData.is_active,
       sfd_id: activeSfdId
     };
@@ -422,27 +402,12 @@ export default function LoanPlansManager() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Durée:</span>
-                  <span>{plan.min_duration} - {plan.max_duration} mois</span>
+                  <span>{plan.duration_months} mois</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Taux d'intérêt:</span>
                   <span>{plan.interest_rate}%</span>
                 </div>
-                <div className="flex justify-between">
-                  <span className="text-muted-foreground">Frais:</span>
-                  <span>{plan.fees}%</span>
-                </div>
-                
-                {plan.requirements && plan.requirements.length > 0 && (
-                  <div className="mt-4">
-                    <span className="text-xs font-medium text-muted-foreground">Conditions requises:</span>
-                    <ul className="list-disc list-inside text-xs mt-1">
-                      {plan.requirements.map((req, idx) => (
-                        <li key={idx}>{req}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </div>
             </CardContent>
           </Card>
@@ -534,25 +499,13 @@ export default function LoanPlansManager() {
               </div>
               
               <div>
-                <Label htmlFor="min_duration">Durée minimum (mois)</Label>
+                <Label htmlFor="duration_months">Durée (mois)</Label>
                 <Input
-                  id="min_duration"
-                  name="min_duration"
-                  type="number"
-                  placeholder="Ex: 1"
-                  value={formData.min_duration}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="max_duration">Durée maximum (mois)</Label>
-                <Input
-                  id="max_duration"
-                  name="max_duration"
+                  id="duration_months"
+                  name="duration_months"
                   type="number"
                   placeholder="Ex: 36"
-                  value={formData.max_duration}
+                  value={formData.duration_months}
                   onChange={handleInputChange}
                 />
               </div>
@@ -567,31 +520,6 @@ export default function LoanPlansManager() {
                   placeholder="Ex: 5.0"
                   value={formData.interest_rate}
                   onChange={handleInputChange}
-                />
-              </div>
-              
-              <div>
-                <Label htmlFor="fees">Frais de dossier (%)</Label>
-                <Input
-                  id="fees"
-                  name="fees"
-                  type="number"
-                  step="0.1"
-                  placeholder="Ex: 1.0"
-                  value={formData.fees}
-                  onChange={handleInputChange}
-                />
-              </div>
-              
-              <div className="col-span-2">
-                <Label htmlFor="requirements">Conditions requises (une par ligne)</Label>
-                <Textarea
-                  id="requirements"
-                  name="requirements"
-                  placeholder="Listez les conditions requises (une par ligne)"
-                  value={formData.requirements}
-                  onChange={handleInputChange}
-                  rows={4}
                 />
               </div>
               

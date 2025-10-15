@@ -34,11 +34,8 @@ interface LoanPlan {
   description?: string;
   min_amount: number;
   max_amount: number;
-  min_duration: number;
-  max_duration: number;
+  duration_months: number;
   interest_rate: number;
-  fees: number;
-  requirements?: string[];
 }
 
 interface LoanFormProps {
@@ -79,7 +76,7 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
         ...prev,
         amount: Math.max(prev.amount, selectedPlan.min_amount),
         interest_rate: selectedPlan.interest_rate,
-        duration_months: Math.max(prev.duration_months, selectedPlan.min_duration)
+        duration_months: selectedPlan.duration_months
       }));
     }
   }, [selectedPlan]);
@@ -136,10 +133,8 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
             description: 'Prêt général avec taux fixe',
             min_amount: 50000,
             max_amount: 500000,
-            min_duration: 3,
-            max_duration: 24,
-            interest_rate: 5.5,
-            fees: 1.0
+            duration_months: 24,
+            interest_rate: 5.5
           },
           {
             id: 'plan2',
@@ -147,10 +142,8 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
             description: 'Prêt destiné aux activités agricoles',
             min_amount: 100000,
             max_amount: 1000000,
-            min_duration: 6,
-            max_duration: 36,
-            interest_rate: 4.5,
-            fees: 0.5
+            duration_months: 36,
+            interest_rate: 4.5
           },
           {
             id: 'plan3',
@@ -158,10 +151,8 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
             description: 'Pour les petites entreprises',
             min_amount: 75000,
             max_amount: 750000,
-            min_duration: 6,
-            max_duration: 30,
-            interest_rate: 6.0,
-            fees: 1.5
+            duration_months: 30,
+            interest_rate: 6.0
           }
         ]);
       }
@@ -325,7 +316,7 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
                   <p>{selectedPlan.description}</p>
                   <p className="mt-1">
                     <span className="font-medium">Limites:</span> {formatCurrency(selectedPlan.min_amount)} - {formatCurrency(selectedPlan.max_amount)} | 
-                    {selectedPlan.min_duration} - {selectedPlan.max_duration} mois
+                    {selectedPlan.duration_months} mois
                   </p>
                 </div>
               )}
@@ -373,24 +364,14 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
                 value={formData.duration_months}
                 onChange={handleInputChange}
                 required
-                min={selectedPlan?.min_duration || 1}
-                max={selectedPlan?.max_duration || 60}
+                value={selectedPlan?.duration_months || formData.duration_months}
+                disabled
               />
               
               {selectedPlan && (
-                <>
-                  <Slider
-                    value={[formData.duration_months]}
-                    min={selectedPlan.min_duration}
-                    max={selectedPlan.max_duration}
-                    step={1}
-                    onValueChange={(value) => handleSliderChange('duration_months', value)}
-                  />
-                  <div className="flex justify-between text-xs text-muted-foreground">
-                    <span>{selectedPlan.min_duration} mois</span>
-                    <span>{selectedPlan.max_duration} mois</span>
-                  </div>
-                </>
+                <div className="text-xs text-muted-foreground">
+                  Durée fixe: {selectedPlan.duration_months} mois
+                </div>
               )}
             </div>
             
@@ -497,12 +478,6 @@ export const NewLoanForm: React.FC<LoanFormProps> = ({ onCancel, onSuccess }) =>
                   <span className="text-sm">Total des intérêts</span>
                   <span className="font-medium">{formatCurrency(calculateTotalInterest())}</span>
                 </div>
-                {selectedPlan && selectedPlan.fees > 0 && (
-                  <div className="flex justify-between">
-                    <span className="text-sm">Frais ({selectedPlan.fees}%)</span>
-                    <span className="font-medium">{formatCurrency(formData.amount * selectedPlan.fees / 100)}</span>
-                  </div>
-                )}
                 {formData.subsidy_requested && formData.subsidy_rate > 0 && (
                   <div className="flex justify-between">
                     <span className="text-sm">Subvention ({formData.subsidy_rate}%)</span>

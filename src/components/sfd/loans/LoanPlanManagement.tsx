@@ -125,7 +125,7 @@ export function LoanPlanManagement({ onNewPlan, onEditPlan }: LoanPlanManagement
                       {formatCurrency(plan.min_amount)} - {formatCurrency(plan.max_amount)}
                     </TableCell>
                     <TableCell>
-                      {plan.min_duration} - {plan.max_duration} mois
+                      {plan.duration_months} mois
                     </TableCell>
                     <TableCell>{plan.interest_rate}%</TableCell>
                     <TableCell>

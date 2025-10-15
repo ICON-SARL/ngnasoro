@@ -4,17 +4,16 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-// Define the type without importing it to prevent circular dependency
+// Define the type to match database schema
 interface MobileMoneySettings {
   id: string;
-  provider: string;
+  operator: string;
   api_key?: string;
-  api_url?: string;
-  webhook_secret: string;
+  api_secret?: string;
+  webhook_url?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;
-  user_id?: string;
 }
 
 export function useMobileMoneySettings() {
@@ -54,10 +53,10 @@ export function useMobileMoneySettings() {
         const { data, error } = await supabase
           .from('mobile_money_settings')
           .insert({
-            provider: settings.provider,
+            operator: settings.operator,
             api_key: settings.api_key,
-            api_url: settings.api_url,
-            webhook_secret: settings.webhook_secret,
+            api_secret: settings.api_secret,
+            webhook_url: settings.webhook_url,
             is_active: settings.is_active
           })
           .select()
@@ -100,10 +99,10 @@ export function useMobileMoneySettings() {
         const { data, error } = await supabase
           .from('mobile_money_settings')
           .update({
-            provider: settings.provider,
+            operator: settings.operator,
             api_key: settings.api_key,
-            api_url: settings.api_url,
-            webhook_secret: settings.webhook_secret,
+            api_secret: settings.api_secret,
+            webhook_url: settings.webhook_url,
             is_active: settings.is_active
           })
           .eq('id', id)
