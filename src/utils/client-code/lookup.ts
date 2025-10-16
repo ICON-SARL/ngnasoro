@@ -26,28 +26,9 @@ export const lookupUserByClientCode = async (clientCode: string, sfdId?: string)
       return clientData;
     }
     
-    // If not found as a client, check profiles table
-    const { data: profileData, error: profileError } = await supabase
-      .from('profiles')
-      .select('id, full_name, email, phone, client_code')
-      .eq('client_code', clientCode)
-      .maybeSingle();
-    
-    if (profileError) {
-      console.error('Error looking up profile by client code:', profileError);
-      return null;
-    }
-    
-    if (profileData) {
-      return {
-        user_id: profileData.id,
-        full_name: profileData.full_name,
-        email: profileData.email,
-        phone: profileData.phone,
-        client_code: profileData.client_code,
-        is_new_client: true // Indicates this profile is not yet a client of the SFD
-      };
-    }
+    // Profiles table doesn't have email or client_code columns
+    // Return null if not found in sfd_clients
+    return null;
     
     return null;
   } catch (error) {
@@ -61,23 +42,10 @@ export const lookupUserByClientCode = async (clientCode: string, sfdId?: string)
  */
 export const getSfdClientByCode = async (clientCode: string, sfdId?: string): Promise<{ data: ClientLookupResult | null, error: any }> => {
   try {
-    const { data, error } = await supabase.rpc('lookup_client_with_sfd', {
-      p_client_code: clientCode,
-      p_sfd_id: sfdId
-    });
-    
-    if (error) {
-      console.error('Error getting SFD client by code:', error);
-      return { data: null, error };
-    }
-    
-    if (data) {
-      return { 
-        data: data as ClientLookupResult,
-        error: null
-      };
-    }
-    
+    // RPC function doesn't exist, use direct query instead
+    // Note: sfd_clients table doesn't have client_code column
+    // This function needs to be refactored or removed
+    console.warn('getSfdClientByCode: client_code column does not exist in sfd_clients table');
     return { data: null, error: null };
   } catch (error) {
     console.error('Error in getSfdClientByCode:', error);

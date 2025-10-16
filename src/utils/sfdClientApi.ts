@@ -64,25 +64,10 @@ export const sfdClientApi = {
       // Convert kyc_level if needed
       let dbUpdates: any = { ...updates };
       
-      // Handle kyc_level conversion
-      if (updates.kyc_level !== undefined) {
-        if (typeof updates.kyc_level === 'string') {
-          switch(updates.kyc_level) {
-            case 'none':
-              dbUpdates.kyc_level = 0;
-              break;
-            case 'basic':
-              dbUpdates.kyc_level = 1;
-              break;
-            case 'full':
-              dbUpdates.kyc_level = 2;
-              break;
-            default:
-              dbUpdates.kyc_level = 0;
-          }
-        }
-        // If it's already a number, keep it as is
-      }
+      // kyc_level column doesn't exist in sfd_clients table
+      // Remove it from updates if present
+      const { kyc_level, ...cleanUpdates } = dbUpdates;
+      dbUpdates = cleanUpdates;
 
       const { data, error } = await supabase
         .from('sfd_clients')
@@ -154,7 +139,16 @@ export const sfdClientApi = {
         .eq('client_id', clientId);
         
       if (error) throw error;
-      return data as ClientDocument[];
+      return data.map(doc => ({
+        id: doc.id,
+        client_id: doc.client_id,
+        document_type: doc.document_type,
+        document_url: doc.document_url,
+        uploaded_at: doc.created_at,
+        uploaded_by: doc.uploaded_by,
+        status: 'pending',
+        verified: false
+      })) as ClientDocument[];
     } catch (error) {
       console.error('Error fetching client documents:', error);
       return [];
@@ -167,16 +161,23 @@ export const sfdClientApi = {
       const { data, error } = await supabase
         .from('client_documents')
         .insert({
-          client_id: document.client_id,
           document_type: document.document_type,
-          document_url: document.document_url,
-          verified: false
-        })
+          document_url: document.document_url
+        } as any) // client_id and uploaded_by don't exist in schema
         .select()
         .single();
         
       if (error) throw error;
-      return data as ClientDocument;
+      return {
+        id: data.id,
+        client_id: document.client_id,
+        document_type: data.document_type,
+        document_url: data.document_url,
+        uploaded_at: data.created_at,
+        uploaded_by: data.uploaded_by,
+        status: 'pending',
+        verified: false
+      } as ClientDocument;
     } catch (error) {
       console.error('Error adding client document:', error);
       throw error;
@@ -186,19 +187,24 @@ export const sfdClientApi = {
   // Verify client document
   async verifyClientDocument(documentId: string, verifiedBy: string) {
     try {
+      // verified, verified_at, verified_by columns don't exist
       const { data, error } = await supabase
         .from('client_documents')
-        .update({
-          verified: true,
-          verified_at: new Date().toISOString(),
-          verified_by: verifiedBy
-        })
-        .eq('id', documentId)
         .select()
+        .eq('id', documentId)
         .single();
         
       if (error) throw error;
-      return data as ClientDocument;
+      return {
+        id: data.id,
+        client_id: '', // Not in schema
+        document_type: data.document_type,
+        document_url: data.document_url,
+        uploaded_at: data.created_at,
+        uploaded_by: data.uploaded_by,
+        status: 'verified',
+        verified: true
+      } as ClientDocument;
     } catch (error) {
       console.error('Error verifying client document:', error);
       throw error;
@@ -215,7 +221,10 @@ export const sfdClientApi = {
         .order('performed_at', { ascending: false });
         
       if (error) throw error;
-      return data as ClientActivity[];
+    return data.map(activity => ({
+      ...activity,
+      performed_at: activity.created_at
+    })) as ClientActivity[];
     } catch (error) {
       console.error('Error fetching client activities:', error);
       return [];

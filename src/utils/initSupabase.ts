@@ -39,19 +39,9 @@ export const initializeSupabase = async () => {
         .single();
         
       if (accountError) {
-        console.warn("User account not found, creating...");
-        // Create account if missing
-        const { error: createAccountError } = await supabase
-          .from('accounts')
-          .insert({
-            user_id: session.user.id,
-            balance: 200000, // Default balance
-            currency: 'FCFA'
-          });
-          
-        if (createAccountError) {
-          console.error("Failed to create account:", createAccountError);
-        }
+        console.warn("User account not found");
+        // accounts table requires sfd_id, cannot create account automatically
+        console.warn("Account creation requires sfd_id");
       }
     } else {
       console.log("No user session found");

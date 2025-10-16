@@ -161,18 +161,18 @@ export async function getAuditLogs(options?: AuditLogFilterOptions): Promise<Aud
         }
       }
 
-      // Ensure target_resource is always set
+      // Map to AuditLogEvent structure
       const event = {
         user_id: log.user_id || 'anonymous',
         action: log.action,
         category: log.category as AuditLogCategory,
         severity: log.severity as AuditLogSeverity,
         status: log.status as 'success' | 'failure' | 'pending',
-        target_resource: log.target_resource || 'system',
+        target_resource: 'system', // Default value since column doesn't exist
         error_message: log.error_message || undefined,
         details: parsedDetails,
-        ip_address: log.ip_address || undefined,
-        device_info: log.device_info || undefined,
+        ip_address: undefined, // Column doesn't exist in schema
+        device_info: undefined, // Column doesn't exist in schema
         created_at: log.created_at || undefined,
         id: log.id
       };

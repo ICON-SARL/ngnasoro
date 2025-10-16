@@ -212,16 +212,16 @@ export const merefSfdIntegration = {
       
       const totalLoanAmount = loanAmountData?.reduce((acc, loan) => acc + (loan.amount || 0), 0) ?? 0;
       
-      // Récupérer le montant des subventions
+      // Récupérer le montant des subventions (used_amount column doesn't exist)
       const { data: subsidyData, error: subsidyError } = await supabase
         .from('sfd_subsidies')
-        .select('amount, used_amount')
+        .select('amount')
         .eq('sfd_id', sfdId);
         
       if (subsidyError) throw subsidyError;
       
       const totalSubsidyAmount = subsidyData?.reduce((acc, subsidy) => acc + (subsidy.amount || 0), 0) ?? 0;
-      const usedSubsidyAmount = subsidyData?.reduce((acc, subsidy) => acc + (subsidy.used_amount || 0), 0) ?? 0;
+      const usedSubsidyAmount = 0; // Column doesn't exist
       
       return {
         success: true,

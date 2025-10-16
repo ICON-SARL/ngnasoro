@@ -10,26 +10,9 @@ export const synchronizeClientCode = async (
   sfdId?: string
 ) => {
   try {
-    // Update profile
-    const { error: profileError } = await supabase
-      .from('profiles')
-      .update({ client_code: clientCode })
-      .eq('id', userId);
-
-    if (profileError) throw profileError;
-
-    // If sfdId provided, update the client record too
-    if (sfdId) {
-      const { error: clientError } = await supabase
-        .from('sfd_clients')
-        .update({ client_code: clientCode })
-        .eq('user_id', userId)
-        .eq('sfd_id', sfdId);
-
-      if (clientError) throw clientError;
-    }
-
-    return { success: true };
+    // profiles and sfd_clients tables don't have client_code column
+    console.warn('synchronizeClientCode: client_code column does not exist');
+    return { success: false, error: 'client_code column does not exist' };
   } catch (error: any) {
     console.error('Error synchronizing client code:', error);
     return { success: false, error: error.message };
