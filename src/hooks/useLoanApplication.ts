@@ -139,18 +139,16 @@ export const useLoanApplication = (sfdId?: string) => {
 
         // Upload documents if provided (using client_documents table)
         if (application.documents?.length) {
-          const documentPromises = application.documents.map(async (doc) => {
+          for (const doc of application.documents) {
             const publicUrl = await uploadDocument(doc.file, loan.id, doc.type);
             
-            return supabase.from('client_documents').insert({
+            await supabase.from('client_documents').insert({
               client_id: clientData.id,
-              document_type: doc.type,
+              document_type: doc.type as any,
               document_url: publicUrl,
               uploaded_by: user.id
             });
-          });
-
-          await Promise.all(documentPromises);
+          }
         }
 
         return loan;

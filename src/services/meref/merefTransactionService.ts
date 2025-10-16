@@ -26,18 +26,19 @@ export const merefTransactionService = {
    */
   async createTransaction(params: MerefTransactionParams): Promise<Transaction | null> {
     try {
+      const userId = params.clientId || (await supabase.auth.getUser()).data.user?.id;
+      if (!userId) throw new Error('No user ID available');
+
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           sfd_id: params.sfdId,
-          user_id: params.clientId || (await supabase.auth.getUser()).data.user?.id,
+          user_id: userId,
           amount: params.amount,
           type: params.type,
-          name: `Transaction MEREF - ${params.type}`,
           description: params.description || `Transaction de type ${params.type}`,
-          reference_id: params.reference || `meref-${Date.now()}`,
-          status: 'success',
-          payment_method: 'meref_account'
+          reference: params.reference || `meref-${Date.now()}`,
+          status: 'completed'
         })
         .select()
         .single();

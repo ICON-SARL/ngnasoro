@@ -111,19 +111,26 @@ export const loanApprovalService = {
           description: `Prêt débloqué de ${loan.amount} FCFA`
         });
       
-      // 5. Créer une transaction dans le compte client
-      await supabase
-        .from('transactions')
-        .insert({
-          user_id: adminId, // L'admin qui a effectué l'opération
-          // client_id doesn't exist in transactions table
-          sfd_id: loan.sfd_id,
-          type: 'loan_disbursement',
-          amount: loan.amount,
-          name: 'Déblocage de prêt',
-          description: `Déblocage du prêt #${loanId}`,
-          status: 'success'
-        });
+      // 5. Get client's user_id for transaction
+      const { data: clientData } = await supabase
+        .from('sfd_clients')
+        .select('user_id')
+        .eq('id', loan.client_id)
+        .single();
+
+      if (clientData?.user_id) {
+        await supabase
+          .from('transactions')
+          .insert({
+            user_id: clientData.user_id,
+            sfd_id: loan.sfd_id,
+            type: 'loan_disbursement',
+            amount: loan.amount,
+            description: `Déblocage du prêt #${loanId}`,
+            status: 'completed',
+            reference: loanId
+          });
+      }
         
       return data;
     } catch (error) {

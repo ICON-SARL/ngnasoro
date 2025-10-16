@@ -35,7 +35,7 @@ export const getLoanPayments = async (loanId: string) => {
     .from('loan_payments')
     .select('*')
     .eq('loan_id', loanId)
-    .order('payment_date', { ascending: false });
+    .order('created_at', { ascending: false });
   
   if (error) {
     console.error('Error fetching loan payments:', error);

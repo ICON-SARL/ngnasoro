@@ -1,10 +1,10 @@
 
 export interface Transaction {
   id: number | string;
-  name?: string;  // Display name (use description as fallback)
+  name: string;  // Display name (use description as fallback)
   type: 'deposit' | 'withdrawal' | 'transfer' | 'payment' | 'loan_repayment' | 'loan_disbursement' | 'reversal' | 'other';
   amount: number;
-  date?: string;  // Display date (use created_at as fallback)
+  date: string;  // Display date (use created_at as fallback)
   created_at?: string;
   status?: 'pending' | 'completed' | 'failed' | 'success' | 'flagged' | 'disputed' | 'reversed';
   description?: string;

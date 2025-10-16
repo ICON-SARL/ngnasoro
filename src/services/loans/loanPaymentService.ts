@@ -33,14 +33,13 @@ export const recordLoanPayment = async (
     }
 
     // Record the payment
-    const { data, error } = await supabase
+    const { data, error} = await supabase
       .from('loan_payments')
       .insert({
         loan_id: loanId,
         amount,
-        payment_method: paymentMethod,
-        transaction_id: transactionId,
-        payment_date: new Date().toISOString(),
+        payment_method: paymentMethod as any,
+        reference: transactionId,
         status: 'completed'
       })
       .select()
@@ -52,16 +51,13 @@ export const recordLoanPayment = async (
     }
 
     // Update the loan with the new payment info
-    const now = new Date().toISOString();
     const nextPaymentDate = new Date();
     nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
     
     await supabase
       .from('sfd_loans')
       .update({
-        last_payment_date: now,
-        // Calculate next payment date based on monthly schedule
-        next_payment_date: nextPaymentDate.toISOString()
+        next_payment_date: nextPaymentDate.toISOString().split('T')[0]
       })
       .eq('id', loanId);
 
@@ -80,7 +76,7 @@ export const getLoanPayments = async (loanId: string): Promise<LoanPayment[]> =>
       .from('loan_payments')
       .select('*')
       .eq('loan_id', loanId)
-      .order('payment_date', { ascending: false });
+      .order('created_at', { ascending: false });
 
     if (error) {
       console.error('Error fetching loan payments:', error);

@@ -90,7 +90,7 @@ export async function fetchLoanDetails(loanId: string | undefined): Promise<{
       
       return {
         id: index + 1,
-        date: new Date(payment.payment_date).toLocaleDateString('fr-FR', {
+        date: new Date(payment.created_at).toLocaleDateString('fr-FR', {
           day: '2-digit',
           month: 'long',
           year: 'numeric'

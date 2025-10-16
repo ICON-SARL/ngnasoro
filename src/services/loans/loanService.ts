@@ -266,7 +266,7 @@ export const recordLoanPayment = async (loanId: string, amount: number, paymentM
       .insert({
         loan_id: loanId,
         amount,
-        payment_method: paymentMethod,
+        payment_method: paymentMethod as any,
         status: 'completed'
       })
       .select()
@@ -287,7 +287,7 @@ export const getLoanPayments = async (loanId: string) => {
       .from('loan_payments')
       .select('*')
       .eq('loan_id', loanId)
-      .order('payment_date', { ascending: false });
+      .order('created_at', { ascending: false});
     
     if (error) throw error;
     return data || [];
@@ -329,18 +329,15 @@ export const sendPaymentReminder = async (loanId: string) => {
     
     const paymentNumber = (paymentCount || 0) + 1;
     
-    // Create reminder record
+    // loan_payment_reminders table doesn't exist - use admin_notifications instead
     const { data, error } = await supabase
-      .from('loan_payment_reminders')
+      .from('admin_notifications')
       .insert({
-        loan_id: loanId,
-        sent_at: new Date().toISOString(),
-        is_sent: true,
-        payment_date: nextPaymentDate.toISOString(),
-        reminder_date: reminderDate.toISOString(),
-        payment_number: paymentNumber,
-        amount: loanData.monthly_payment || 0,
-        client_id: loanData.client_id
+        user_id: loanData.client_id,
+        title: 'Rappel de paiement',
+        message: `Paiement #${paymentNumber} de ${loanData.monthly_payment || 0} FCFA dû le ${nextPaymentDate.toLocaleDateString('fr-FR')}`,
+        type: 'payment_reminder',
+        action_url: `/loans/${loanId}`
       })
       .select()
       .single();

@@ -30,11 +30,12 @@ export const createLoan = async (loanData: CreateLoanInput): Promise<Loan | null
         duration_months: loanData.duration_months,
         interest_rate: loanData.interest_rate,
         monthly_payment: (loanData.amount / loanData.duration_months) * (1 + loanData.interest_rate / 100),
+        total_amount: loanData.amount,
+        remaining_amount: loanData.amount,
         purpose: loanData.purpose,
         status: 'pending',
         loan_plan_id: loanData.loan_plan_id,
-        subsidy_amount: loanData.subsidy_amount || 0,
-        subsidy_rate: loanData.subsidy_rate || 0
+        next_payment_date: new Date(new Date().setMonth(new Date().getMonth() + 1)).toISOString().split('T')[0]
       })
       .select()
       .single();
