@@ -31,11 +31,9 @@ export class BaseTransactionManager {
         amount: amount,
         type: type,
         description: description || `Transaction ${type}`,
-        payment_method: paymentMethod || 'sfd_account',
-        reference_id: referenceId || `tx-${Date.now()}`,
-        name: name || `Transaction ${type}`,
-        date: new Date().toISOString(),
-        status: 'success'
+        payment_method: (paymentMethod || 'sfd_account') as any,
+        reference: referenceId || `tx-${Date.now()}`,
+        status: 'completed' as any
       };
 
       // Insert the transaction into the database

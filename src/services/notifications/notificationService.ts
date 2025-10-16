@@ -105,11 +105,8 @@ export const sendNotification = async ({
         title,
         message,
         type,
-        recipient_id,
-        recipient_role,
-        action_link,
-        sender_id: user.id,
-        read: false
+        user_id: recipient_id,
+        action_url: action_link
       })
       .select()
       .single();
@@ -127,7 +124,7 @@ export const markNotificationAsRead = async (notificationId: string) => {
   try {
     const { error } = await supabase
       .from('admin_notifications')
-      .update({ read: true })
+      .update({ is_read: true })
       .eq('id', notificationId);
 
     if (error) throw error;
@@ -143,11 +140,16 @@ export const getUserNotifications = async (userId: string, userRole: string) => 
     const { data, error } = await supabase
       .from('admin_notifications')
       .select('*')
-      .or(`recipient_id.eq.${userId},recipient_role.eq.${userRole}`)
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) throw error;
-    return data as RealtimeNotification[];
+    return data.map(n => ({
+      ...n,
+      read: n.is_read,
+      recipient_id: n.user_id,
+      action_link: n.action_url
+    })) as RealtimeNotification[];
   } catch (error) {
     console.error('Error fetching notifications:', error);
     throw error;

@@ -29,16 +29,14 @@ export const fetchLoanById = async (loanId: string): Promise<Loan | null> => {
     client_id: data.client_id,
     sfd_id: data.sfd_id,
     amount: data.amount,
-    duration_months: data.duration_months,
-    interest_rate: data.interest_rate,
-    monthly_payment: data.monthly_payment,
-    purpose: data.purpose,
-    status: status || 'pending',
-    created_at: data.created_at,
-    reference: data.id.substring(0, 8),
-    updated_at: data.created_at,
-    subsidy_amount: data.subsidy_amount || 0,
-    subsidy_rate: data.subsidy_rate || 0
+      duration_months: data.duration_months,
+      interest_rate: data.interest_rate,
+      monthly_payment: data.monthly_payment,
+      purpose: data.purpose,
+      status: status || 'pending',
+      created_at: data.created_at,
+      reference: data.id.substring(0, 8),
+      updated_at: data.created_at
   };
   
   return loan;
@@ -87,9 +85,7 @@ export const getSfdLoans = async (sfdId?: string): Promise<Loan[]> => {
         ...loan,
         client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
         status: status || 'pending', // Default to pending if status is invalid
-        reference: loan.id.substring(0, 8),
-        subsidy_amount: loan.subsidy_amount || 0,
-        subsidy_rate: loan.subsidy_rate || 0
+        reference: loan.id.substring(0, 8)
       } as Loan;
     });
   } catch (error) {

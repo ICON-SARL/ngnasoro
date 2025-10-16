@@ -42,13 +42,13 @@ export const transferService = {
           .from('transactions')
           .insert({
             user_id: user.id,
+            sfd_id: params.fromAccountId.split('-')[0],
             type: 'transfer',
             amount: params.amount,
-            name: `Transfert vers ${params.recipientName || 'autre compte'}`,
             description: params.description || 'Transfert entre comptes',
-            reference_id: result,
-            payment_method: 'sfd_account',
-            status: 'success'
+            reference: result,
+            payment_method: 'sfd_account' as any,
+            status: 'completed' as any
           })
           .select()
           .single();
@@ -77,13 +77,13 @@ export const transferService = {
           .from('transactions')
           .insert({
             user_id: user.id,
+            sfd_id: params.fromAccountId.split('-')[0],
             type: 'transfer',
             amount: params.amount,
-            name: `Transfert vers ${params.recipientName || params.recipientPhone}`,
             description: params.description || `Transfert Mobile Money: ${params.recipientPhone}`,
-            reference_id: data.transferId || 'mm-transfer',
-            payment_method: 'mobile_money',
-            status: data.success ? 'success' : 'failed'
+            reference: data.transferId || 'mm-transfer',
+            payment_method: 'mobile_money' as any,
+            status: (data.success ? 'completed' : 'failed') as any
           })
           .select()
           .single();
@@ -100,13 +100,13 @@ export const transferService = {
           .from('transactions')
           .insert({
             user_id: user.id,
-            type: 'scheduled_transfer',
+            sfd_id: params.fromAccountId.split('-')[0],
+            type: 'transfer',
             amount: params.amount,
-            name: `Transfert programmé vers ${params.recipientName || params.recipientPhone || 'autre compte'}`,
             description: params.description || `Transfert programmé pour ${params.scheduledDate.toISOString()}`,
-            payment_method: params.transferType === 'mobile_money' ? 'mobile_money' : 'sfd_account',
-            status: 'pending',
-            reference_id: `scheduled-${new Date().getTime()}`
+            payment_method: (params.transferType === 'mobile_money' ? 'mobile_money' : 'sfd_account') as any,
+            status: 'pending' as any,
+            reference: `scheduled-${new Date().getTime()}`
           })
           .select()
           .single();
@@ -150,7 +150,7 @@ export const transferService = {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .select('name, description, reference_id')
+        .select('description, reference')
         .eq('user_id', userId)
         .eq('type', 'transfer')
         .order('created_at', { ascending: false })
@@ -161,15 +161,15 @@ export const transferService = {
       // Extraire les informations de contact uniques
       const uniqueContacts = new Map();
       data.forEach(transaction => {
-        // Extraire le nom du destinataire du champ name
-        const name = transaction.name.replace('Transfert vers ', '');
+        // Extraire le nom du destinataire du champ description
+        const name = transaction.description?.replace('Transfert vers ', '') || 'Contact';
         // Extraire le numéro de téléphone du champ description s'il existe
         const phoneMatch = transaction.description?.match(/\b\d{10,12}\b/);
         const phone = phoneMatch ? phoneMatch[0] : null;
         
-        // Utiliser le référence_id comme clé unique
-        if (!uniqueContacts.has(transaction.reference_id)) {
-          uniqueContacts.set(transaction.reference_id, {
+        // Utiliser le référence comme clé unique
+        if (!uniqueContacts.has(transaction.reference)) {
+          uniqueContacts.set(transaction.reference, {
             name,
             phone,
             avatar_url: `/lovable-uploads/64d80661-a6eb-404d-af95-8d0ffeaa0a34.png`

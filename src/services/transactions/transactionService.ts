@@ -90,13 +90,12 @@ export const transactionService = {
         .insert({
           user_id: options.userId,
           sfd_id: options.sfdId,
-          name: options.name,
           amount: options.amount,
           type: options.type,
-          status: options.status || 'success',
+          status: (options.status || 'completed') as any,
           description: options.description,
-          payment_method: options.paymentMethod,
-          reference_id: options.referenceId,
+          payment_method: options.paymentMethod as any,
+          reference: options.referenceId
         })
         .select()
         .single();

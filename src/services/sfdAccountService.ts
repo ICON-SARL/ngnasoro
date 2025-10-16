@@ -134,10 +134,10 @@ export const sfdAccountService = {
           return data.map(tx => ({
             id: tx.id,
             sfd_id: tx.sfd_id || sfdId,
-            from_account_id: tx.reference_id || '',
+            from_account_id: tx.reference || '',
             to_account_id: tx.user_id || '',
             amount: Math.abs(tx.amount || 0),
-            description: tx.description || tx.name || '',
+            description: tx.description || '',
             performed_by: tx.user_id || null,
             created_at: tx.created_at || new Date().toISOString()
           })) as SfdAccountTransfer[];

@@ -231,10 +231,9 @@ export const disburseLoan = async (loanId: string, userId: string): Promise<bool
         sfd_id: loan.sfd_id,
         type: 'loan_disbursement',
         amount: loan.amount,
-        name: 'Décaissement de prêt',
         description: `Décaissement du prêt ${loanId.substring(0, 8)}`,
-        status: 'success',
-        reference_id: loanId
+        status: 'completed' as any,
+        reference: loanId
       });
     
     if (transactionError) {

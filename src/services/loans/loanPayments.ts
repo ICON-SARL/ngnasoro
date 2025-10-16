@@ -15,7 +15,7 @@ export const recordLoanPayment = async (
     .insert({
       loan_id: loanId,
       amount,
-      payment_method: paymentMethod,
+      payment_method: paymentMethod as any,
       status: 'completed'
     });
   
