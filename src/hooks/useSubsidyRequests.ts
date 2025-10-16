@@ -167,7 +167,12 @@ export function useSubsidyRequests(filters?: SubsidyRequestFilter) {
         is_active?: boolean;
       }
     }) => {
-      return subsidyRequestsApi.updateAlertThreshold(id, updates);
+      const dbUpdates: any = {};
+      if (updates.threshold_amount) {
+        dbUpdates.low_threshold = updates.threshold_amount;
+        dbUpdates.critical_threshold = updates.threshold_amount * 0.5;
+      }
+      return subsidyRequestsApi.updateAlertThreshold(id, dbUpdates);
     },
     onSuccess: () => {
       toast({

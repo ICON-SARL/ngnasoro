@@ -45,7 +45,7 @@ export const sfdClientApi = {
         .insert({
           ...client,
           status: 'pending',
-          kyc_level: 0
+          kyc_level: 1 // Default KYC level
         })
         .select()
         .single();
@@ -61,17 +61,9 @@ export const sfdClientApi = {
   // Update client
   async updateClient(clientId: string, updates: Partial<SfdClient>) {
     try {
-      // Convert kyc_level if needed
-      let dbUpdates: any = { ...updates };
-      
-      // kyc_level column doesn't exist in sfd_clients table
-      // Remove it from updates if present
-      const { kyc_level, ...cleanUpdates } = dbUpdates;
-      dbUpdates = cleanUpdates;
-
-      const { data, error } = await supabase
+      const { data, error} = await supabase
         .from('sfd_clients')
-        .update(dbUpdates)
+        .update(updates)
         .eq('id', clientId)
         .select()
         .single();
@@ -139,16 +131,7 @@ export const sfdClientApi = {
         .eq('client_id', clientId);
         
       if (error) throw error;
-      return data.map(doc => ({
-        id: doc.id,
-        client_id: doc.client_id,
-        document_type: doc.document_type,
-        document_url: doc.document_url,
-        uploaded_at: doc.created_at,
-        uploaded_by: doc.uploaded_by,
-        status: 'pending',
-        verified: false
-      })) as ClientDocument[];
+      return data as ClientDocument[];
     } catch (error) {
       console.error('Error fetching client documents:', error);
       return [];
@@ -156,28 +139,23 @@ export const sfdClientApi = {
   },
   
   // Add client document
-  async addClientDocument(document: Omit<ClientDocument, 'id' | 'uploaded_at' | 'verified' | 'verified_at' | 'verified_by'>) {
+  async addClientDocument(document: { client_id: string; document_type: string; document_url: string; uploaded_by: string }) {
     try {
       const { data, error } = await supabase
         .from('client_documents')
         .insert({
+          client_id: document.client_id,
           document_type: document.document_type,
-          document_url: document.document_url
-        } as any) // client_id and uploaded_by don't exist in schema
+          document_url: document.document_url,
+          uploaded_by: document.uploaded_by,
+          status: 'pending',
+          verified: false
+        } as any)
         .select()
         .single();
         
       if (error) throw error;
-      return {
-        id: data.id,
-        client_id: document.client_id,
-        document_type: data.document_type,
-        document_url: data.document_url,
-        uploaded_at: data.created_at,
-        uploaded_by: data.uploaded_by,
-        status: 'pending',
-        verified: false
-      } as ClientDocument;
+      return data as ClientDocument;
     } catch (error) {
       console.error('Error adding client document:', error);
       throw error;
@@ -187,24 +165,20 @@ export const sfdClientApi = {
   // Verify client document
   async verifyClientDocument(documentId: string, verifiedBy: string) {
     try {
-      // verified, verified_at, verified_by columns don't exist
       const { data, error } = await supabase
         .from('client_documents')
-        .select()
+        .update({
+          verified: true,
+          status: 'verified',
+          verified_at: new Date().toISOString(),
+          verified_by: verifiedBy
+        })
         .eq('id', documentId)
+        .select()
         .single();
         
       if (error) throw error;
-      return {
-        id: data.id,
-        client_id: '', // Not in schema
-        document_type: data.document_type,
-        document_url: data.document_url,
-        uploaded_at: data.created_at,
-        uploaded_by: data.uploaded_by,
-        status: 'verified',
-        verified: true
-      } as ClientDocument;
+      return data as ClientDocument;
     } catch (error) {
       console.error('Error verifying client document:', error);
       throw error;

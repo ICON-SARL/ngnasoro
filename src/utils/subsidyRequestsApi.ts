@@ -26,6 +26,18 @@ export const subsidyRequestsApi = {
           query = query.eq('status', filters.status);
         }
         
+        if (filters.priority) {
+          query = query.eq('priority', filters.priority);
+        }
+        
+        if (filters.region) {
+          query = query.eq('region', filters.region);
+        }
+        
+        if (filters.alertTriggered !== undefined) {
+          query = query.eq('alert_triggered', filters.alertTriggered);
+        }
+        
         if (filters.minAmount) {
           query = query.gte('amount', filters.minAmount);
         }
@@ -45,8 +57,6 @@ export const subsidyRequestsApi = {
         if (filters.endDate) {
           query = query.lte('created_at', filters.endDate);
         }
-        
-        // priority, region, alert_triggered columns don't exist - ignore those filters
       }
         
       const { data, error } = await query;
@@ -81,7 +91,18 @@ export const subsidyRequestsApi = {
           query = query.eq('status', filters.status);
         }
         
-        // priority and alert_triggered columns don't exist
+        if (filters.priority) {
+          query = query.eq('priority', filters.priority);
+        }
+        
+        if (filters.region) {
+          query = query.eq('region', filters.region);
+        }
+        
+        if (filters.alertTriggered !== undefined) {
+          query = query.eq('alert_triggered', filters.alertTriggered);
+        }
+        
         if (filters.minAmount) {
           query = query.gte('amount', filters.minAmount);
         }
@@ -218,12 +239,11 @@ export const subsidyRequestsApi = {
     priority: 'low' | 'normal' | 'high' | 'urgent'
   ) {
     try {
-      // priority column doesn't exist in subsidy_requests
-      console.warn('subsidy_requests table missing priority column');
       const { data, error } = await supabase
         .from('subsidy_requests')
-        .select()
+        .update({ priority })
         .eq('id', requestId)
+        .select()
         .single();
         
       if (error) throw error;
@@ -267,8 +287,7 @@ export const subsidyRequestsApi = {
     try {
       const { data, error } = await supabase
         .from('subsidy_alert_thresholds')
-        .select('*')
-        .order('threshold_amount', { ascending: true });
+        .select('*');
         
       if (error) throw error;
       return data as unknown as SubsidyAlertThreshold[];
@@ -279,22 +298,14 @@ export const subsidyRequestsApi = {
   },
   
   async createAlertThreshold(threshold: {
-    threshold_name: string;
-    threshold_amount: number;
-    notification_emails?: string[];
-    is_active?: boolean;
+    sfd_id: string;
+    low_threshold: number;
+    critical_threshold: number;
   }) {
     try {
-      // subsidy_alert_thresholds schema only has: low_threshold, critical_threshold
-      // threshold_name, threshold_amount, notification_emails, created_by, is_active don't exist
-      console.warn('subsidy_alert_thresholds table schema mismatch');
       const { data, error } = await supabase
         .from('subsidy_alert_thresholds')
-        .insert({
-          sfd_id: '', // Required field
-          low_threshold: threshold.threshold_amount,
-          critical_threshold: threshold.threshold_amount * 0.5
-        } as any)
+        .insert(threshold)
         .select()
         .single();
         
@@ -307,21 +318,13 @@ export const subsidyRequestsApi = {
   },
   
   async updateAlertThreshold(id: string, updates: {
-    threshold_name?: string;
-    threshold_amount?: number;
-    notification_emails?: string[];
-    is_active?: boolean;
+    low_threshold?: number;
+    critical_threshold?: number;
   }) {
     try {
-      // subsidy_alert_thresholds schema only has: low_threshold, critical_threshold
-      console.warn('subsidy_alert_thresholds table schema mismatch');
-      const dbUpdates: any = {};
-      if (updates.threshold_amount) {
-        dbUpdates.low_threshold = updates.threshold_amount;
-      }
       const { data, error } = await supabase
         .from('subsidy_alert_thresholds')
-        .update(dbUpdates)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();

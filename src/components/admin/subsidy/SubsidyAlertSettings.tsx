@@ -48,9 +48,9 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
     const amount = parseFloat(newThreshold.threshold_amount.replace(/\s/g, '').replace(',', '.'));
     
     await createAlertThreshold.mutateAsync({
-      threshold_name: newThreshold.threshold_name,
-      threshold_amount: amount,
-      is_active: newThreshold.is_active
+      sfd_id: '', // TODO: Ajouter sfd_id approprié
+      low_threshold: amount,
+      critical_threshold: amount * 0.5
     });
     
     setNewThreshold({

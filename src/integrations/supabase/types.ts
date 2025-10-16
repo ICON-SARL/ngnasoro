@@ -148,10 +148,13 @@ export type Database = {
           category: string
           created_at: string | null
           details: Json | null
+          device_info: Json | null
           error_message: string | null
           id: string
+          ip_address: string | null
           severity: string
           status: string
+          target_resource: string | null
           user_id: string | null
         }
         Insert: {
@@ -159,10 +162,13 @@ export type Database = {
           category: string
           created_at?: string | null
           details?: Json | null
+          device_info?: Json | null
           error_message?: string | null
           id?: string
+          ip_address?: string | null
           severity: string
           status: string
+          target_resource?: string | null
           user_id?: string | null
         }
         Update: {
@@ -170,10 +176,13 @@ export type Database = {
           category?: string
           created_at?: string | null
           details?: Json | null
+          device_info?: Json | null
           error_message?: string | null
           id?: string
+          ip_address?: string | null
           severity?: string
           status?: string
+          target_resource?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -185,6 +194,7 @@ export type Database = {
           created_at: string | null
           description: string | null
           id: string
+          performed_at: string | null
           performed_by: string | null
         }
         Insert: {
@@ -193,6 +203,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          performed_at?: string | null
           performed_by?: string | null
         }
         Update: {
@@ -201,6 +212,7 @@ export type Database = {
           created_at?: string | null
           description?: string | null
           id?: string
+          performed_at?: string | null
           performed_by?: string | null
         }
         Relationships: [
@@ -273,7 +285,12 @@ export type Database = {
           document_type: Database["public"]["Enums"]["document_type"]
           document_url: string
           id: string
+          status: string | null
+          uploaded_at: string | null
           uploaded_by: string | null
+          verified: boolean | null
+          verified_at: string | null
+          verified_by: string | null
         }
         Insert: {
           client_id: string
@@ -281,7 +298,12 @@ export type Database = {
           document_type: Database["public"]["Enums"]["document_type"]
           document_url: string
           id?: string
+          status?: string | null
+          uploaded_at?: string | null
           uploaded_by?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Update: {
           client_id?: string
@@ -289,7 +311,12 @@ export type Database = {
           document_type?: Database["public"]["Enums"]["document_type"]
           document_url?: string
           id?: string
+          status?: string | null
+          uploaded_at?: string | null
           uploaded_by?: string | null
+          verified?: boolean | null
+          verified_at?: string | null
+          verified_by?: string | null
         }
         Relationships: [
           {
@@ -297,6 +324,53 @@ export type Database = {
             columns: ["client_id"]
             isOneToOne: false
             referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      generated_reports: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          definition_id: string
+          error: string | null
+          format: string
+          id: string
+          parameters: Json
+          result_url: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          definition_id: string
+          error?: string | null
+          format: string
+          id?: string
+          parameters: Json
+          result_url?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          definition_id?: string
+          error?: string | null
+          format?: string
+          id?: string
+          parameters?: Json
+          result_url?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "generated_reports_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "report_definitions"
             referencedColumns: ["id"]
           },
         ]
@@ -585,26 +659,68 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          client_code: string | null
           created_at: string | null
           full_name: string | null
           id: string
+          kyc_level: number | null
           phone: string | null
           updated_at: string | null
         }
         Insert: {
           avatar_url?: string | null
+          client_code?: string | null
           created_at?: string | null
           full_name?: string | null
           id: string
+          kyc_level?: number | null
           phone?: string | null
           updated_at?: string | null
         }
         Update: {
           avatar_url?: string | null
+          client_code?: string | null
           created_at?: string | null
           full_name?: string | null
           id?: string
+          kyc_level?: number | null
           phone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      report_definitions: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          name: string
+          permissions: string[] | null
+          schema: Json
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          permissions?: string[] | null
+          schema: Json
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          permissions?: string[] | null
+          schema?: Json
+          type?: string
           updated_at?: string | null
         }
         Relationships: []
@@ -653,10 +769,12 @@ export type Database = {
       sfd_clients: {
         Row: {
           address: string | null
+          client_code: string | null
           created_at: string | null
           email: string | null
           full_name: string
           id: string
+          kyc_level: number | null
           phone: string | null
           sfd_id: string
           status: string | null
@@ -665,10 +783,12 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name: string
           id?: string
+          kyc_level?: number | null
           phone?: string | null
           sfd_id: string
           status?: string | null
@@ -677,10 +797,12 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          client_code?: string | null
           created_at?: string | null
           email?: string | null
           full_name?: string
           id?: string
+          kyc_level?: number | null
           phone?: string | null
           sfd_id?: string
           status?: string | null
@@ -883,9 +1005,14 @@ export type Database = {
           approved_by: string | null
           created_at: string | null
           description: string | null
+          end_date: string | null
           id: string
+          name: string | null
           sfd_id: string
+          sponsor_id: string | null
+          start_date: string | null
           status: string | null
+          used_amount: number | null
         }
         Insert: {
           amount: number
@@ -893,9 +1020,14 @@ export type Database = {
           approved_by?: string | null
           created_at?: string | null
           description?: string | null
+          end_date?: string | null
           id?: string
+          name?: string | null
           sfd_id: string
+          sponsor_id?: string | null
+          start_date?: string | null
           status?: string | null
+          used_amount?: number | null
         }
         Update: {
           amount?: number
@@ -903,9 +1035,14 @@ export type Database = {
           approved_by?: string | null
           created_at?: string | null
           description?: string | null
+          end_date?: string | null
           id?: string
+          name?: string | null
           sfd_id?: string
+          sponsor_id?: string | null
+          start_date?: string | null
           status?: string | null
+          used_amount?: number | null
         }
         Relationships: [
           {
@@ -982,6 +1119,7 @@ export type Database = {
           id: string
           performed_by: string | null
           request_id: string
+          subsidy_id: string | null
         }
         Insert: {
           activity_type: string
@@ -990,6 +1128,7 @@ export type Database = {
           id?: string
           performed_by?: string | null
           request_id: string
+          subsidy_id?: string | null
         }
         Update: {
           activity_type?: string
@@ -998,6 +1137,7 @@ export type Database = {
           id?: string
           performed_by?: string | null
           request_id?: string
+          subsidy_id?: string | null
         }
         Relationships: [
           {
@@ -1005,6 +1145,13 @@ export type Database = {
             columns: ["request_id"]
             isOneToOne: false
             referencedRelation: "subsidy_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subsidy_activities_subsidy_id_fkey"
+            columns: ["subsidy_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_subsidies"
             referencedColumns: ["id"]
           },
         ]
@@ -1081,10 +1228,14 @@ export type Database = {
       }
       subsidy_requests: {
         Row: {
+          alert_triggered: boolean | null
           amount: number
           created_at: string | null
+          expected_impact: string | null
           id: string
           justification: string
+          priority: string | null
+          region: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -1092,10 +1243,14 @@ export type Database = {
           status: string | null
         }
         Insert: {
+          alert_triggered?: boolean | null
           amount: number
           created_at?: string | null
+          expected_impact?: string | null
           id?: string
           justification: string
+          priority?: string | null
+          region?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1103,10 +1258,14 @@ export type Database = {
           status?: string | null
         }
         Update: {
+          alert_triggered?: boolean | null
           amount?: number
           created_at?: string | null
+          expected_impact?: string | null
           id?: string
           justification?: string
+          priority?: string | null
+          region?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1119,6 +1278,48 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subsidy_usage: {
+        Row: {
+          amount: number
+          id: string
+          loan_id: string
+          notes: string | null
+          subsidy_id: string
+          used_at: string | null
+        }
+        Insert: {
+          amount: number
+          id?: string
+          loan_id: string
+          notes?: string | null
+          subsidy_id: string
+          used_at?: string | null
+        }
+        Update: {
+          amount?: number
+          id?: string
+          loan_id?: string
+          notes?: string | null
+          subsidy_id?: string
+          used_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subsidy_usage_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subsidy_usage_subsidy_id_fkey"
+            columns: ["subsidy_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_subsidies"
             referencedColumns: ["id"]
           },
         ]
@@ -1295,6 +1496,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      generate_client_code: {
+        Args: { sfd_code: string }
+        Returns: string
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
