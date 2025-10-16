@@ -60,7 +60,7 @@ export const merefTransactionService = {
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
-        .eq('reference_id', `meref-loan-${loanRequestId}`)
+        .eq('reference', `meref-loan-${loanRequestId}`)
         .order('created_at', { ascending: false });
       
       if (error) throw error;

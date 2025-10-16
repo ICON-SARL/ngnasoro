@@ -29,10 +29,7 @@ export const sfdApi = {
         region: sfd.region,
         status: sfd.status,
         logo_url: sfd.logo_url,
-        description: sfd.description,
-        settings: typeof sfd.settings === 'string' 
-          ? JSON.parse(sfd.settings) 
-          : sfd.settings
+        description: sfd.description
       }));
     } catch (error) {
       console.error('Error fetching SFDs:', error);
@@ -97,13 +94,7 @@ export const sfdApi = {
       
       if (error) throw error;
       
-      // Transform the settings field to ensure it's treated as Record<string, any>
-      return data.map((sfd: any) => ({
-        ...sfd,
-        settings: typeof sfd.settings === 'string' 
-          ? JSON.parse(sfd.settings)
-          : sfd.settings
-      })) as SfdData[];
+      return data as SfdData[];
     } catch (error) {
       console.error('Error fetching SFDs:', error);
       return [];

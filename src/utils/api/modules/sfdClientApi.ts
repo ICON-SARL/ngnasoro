@@ -40,9 +40,9 @@ export const sfdClientApi = {
         client_id: clientId,
         balance: data.balance,
         currency: data.currency,
-        sfd_id: '', // Set a default empty string since sfd_id doesn't exist in the database table
+        sfd_id: data.sfd_id,
         updated_at: data.updated_at,
-        last_updated: data.last_updated
+        last_updated: data.updated_at
       };
       
       return accountData;
@@ -78,7 +78,7 @@ export const sfdClientApi = {
           currency: existingAccount.currency,
           sfd_id: sfdId, // Use the provided sfdId
           updated_at: existingAccount.updated_at,
-          last_updated: existingAccount.last_updated
+          last_updated: existingAccount.updated_at
         };
         
         return accountData;
@@ -89,9 +89,9 @@ export const sfdClientApi = {
         .from('accounts')
         .insert({
           user_id: clientId,
+          sfd_id: sfdId,
           balance: initialBalance,
-          currency: 'FCFA',
-          // Note: we don't add sfd_id to the database insert since that column might not exist
+          currency: 'FCFA'
         })
         .select()
         .single();
@@ -107,7 +107,7 @@ export const sfdClientApi = {
         currency: data.currency,
         sfd_id: sfdId, // Use the provided sfdId
         updated_at: data.updated_at,
-        last_updated: data.last_updated
+        last_updated: data.updated_at
       };
       
       return newAccountData;
@@ -132,18 +132,25 @@ export const sfdClientApi = {
         return { success: false, error: 'Amount must be greater than zero' };
       }
       
+      // Get client's SFD
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('user_id', clientId)
+        .single();
+
       // Create transaction record
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: client?.sfd_id || '',
           amount: amount,
           type: 'deposit',
-          name: 'Dépôt',
           description: description || 'Dépôt sur compte client',
-          status: 'success',
-          payment_method: paymentMethod,
-          reference_id: `dep-${Date.now()}`
+          status: 'completed' as any,
+          payment_method: paymentMethod as any,
+          reference: `dep-${Date.now()}`
         })
         .select()
         .single();
@@ -205,18 +212,25 @@ export const sfdClientApi = {
         return { success: false, error: 'Insufficient funds' };
       }
       
+      // Get client's SFD
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('user_id', clientId)
+        .single();
+
       // Create transaction record
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: client?.sfd_id || '',
           amount: -amount, // Negative amount for withdrawal
           type: 'withdrawal',
-          name: 'Retrait',
           description: description || 'Retrait du compte client',
-          status: 'success',
-          payment_method: paymentMethod,
-          reference_id: `wit-${Date.now()}`
+          status: 'completed' as any,
+          payment_method: paymentMethod as any,
+          reference: `wit-${Date.now()}`
         })
         .select()
         .single();
@@ -277,18 +291,25 @@ export const sfdClientApi = {
         return { success: false, error: 'Loan must be in approved status to disburse' };
       }
       
+      // Get client's SFD
+      const { data: clientData } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('id', clientId)
+        .single();
+
       // Create transaction record
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: clientData?.sfd_id || '',
           amount: amount,
           type: 'loan_disbursement',
-          name: 'Décaissement de prêt',
           description: description || `Décaissement du prêt ${loanId}`,
-          status: 'success',
-          payment_method: 'sfd_account',
-          reference_id: loanId
+          status: 'completed' as any,
+          payment_method: 'cash' as any,
+          reference: loanId
         })
         .select()
         .single();
@@ -398,18 +419,25 @@ export const sfdClientApi = {
         return { success: false, error: data.message || 'Mobile money transaction failed' };
       }
       
+      // Get client's SFD
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('user_id', clientId)
+        .single();
+
       // Create transaction record
       const { data: transaction, error: transactionError } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: client?.sfd_id || '',
           amount: transactionType === 'withdrawal' ? -amount : amount,
           type: transactionType,
-          name: `${provider.toUpperCase()} ${transactionType === 'withdrawal' ? 'Retrait' : 'Dépôt'}`,
           description: description || `${transactionType === 'withdrawal' ? 'Retrait' : 'Dépôt'} via ${provider.toUpperCase()} Mobile Money`,
-          status: 'success',
-          payment_method: 'mobile_money',
-          reference_id: data.reference || `mm-${Date.now()}`
+          status: 'completed' as any,
+          payment_method: 'mobile_money' as any,
+          reference: data.reference || `mm-${Date.now()}`
         })
         .select()
         .single();

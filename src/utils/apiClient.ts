@@ -116,17 +116,25 @@ export const apiClient = {
     paymentMethod: string = 'cash'
   ): Promise<TransactionResult> {
     try {
+      // Get client's SFD
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('user_id', clientId)
+        .single();
+
       // Create a transaction
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: client?.sfd_id || '',
           amount: amount,
           type: 'deposit',
-          name: description || 'Dépôt',
           description: description || 'Dépôt effectué par administrateur',
-          status: 'success',
-          payment_method: paymentMethod
+          status: 'completed' as any,
+          payment_method: paymentMethod as any,
+          reference: `dep-${Date.now()}`
         })
         .select()
         .single();
@@ -171,17 +179,25 @@ export const apiClient = {
         };
       }
       
+      // Get client's SFD
+      const { data: client } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('user_id', clientId)
+        .single();
+      
       // Create a transaction with negative amount
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: client?.sfd_id || '',
           amount: -amount, // Negative for withdrawal
           type: 'withdrawal',
-          name: description || 'Retrait',
           description: description || 'Retrait effectué par administrateur',
-          status: 'success',
-          payment_method: paymentMethod
+          status: 'completed' as any,
+          payment_method: paymentMethod as any,
+          reference: `wit-${Date.now()}`
         })
         .select()
         .single();
@@ -210,18 +226,25 @@ export const apiClient = {
     description?: string
   ): Promise<TransactionResult> {
     try {
+      // Get client's SFD
+      const { data: clientData } = await supabase
+        .from('sfd_clients')
+        .select('sfd_id')
+        .eq('id', clientId)
+        .single();
+
       // Create a transaction
       const { data, error } = await supabase
         .from('transactions')
         .insert({
           user_id: clientId,
+          sfd_id: clientData?.sfd_id || '',
           amount: amount,
           type: 'loan_disbursement',
-          name: description || 'Décaissement de prêt',
           description: description || `Décaissement du prêt #${loanId}`,
-          status: 'success',
-          payment_method: 'loan_disbursement',
-          reference_id: loanId
+          status: 'completed' as any,
+          payment_method: 'cash' as any,
+          reference: loanId
         })
         .select()
         .single();
@@ -297,113 +320,30 @@ export const apiClient = {
     }
   },
 
-  // Generate QR code for transaction
+  // Generate QR code for transaction - Note: qr_codes table doesn't exist
   async generateTransactionQRCode(
     clientId: string,
     amount: number,
     transactionType: 'deposit' | 'withdrawal',
     adminId: string
   ): Promise<QRCodeResult> {
-    try {
-      const { data, error } = await supabase
-        .from('qr_codes')
-        .insert({
-          user_id: clientId,
-          amount,
-          is_withdrawal: transactionType === 'withdrawal',
-          code: `${transactionType.charAt(0)}${Date.now()}${Math.floor(Math.random() * 1000)}`,
-          expires_at: new Date(Date.now() + 15 * 60000).toISOString() // Expire in 15 minutes
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      return {
-        success: true,
-        qr_code_data: data.code,
-        qr_code_url: `qr:${data.code}`,
-        expires_at: data.expires_at
-      };
-    } catch (error: any) {
-      console.error('Error generating transaction QR code:', error);
-      return {
-        success: false,
-        error: error.message || 'Une erreur est survenue lors de la génération du QR code'
-      };
-    }
+    console.warn('QR codes feature not yet implemented - table does not exist');
+    return {
+      success: false,
+      error: 'QR codes feature not yet implemented'
+    };
   },
 
-  // Process QR code transaction
+  // Process QR code transaction - Note: qr_codes table doesn't exist
   async processQRCodeTransaction(
     qrCodeData: string,
     adminId: string
   ): Promise<TransactionResult> {
-    try {
-      // First, validate the QR code
-      const { data: qrCode, error: qrError } = await supabase
-        .from('qr_codes')
-        .select('*')
-        .eq('code', qrCodeData)
-        .eq('status', 'active')
-        .gt('expires_at', new Date().toISOString())
-        .single();
-
-      if (qrError) throw new Error('QR code invalide ou expiré');
-      
-      if (!qrCode) {
-        return {
-          success: false,
-          error: 'QR code non trouvé ou déjà utilisé'
-        };
-      }
-      
-      // Process the transaction based on QR code type
-      const transactionType = qrCode.is_withdrawal ? 'withdrawal' : 'deposit';
-      
-      // Create the transaction
-      const { data: transaction, error: txError } = await supabase
-        .from('transactions')
-        .insert({
-          user_id: qrCode.user_id,
-          amount: qrCode.is_withdrawal ? -qrCode.amount : qrCode.amount,
-          type: transactionType,
-          name: `${transactionType === 'withdrawal' ? 'Retrait' : 'Dépôt'} par QR Code`,
-          description: `Transaction par QR Code #${qrCode.code}`,
-          status: 'success',
-          payment_method: 'qr_code',
-          reference_id: qrCode.code
-        })
-        .select()
-        .single();
-        
-      if (txError) throw txError;
-      
-      // Mark QR code as used
-      const { error: updateError } = await supabase
-        .from('qr_codes')
-        .update({
-          status: 'used',
-          used_at: new Date().toISOString(),
-          used_by: adminId
-        })
-        .eq('id', qrCode.id);
-        
-      if (updateError) {
-        console.error('Error updating QR code status:', updateError);
-      }
-      
-      return {
-        success: true,
-        transaction_id: transaction.id
-      };
-    } catch (error: any) {
-      console.error('Error processing QR code transaction:', error);
-      return {
-        success: false,
-        error: error.message || 'Une erreur est survenue lors du traitement de la transaction par QR code'
-      };
-    }
+    console.warn('QR codes feature not yet implemented - table does not exist');
+    return {
+      success: false,
+      error: 'QR codes feature not yet implemented'
+    };
   },
 
   // Get SFD loans
