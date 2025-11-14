@@ -1324,6 +1324,164 @@ export type Database = {
           },
         ]
       }
+      tontine_contributions: {
+        Row: {
+          amount: number
+          contribution_date: string | null
+          created_at: string | null
+          id: string
+          member_id: string
+          payment_method: string | null
+          reference: string | null
+          status: string
+          tontine_id: string
+        }
+        Insert: {
+          amount: number
+          contribution_date?: string | null
+          created_at?: string | null
+          id?: string
+          member_id: string
+          payment_method?: string | null
+          reference?: string | null
+          status?: string
+          tontine_id: string
+        }
+        Update: {
+          amount?: number
+          contribution_date?: string | null
+          created_at?: string | null
+          id?: string
+          member_id?: string
+          payment_method?: string | null
+          reference?: string | null
+          status?: string
+          tontine_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tontine_contributions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "tontine_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tontine_contributions_tontine_id_fkey"
+            columns: ["tontine_id"]
+            isOneToOne: false
+            referencedRelation: "tontines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tontine_members: {
+        Row: {
+          client_id: string
+          id: string
+          is_admin: boolean | null
+          joined_at: string | null
+          status: string | null
+          tontine_id: string
+          total_contributed: number | null
+          user_id: string
+        }
+        Insert: {
+          client_id: string
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: string | null
+          tontine_id: string
+          total_contributed?: number | null
+          user_id: string
+        }
+        Update: {
+          client_id?: string
+          id?: string
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: string | null
+          tontine_id?: string
+          total_contributed?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tontine_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tontine_members_tontine_id_fkey"
+            columns: ["tontine_id"]
+            isOneToOne: false
+            referencedRelation: "tontines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tontines: {
+        Row: {
+          contribution_amount: number
+          created_at: string | null
+          current_members: number | null
+          description: string | null
+          end_date: string | null
+          frequency: string
+          id: string
+          max_members: number | null
+          name: string
+          sfd_id: string
+          start_date: string
+          status: string
+          total_collected: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          contribution_amount: number
+          created_at?: string | null
+          current_members?: number | null
+          description?: string | null
+          end_date?: string | null
+          frequency: string
+          id?: string
+          max_members?: number | null
+          name: string
+          sfd_id: string
+          start_date: string
+          status?: string
+          total_collected?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          contribution_amount?: number
+          created_at?: string | null
+          current_members?: number | null
+          description?: string | null
+          end_date?: string | null
+          frequency?: string
+          id?: string
+          max_members?: number | null
+          name?: string
+          sfd_id?: string
+          start_date?: string
+          status?: string
+          total_collected?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tontines_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       transaction_types: {
         Row: {
           code: string

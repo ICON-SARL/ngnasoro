@@ -12,6 +12,9 @@ import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
+import SupportPage from './pages/mobile/SupportPage';
+import AccountsPage from './pages/mobile/AccountsPage';
+import TontinePage from './pages/mobile/TontinePage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
@@ -230,6 +233,22 @@ const router = createBrowserRouter([
       {
         path: 'sfd-adhesion/:sfdId',
         element: <SfdAdhesionPage />,
+      },
+      {
+        path: 'support',
+        element: <SupportPage />,
+      },
+      {
+        path: 'accounts',
+        element: <AccountsPage />,
+      },
+      {
+        path: 'tontine',
+        element: <TontinePage />,
+      },
+      {
+        path: 'tontine/:tontineId',
+        element: <TontinePage />,
       },
     ],
   },
