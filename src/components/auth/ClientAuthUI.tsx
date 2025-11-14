@@ -8,6 +8,7 @@ import RegisterForm from './RegisterForm';
 import { Check } from 'lucide-react';
 import LanguageSelector from '../LanguageSelector';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
 
 const ClientAuthUI = () => {
   const [activeTab, setActiveTab] = useState('login');
@@ -31,23 +32,44 @@ const ClientAuthUI = () => {
   
   useEffect(() => {
     if (user && !loading) {
-      console.log('Authenticated user from ClientAuthUI:', user);
-      console.log('User role from auth context:', userRole);
-      
-      // Get user role from app_metadata
-      const role = user.app_metadata?.role;
-      console.log('User role from metadata:', role);
+      console.log('✅ User authenticated:', { id: user.id, email: user.email, role: userRole });
       
       // Redirect based on role
-      if (role === 'admin') {
+      if (userRole === 'admin') {
         navigate('/super-admin-dashboard');
-      } else if (role === 'sfd_admin') {
+      } else if (userRole === 'sfd_admin') {
         navigate('/agency-dashboard');
+      } else if (userRole === 'client') {
+        // Vérifier si l'utilisateur a un SFD associé
+        checkUserSfdAndRedirect();
       } else {
-        navigate('/mobile-flow/main');
+        // Rôle 'user' - pas encore de SFD, rediriger vers sélection
+        navigate('/sfd-selection');
       }
     }
-  }, [user, userRole, loading, navigate, location.pathname]);
+  }, [user, userRole, loading, navigate]);
+
+  const checkUserSfdAndRedirect = async () => {
+    if (!user) return;
+
+    try {
+      const { data: userSfds } = await supabase
+        .from('user_sfds')
+        .select('sfd_id, is_default')
+        .eq('user_id', user.id);
+
+      if (!userSfds || userSfds.length === 0) {
+        console.log('ℹ️ Client has no SFD, redirecting to selection');
+        navigate('/sfd-selection');
+      } else {
+        console.log('✅ Client has SFD, redirecting to dashboard');
+        navigate('/mobile-flow/dashboard');
+      }
+    } catch (error) {
+      console.error('Error checking user SFDs:', error);
+      navigate('/mobile-flow/dashboard');
+    }
+  };
   
   useEffect(() => {
     // Set active tab (login or register)
@@ -96,10 +118,13 @@ const ClientAuthUI = () => {
         <Logo />
         
         <div className="auth-card">
-          <div className="p-4 bg-[#0D6A51]/10 border-b border-[#0D6A51]/20">
-            <h2 className="text-[#0D6A51] font-medium text-center">
-              Espace Client
+          <div className="p-6 bg-gradient-to-br from-[#0D6A51] to-[#0D6A51]/80 border-b border-[#0D6A51]/20">
+            <h2 className="text-white font-bold text-xl text-center mb-1">
+              Bienvenue
             </h2>
+            <p className="text-white/80 text-sm text-center">
+              Gérez vos finances en toute simplicité
+            </p>
           </div>
           
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

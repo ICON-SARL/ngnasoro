@@ -68,7 +68,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const cleanupDuplicateRoles = async (userId: string, primaryRole: UserRole): Promise<void> => {
     try {
       if (primaryRole !== UserRole.User) {
-        // Vérifier d'abord s'il y a des doublons avant de supprimer
         const { data: existingRoles } = await supabase
           .from('user_roles')
           .select('id, role')
@@ -77,9 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const hasUserRole = existingRoles?.some(r => r.role === 'user');
         const hasOtherRoles = existingRoles?.some(r => r.role !== 'user');
         
-        // Ne supprimer que si l'utilisateur a un rôle ET le rôle 'user'
         if (hasUserRole && hasOtherRoles) {
-          console.log('Cleaning up duplicate user role for:', userId);
+          console.log('🧹 Cleaning up duplicate user role for:', userId);
           await supabase
             .from('user_roles')
             .delete()
@@ -88,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (err) {
-      console.error('Error cleaning up duplicate roles:', err);
+      console.error('❌ Error cleaning up duplicate roles:', err);
     }
   };
 

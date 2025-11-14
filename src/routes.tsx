@@ -10,6 +10,7 @@ import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
+import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
@@ -49,6 +50,10 @@ const router = createBrowserRouter([
   {
     path: '/pending-approval',
     element: <PendingApprovalPage />,
+  },
+  {
+    path: '/sfd-selection',
+    element: <SfdSelectionPage />,
   },
   
   // Super Admin routes
