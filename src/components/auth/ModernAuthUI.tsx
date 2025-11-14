@@ -58,7 +58,7 @@ const ModernAuthUI: React.FC = () => {
             // Rôle 'user' - doit adhérer à une SFD
             navigate('/pending-approval');
           }
-        }, 1500);
+        }, 2000);
       } else {
         const { error } = await supabase.auth.signUp({
           email: formData.email,
@@ -85,10 +85,10 @@ const ModernAuthUI: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/5 flex items-center justify-center p-4 relative overflow-hidden">
-      <ParticleBackground particleCount={25} />
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-0 -left-4 w-72 h-72 bg-primary rounded-full mix-blend-multiply filter blur-xl animate-blob" />
-        <div className="absolute top-0 -right-4 w-72 h-72 bg-accent rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
+      <ParticleBackground particleCount={30} />
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/40 rounded-full mix-blend-multiply filter blur-xl animate-blob" />
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-accent/40 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
       </div>
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md relative z-10">

@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UltraInput } from '@/components/ui/ultra-modern/UltraInput';
 import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { SuccessConfetti } from '@/components/ui/SuccessConfetti';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -28,7 +29,7 @@ const ModernAdminAuthUI: React.FC = () => {
       trigger('success');
       setShowConfetti(true);
       toast({ title: 'Accès autorisé', description: 'Bienvenue MEREF' });
-      setTimeout(() => navigate('/admin/dashboard'), 1500);
+      setTimeout(() => navigate('/super-admin-dashboard'), 2000);
     } catch (error: any) {
       trigger('error');
       toast({ title: 'Accès refusé', description: error.message, variant: 'destructive' });
@@ -39,6 +40,11 @@ const ModernAdminAuthUI: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+      <ParticleBackground particleCount={30} color="251, 191, 36" />
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-amber-500/30 rounded-full mix-blend-multiply filter blur-xl animate-blob" />
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-yellow-500/30 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
+      </div>
       <div className="absolute inset-0 bg-[linear-gradient(rgba(251,191,36,.03)_1px,transparent_1px),linear-gradient(90deg,rgba(251,191,36,.03)_1px,transparent_1px)] bg-[size:50px_50px]" />
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">

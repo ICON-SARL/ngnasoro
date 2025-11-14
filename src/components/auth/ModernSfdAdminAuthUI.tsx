@@ -7,6 +7,7 @@ import { useToast } from '@/hooks/use-toast';
 import { UltraInput } from '@/components/ui/ultra-modern/UltraInput';
 import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
+import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { SuccessConfetti } from '@/components/ui/SuccessConfetti';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
@@ -28,7 +29,7 @@ const ModernSfdAdminAuthUI: React.FC = () => {
       trigger('success');
       setShowConfetti(true);
       toast({ title: 'Connexion réussie', description: 'Bienvenue SFD' });
-      setTimeout(() => navigate('/sfd/dashboard'), 1500);
+      setTimeout(() => navigate('/agency-dashboard'), 2000);
     } catch (error: any) {
       trigger('error');
       toast({ title: 'Erreur', description: error.message, variant: 'destructive' });
@@ -39,6 +40,11 @@ const ModernSfdAdminAuthUI: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center p-4 relative overflow-hidden">
+      <ParticleBackground particleCount={30} />
+      <div className="absolute inset-0 opacity-30">
+        <div className="absolute top-0 -left-4 w-96 h-96 bg-primary/40 rounded-full mix-blend-multiply filter blur-xl animate-blob" />
+        <div className="absolute top-0 -right-4 w-96 h-96 bg-accent/40 rounded-full mix-blend-multiply filter blur-xl animate-blob animation-delay-2000" />
+      </div>
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
         <div className="glass-card p-8 space-y-6 border border-primary/30">
