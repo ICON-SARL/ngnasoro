@@ -32,3 +32,6 @@ verify_jwt = true
 
 [functions.approve-subsidy]
 verify_jwt = true
+
+[functions.scheduled-tasks]
+verify_jwt = false
