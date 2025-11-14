@@ -24,6 +24,9 @@ import AdminLoginPage from './pages/AdminLoginPage';
 import SystemSettingsPage from './pages/admin/SystemSettingsPage';
 import ClientAdhesionManagementPage from './pages/admin/ClientAdhesionManagementPage';
 import KycUpgradePage from './pages/KycUpgradePage';
+import MEREFDashboard from './pages/dashboards/MEREFDashboard';
+import SfdAdminDashboard from './pages/dashboards/SfdAdminDashboard';
+import CashierDashboard from './pages/dashboards/CashierDashboard';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
@@ -64,7 +67,7 @@ const router = createBrowserRouter([
     path: '/super-admin-dashboard',
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <SuperAdminDashboard />
+        <MEREFDashboard />
       </RoleGuard>
     ),
   },
@@ -82,13 +85,15 @@ const router = createBrowserRouter([
     path: '/agency-dashboard',
     element: (
       <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <div className="min-h-screen bg-gray-50">
-          <SfdHeader />
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold">Tableau de bord SFD</h1>
-            <p className="text-gray-600">Gérez votre SFD et suivez les activités</p>
-          </div>
-        </div>
+        <SfdAdminDashboard />
+      </RoleGuard>
+    ),
+  },
+  {
+    path: '/cashier-dashboard',
+    element: (
+      <RoleGuard requiredRole="cashier" fallbackPath="/access-denied">
+        <CashierDashboard />
       </RoleGuard>
     ),
   },
