@@ -33,7 +33,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/admin/auth',
-    element: <LoginPage isSfdAdmin={false} />,
+    element: <AdminLoginPage />,
   },
   {
     path: '/sfd/auth',

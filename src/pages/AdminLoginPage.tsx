@@ -1,9 +1,9 @@
 
 import React from 'react';
-import AdminAuthUI from '@/components/auth/AdminAuthUI';
+import ModernAdminAuthUI from '@/components/auth/ModernAdminAuthUI';
 
 const AdminLoginPage = () => {
-  return <AdminAuthUI />;
+  return <ModernAdminAuthUI />;
 };
 
 export default AdminLoginPage;
