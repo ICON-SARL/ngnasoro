@@ -2,7 +2,7 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { SfdAccount } from '@/hooks/useSfdAccounts';
+import { SfdAccount } from '@/types/sfdAccounts';
 
 interface AccountBalanceCardProps {
   balance: number;
