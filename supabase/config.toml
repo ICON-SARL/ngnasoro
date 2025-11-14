@@ -2,3 +2,33 @@ project_id = "hnzozzbnfougbcncdgrk"
 
 [functions.initialize-client-account]
 verify_jwt = true
+
+[functions.apply-for-loan]
+verify_jwt = true
+
+[functions.approve-loan]
+verify_jwt = true
+
+[functions.disburse-loan]
+verify_jwt = true
+
+[functions.make-payment]
+verify_jwt = true
+
+[functions.open-cash-session]
+verify_jwt = true
+
+[functions.close-cash-session]
+verify_jwt = true
+
+[functions.validate-mobile-money-webhook]
+verify_jwt = false
+
+[functions.reconcile-mobile-money]
+verify_jwt = true
+
+[functions.request-subsidy]
+verify_jwt = true
+
+[functions.approve-subsidy]
+verify_jwt = true

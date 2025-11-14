@@ -3,6 +3,8 @@ export enum UserRole {
   SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
+  CASHIER = 'cashier',
+  SUPERVISOR = 'supervisor',
   CLIENT = 'client',
   USER = 'user'
 }
