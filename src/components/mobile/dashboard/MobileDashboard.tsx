@@ -14,7 +14,7 @@ import { AlertCircle } from 'lucide-react';
 
 const MobileDashboard: React.FC = () => {
   const { user } = useAuth();
-  const { data: accounts, isLoading: accountsLoading, error: accountsError } = useSfdAccounts();
+  const { sfdAccounts: accounts, isLoading: accountsLoading, error: accountsError } = useSfdAccounts();
 
   // Récupérer le profil utilisateur pour KYC
   const { data: profile } = useQuery({
