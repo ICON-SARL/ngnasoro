@@ -187,6 +187,176 @@ export type Database = {
         }
         Relationships: []
       }
+      cash_operations: {
+        Row: {
+          amount: number
+          balance_after: number
+          client_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          operation_type: string
+          session_id: string
+          transaction_id: string | null
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          operation_type: string
+          session_id: string
+          transaction_id?: string | null
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          client_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          operation_type?: string
+          session_id?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_operations_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cash_operations_transaction_id_fkey"
+            columns: ["transaction_id"]
+            isOneToOne: false
+            referencedRelation: "transactions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cash_sessions: {
+        Row: {
+          active_qr_code_id: string | null
+          cashier_id: string
+          closed_at: string | null
+          closing_balance: number | null
+          created_at: string | null
+          id: string
+          opened_at: string
+          opening_balance: number
+          sfd_id: string
+          station_name: string | null
+          status: string
+          updated_at: string | null
+        }
+        Insert: {
+          active_qr_code_id?: string | null
+          cashier_id: string
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string | null
+          id?: string
+          opened_at?: string
+          opening_balance?: number
+          sfd_id: string
+          station_name?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Update: {
+          active_qr_code_id?: string | null
+          cashier_id?: string
+          closed_at?: string | null
+          closing_balance?: number | null
+          created_at?: string | null
+          id?: string
+          opened_at?: string
+          opening_balance?: number
+          sfd_id?: string
+          station_name?: string | null
+          status?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cash_sessions_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      cashier_qr_codes: {
+        Row: {
+          cash_session_id: string
+          cashier_id: string
+          created_at: string | null
+          expires_at: string
+          generated_at: string
+          id: string
+          last_scanned_at: string | null
+          max_scans: number
+          qr_code_data: string
+          qr_code_hash: string
+          scan_count: number
+          sfd_id: string
+          station_name: string | null
+          status: string
+        }
+        Insert: {
+          cash_session_id: string
+          cashier_id: string
+          created_at?: string | null
+          expires_at: string
+          generated_at?: string
+          id?: string
+          last_scanned_at?: string | null
+          max_scans?: number
+          qr_code_data: string
+          qr_code_hash: string
+          scan_count?: number
+          sfd_id: string
+          station_name?: string | null
+          status?: string
+        }
+        Update: {
+          cash_session_id?: string
+          cashier_id?: string
+          created_at?: string | null
+          expires_at?: string
+          generated_at?: string
+          id?: string
+          last_scanned_at?: string | null
+          max_scans?: number
+          qr_code_data?: string
+          qr_code_hash?: string
+          scan_count?: number
+          sfd_id?: string
+          station_name?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cashier_qr_codes_cash_session_id_fkey"
+            columns: ["cash_session_id"]
+            isOneToOne: false
+            referencedRelation: "cash_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashier_qr_codes_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       client_activities: {
         Row: {
           activity_type: string

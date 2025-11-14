@@ -1,9 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Eye, EyeOff, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SfdAccount } from '@/types/sfdAccounts';
-import { useNavigate } from 'react-router-dom';
+import { FundsActionSheet } from '@/components/mobile/funds/FundsActionSheet';
+import { CashierQRScanner } from '@/components/mobile/funds/CashierQRScanner';
+import MobileMoneyModal from '@/components/mobile/loan/MobileMoneyModal';
+import { Dialog } from '@/components/ui/dialog';
 
 interface AccountBalanceCardProps {
   balance: number;
@@ -16,8 +19,11 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   currency,
   accounts 
 }) => {
-  const [isBalanceVisible, setIsBalanceVisible] = React.useState(true);
-  const navigate = useNavigate();
+  const [isBalanceVisible, setIsBalanceVisible] = useState(true);
+  const [fundsActionType, setFundsActionType] = useState<'deposit' | 'withdrawal'>('deposit');
+  const [showFundsSheet, setShowFundsSheet] = useState(false);
+  const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
 
   const formatBalance = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -70,14 +76,20 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
         {/* Action buttons */}
         <div className="flex gap-3 mb-4">
           <Button
-            onClick={() => navigate('/mobile-flow/funds-management?action=deposit')}
+            onClick={() => {
+              setFundsActionType('deposit');
+              setShowFundsSheet(true);
+            }}
             className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 h-12 rounded-2xl font-medium"
           >
             <ArrowDownToLine className="w-5 h-5 mr-2" />
             Recharger
           </Button>
           <Button
-            onClick={() => navigate('/mobile-flow/funds-management?action=withdraw')}
+            onClick={() => {
+              setFundsActionType('withdrawal');
+              setShowFundsSheet(true);
+            }}
             variant="outline"
             className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 h-12 rounded-2xl font-medium"
           >
@@ -102,6 +114,36 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           </div>
         )}
       </div>
+
+      {/* Funds Action Sheet */}
+      <FundsActionSheet
+        isOpen={showFundsSheet}
+        onClose={() => setShowFundsSheet(false)}
+        actionType={fundsActionType}
+        onMobileMoneySelected={() => {
+          setShowFundsSheet(false);
+          setShowMobileMoneyModal(true);
+        }}
+        onCashierScanSelected={() => {
+          setShowFundsSheet(false);
+          setShowQRScanner(true);
+        }}
+      />
+
+      {/* Mobile Money Modal */}
+      <Dialog open={showMobileMoneyModal} onOpenChange={setShowMobileMoneyModal}>
+        <MobileMoneyModal
+          onClose={() => setShowMobileMoneyModal(false)}
+          isWithdrawal={fundsActionType === 'withdrawal'}
+        />
+      </Dialog>
+
+      {/* QR Scanner */}
+      <CashierQRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        transactionType={fundsActionType}
+      />
     </motion.div>
   );
 };
