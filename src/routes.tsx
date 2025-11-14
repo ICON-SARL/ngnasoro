@@ -9,6 +9,8 @@ import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
+import UnifiedLoansPage from './pages/mobile/UnifiedLoansPage';
+import MobileLoanDetailsPage from './pages/mobile/MobileLoanDetailsPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
@@ -214,10 +216,18 @@ const router = createBrowserRouter([
         path: 'diagnostics',
         element: <MobileDiagnosticsPage />,
       },
-      {
-        path: 'loan-application',
-        element: <MobileLoanApplicationPage />,
-      },
+        {
+          path: 'loans',
+          element: <UnifiedLoansPage />,
+        },
+        {
+          path: 'loans/:loanId',
+          element: <MobileLoanDetailsPage />,
+        },
+        {
+          path: 'loan-application',
+          element: <Navigate to="/mobile-flow/loans" replace />,
+        },
       {
         path: 'loan-application/:planId',
         element: <MobileLoanApplicationPage />,
