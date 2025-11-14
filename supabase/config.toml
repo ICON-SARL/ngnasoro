@@ -35,3 +35,6 @@ verify_jwt = true
 
 [functions.scheduled-tasks]
 verify_jwt = false
+
+[functions.generate-test-data]
+verify_jwt = false
