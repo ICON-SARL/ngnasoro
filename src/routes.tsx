@@ -1,11 +1,15 @@
 
-import { createBrowserRouter } from 'react-router-dom';
-import { MobileRouter } from './components/Router';
+import { createBrowserRouter, Navigate } from 'react-router-dom';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
+import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
+import MobileLoansPage from './pages/mobile/MobileLoansPage';
+import MobileProfilePage from './pages/mobile/MobileProfilePage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
 import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
 import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
 import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
+import SfdSelectorPage from './pages/SfdSelectorPage';
+import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import SfdClientsPage from './pages/SfdClientsPage';
@@ -134,6 +138,12 @@ const router = createBrowserRouter([
     ),
   },
   
+  // Redirection /mobile → /mobile-flow/dashboard
+  {
+    path: '/mobile',
+    element: <Navigate to="/mobile-flow/dashboard" replace />,
+  },
+  
   // Mobile client routes
   {
     path: '/mobile-flow',
@@ -144,28 +154,32 @@ const router = createBrowserRouter([
     ),
     children: [
       {
-        path: 'main',
-        element: <MobileRouter />,
+        index: true,
+        element: <Navigate to="dashboard" replace />,
       },
       {
         path: 'dashboard',
-        element: <MobileRouter />,
+        element: <MobileDashboardPage />,
+      },
+      {
+        path: 'main',
+        element: <Navigate to="/mobile-flow/dashboard" replace />,
       },
       {
         path: 'profile',
-        element: <MobileRouter />,
+        element: <MobileProfilePage />,
       },
       {
         path: 'loans',
-        element: <MobileRouter />,
+        element: <MobileLoansPage />,
       },
       {
         path: 'funds-management',
         element: <FundsManagementPage />,
       },
       {
-        path: 'transactions',
-        element: <MobileRouter />,
+        path: 'diagnostics',
+        element: <MobileDiagnosticsPage />,
       },
       {
         path: 'loan-application',
@@ -180,13 +194,13 @@ const router = createBrowserRouter([
         element: <LoanDetailsPage />,
       },
       {
-        path: 'diagnostics',
-        element: <MobileDiagnosticsPage />,
+        path: 'sfd-selector',
+        element: <SfdSelectorPage />,
       },
       {
-        index: true,
-        element: <MobileRouter />,
-      }
+        path: 'sfd-adhesion/:sfdId',
+        element: <SfdAdhesionPage />,
+      },
     ],
   },
   

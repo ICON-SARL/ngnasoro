@@ -32,7 +32,7 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       id: 'home',
       label: 'Accueil',
       icon: Home,
-      path: '/mobile-flow/main'
+      path: '/mobile-flow/dashboard'
     },
     {
       id: 'loans',
