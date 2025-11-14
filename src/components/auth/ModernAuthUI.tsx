@@ -64,10 +64,9 @@ const ModernAuthUI: React.FC = () => {
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }} className="w-full max-w-md relative z-10">
         <div className="glass-card p-8 space-y-6 border border-border/50 shadow-2xl">
-          <div className="text-center space-y-4">
-            <div className="flex justify-center"><AnimatedLogo size={80} withGlow withPulse /></div>
-            <motion.h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient">N'GNA SÔRÔ</motion.h1>
-            <p className="text-muted-foreground">{isLogin ? 'Accédez à votre espace personnel' : 'Créez votre compte'}</p>
+          <div className="text-center space-y-3">
+            <div className="flex justify-center"><AnimatedLogo size={120} withGlow withPulse /></div>
+            <p className="text-muted-foreground text-lg">{isLogin ? 'Accédez à votre espace personnel' : 'Créez votre compte'}</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <AnimatePresence mode="wait">
