@@ -1,5 +1,6 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import RootLayout from './components/RootLayout';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
@@ -22,11 +23,14 @@ import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
 const router = createBrowserRouter([
-  // Default entry point - redirect to auth
   {
-    path: '/',
-    element: <LoginPage />,
-  },
+    element: <RootLayout />,
+    children: [
+      // Default entry point - redirect to auth
+      {
+        path: '/',
+        element: <LoginPage />,
+      },
   
   // Auth routes
   {
@@ -219,6 +223,7 @@ const router = createBrowserRouter([
     path: '/access-denied',
     element: <UnauthorizedPage />,
   },
-]);
+  ],
+}]);
 
 export default router;
