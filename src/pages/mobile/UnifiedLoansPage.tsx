@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, Plus } from 'lucide-react';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
@@ -21,9 +21,9 @@ const UnifiedLoansPage = () => {
   const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
   
   // Fetch active SFD
-  useState(() => {
+  useEffect(() => {
     getActiveSfdData().then(sfd => setActiveSfd(sfd));
-  });
+  }, []);
 
   // Fetch loans
   const { loans, isLoading: isLoadingLoans } = useSfdLoans();
