@@ -16,6 +16,7 @@ import SfdClientsPage from './pages/SfdClientsPage';
 import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoginPage from './pages/LoginPage';
+import AdminLoginPage from './pages/AdminLoginPage';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
