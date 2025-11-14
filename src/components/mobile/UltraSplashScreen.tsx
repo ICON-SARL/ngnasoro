@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
+import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 
 interface UltraSplashScreenProps {
   onComplete?: () => void;
@@ -18,7 +19,6 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
   const [particles, setParticles] = useState<Array<{ x: number; y: number; delay: number }>>([]);
 
   useEffect(() => {
-    // Generate particles
     const newParticles = Array.from({ length: 20 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
@@ -26,11 +26,9 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
     }));
     setParticles(newParticles);
 
-    // Animation sequence
     const logoTimer = setTimeout(() => setShowLogo(true), 200);
     const textTimer = setTimeout(() => setShowText(true), 800);
 
-    // Progress animation
     const progressInterval = setInterval(() => {
       setProgress((prev) => {
         if (prev >= 100) {
@@ -41,7 +39,6 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
       });
     }, duration / 50);
 
-    // Complete animation
     const completeTimer = setTimeout(() => {
       if (onComplete) {
         onComplete();
@@ -60,10 +57,8 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-accent to-primary animate-gradient">
-      {/* Animated mesh gradient background */}
       <div className="absolute inset-0 mesh-gradient opacity-50" />
       
-      {/* Floating particles */}
       <div className="absolute inset-0">
         {particles.map((particle, index) => (
           <motion.div
@@ -87,9 +82,7 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
         ))}
       </div>
 
-      {/* Main content */}
       <div className="relative z-10 flex flex-col items-center space-y-8">
-        {/* Logo with morphing animation */}
         <AnimatePresence>
           {showLogo && (
             <motion.div
@@ -101,108 +94,48 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
               }}
               className="relative"
             >
-              {/* Logo container with glow effect */}
-              <div className="relative">
-                {/* Glow effect */}
-                <motion.div
-                  className="absolute inset-0 rounded-full bg-white/50 blur-3xl"
-                  animate={{
-                    scale: [1, 1.2, 1],
-                    opacity: [0.3, 0.6, 0.3],
-                  }}
-                  transition={{
-                    duration: 2,
-                    repeat: Infinity,
-                  }}
-                />
-                
-                {/* Logo circle */}
-                <motion.div
-                  className="relative w-32 h-32 rounded-full bg-white flex items-center justify-center shadow-2xl"
-                  whileHover={{ scale: 1.05, rotateY: 180 }}
-                  transition={{ duration: 0.6 }}
-                >
-                  <span className="text-4xl font-bold gradient-text">N'G</span>
-                </motion.div>
-
-                {/* Orbiting elements */}
-                {[0, 120, 240].map((angle, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-3 h-3 rounded-full bg-white shadow-lg"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                    }}
-                    animate={{
-                      x: [
-                        Math.cos((angle * Math.PI) / 180) * 60,
-                        Math.cos(((angle + 360) * Math.PI) / 180) * 60,
-                      ],
-                      y: [
-                        Math.sin((angle * Math.PI) / 180) * 60,
-                        Math.sin(((angle + 360) * Math.PI) / 180) * 60,
-                      ],
-                    }}
-                    transition={{
-                      duration: 3,
-                      repeat: Infinity,
-                      ease: 'linear',
-                    }}
-                  />
-                ))}
-              </div>
+              <AnimatedLogo size={140} withGlow withPulse />
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Animated text */}
         <AnimatePresence>
           {showText && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-center"
+              className="text-center space-y-2"
             >
               <motion.h1 
-                className="text-4xl font-bold text-white mb-2"
-                animate={{
-                  backgroundPosition: ['0% 50%', '100% 50%', '0% 50%'],
-                }}
-                style={{
-                  background: 'linear-gradient(90deg, #ffffff, #10B981, #34D399, #ffffff)',
-                  backgroundSize: '200% auto',
-                  WebkitBackgroundClip: 'text',
-                  WebkitTextFillColor: 'transparent',
-                  backgroundClip: 'text',
-                }}
-                transition={{
-                  duration: 3,
-                  repeat: Infinity,
-                }}
+                className="text-5xl font-bold bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient"
               >
                 N'GNA SÔRÔ
               </motion.h1>
-              <p className="text-white/80 text-sm">Votre partenaire microfinance</p>
+              <motion.p
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
+                className="text-white/80 text-lg"
+              >
+                Microfinance digitale
+              </motion.p>
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* Circular progress */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 1.2, duration: 0.4 }}
+        <motion.div 
           className="relative w-24 h-24"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: 1 }}
         >
-          {/* Background circle */}
-          <svg className="w-full h-full -rotate-90">
+          <svg className="w-full h-full transform -rotate-90">
             <circle
               cx="48"
               cy="48"
               r="44"
-              stroke="rgba(255,255,255,0.2)"
+              stroke="rgba(255, 255, 255, 0.2)"
               strokeWidth="4"
               fill="none"
             />
@@ -214,27 +147,46 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
               strokeWidth="4"
               fill="none"
               strokeLinecap="round"
-              strokeDasharray={276}
-              strokeDashoffset={276 - (276 * progress) / 100}
-              transition={{ duration: 0.1 }}
+              strokeDasharray={276.46}
+              strokeDashoffset={276.46 - (276.46 * progress) / 100}
+              style={{
+                filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
+              }}
             />
           </svg>
-          
-          {/* Percentage text */}
           <div className="absolute inset-0 flex items-center justify-center">
             <span className="text-white text-lg font-bold">{Math.round(progress)}%</span>
           </div>
         </motion.div>
       </div>
 
+      <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30 pointer-events-none" />
+
       <style>{`
         @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
+          0%, 100% {
+            background-position: 0% 50%;
+          }
+          50% {
+            background-position: 100% 50%;
+          }
         }
+
         .animate-gradient {
           background-size: 200% 200%;
-          animation: gradient 4s ease infinite;
+          animation: gradient 8s ease infinite;
+        }
+
+        .mesh-gradient {
+          background-image: 
+            radial-gradient(at 27% 37%, hsla(215, 98%, 61%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 97% 21%, hsla(125, 98%, 72%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 52% 99%, hsla(354, 98%, 61%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 10% 29%, hsla(256, 96%, 67%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 97% 96%, hsla(38, 60%, 74%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 33% 50%, hsla(222, 67%, 73%, 0.3) 0px, transparent 50%),
+            radial-gradient(at 79% 53%, hsla(343, 68%, 79%, 0.3) 0px, transparent 50%);
+          animation: gradient 15s ease infinite;
         }
       `}</style>
     </div>

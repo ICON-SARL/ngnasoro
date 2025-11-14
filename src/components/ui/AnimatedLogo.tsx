@@ -46,7 +46,7 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         src={logo}
         alt="N'GNA SÔRÔ Logo"
         style={{ width: size, height: size }}
-        className="relative z-10 rounded-full shadow-2xl"
+        className="relative z-10 drop-shadow-2xl"
         whileHover={{
           rotateY: 15,
           rotateX: 5,
