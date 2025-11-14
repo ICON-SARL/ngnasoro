@@ -60,8 +60,7 @@ const SfdAuthUI = () => {
         const isSfdAdmin = user.app_metadata?.role === 'sfd_admin' || await checkSfdAdminStatus(user.id);
         
         if (isSfdAdmin) {
-          // Save the role in session storage to help with persistence
-          sessionStorage.setItem('user_role', 'sfd_admin');
+          // ✅ SECURE: No localStorage/sessionStorage for roles - role checked server-side
           navigate('/agency-dashboard');
         } else {
           // If not an SFD admin, show error

@@ -108,9 +108,9 @@ export function SfdLoginForm() {
           throw new Error("Aucune SFD associée à votre compte");
         }
         
-        // Store the user role for persistence
-        sessionStorage.setItem('user_role', 'sfd_admin');
-        sessionStorage.setItem('active_sfd_id', sfdData.sfd_id);
+        // ✅ SECURE: No localStorage/sessionStorage for roles
+        // Roles are always fetched from database via user_roles table
+        // activeSfdId is managed by AuthContext state, not storage
         
         toast({
           title: "Connexion réussie",
