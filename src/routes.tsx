@@ -12,6 +12,7 @@ import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import PendingApprovalPage from './pages/PendingApprovalPage';
 import SfdClientsPage from './pages/SfdClientsPage';
 import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
@@ -39,6 +40,10 @@ const router = createBrowserRouter([
   {
     path: '/sfd/auth',
     element: <SfdLoginPage />,
+  },
+  {
+    path: '/pending-approval',
+    element: <PendingApprovalPage />,
   },
   
   // Super Admin routes

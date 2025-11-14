@@ -27,24 +27,53 @@ const ModernAuthUI: React.FC = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email: formData.email,
           password: formData.password,
         });
         if (error) throw error;
+        
         trigger('success');
         setShowConfetti(true);
         toast({ title: 'Connexion réussie', description: 'Vous allez être redirigé...' });
-        setTimeout(() => navigate('/mobile-flow/dashboard'), 1500);
+        
+        // Récupérer le rôle de l'utilisateur pour redirection intelligente
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id)
+          .single();
+        
+        const role = roleData?.role || 'user';
+        
+        // Redirection selon le rôle
+        setTimeout(() => {
+          if (role === 'admin') {
+            navigate('/super-admin-dashboard');
+          } else if (role === 'sfd_admin') {
+            navigate('/agency-dashboard');
+          } else if (role === 'client') {
+            navigate('/mobile-flow/dashboard');
+          } else {
+            // Rôle 'user' - doit adhérer à une SFD
+            navigate('/pending-approval');
+          }
+        }, 1500);
       } else {
         const { error } = await supabase.auth.signUp({
           email: formData.email,
           password: formData.password,
-          options: { data: { full_name: formData.fullName } },
+          options: { 
+            data: { full_name: formData.fullName },
+            emailRedirectTo: `${window.location.origin}/pending-approval`
+          },
         });
         if (error) throw error;
         trigger('success');
-        toast({ title: 'Inscription réussie', description: 'Vérifiez votre email.' });
+        toast({ 
+          title: 'Inscription réussie', 
+          description: 'Vérifiez votre email pour confirmer votre compte.' 
+        });
       }
     } catch (error: any) {
       trigger('error');
