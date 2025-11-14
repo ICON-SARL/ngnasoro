@@ -31,6 +31,12 @@ const AccessDeniedPage = () => {
     return '/mobile-flow/main';
   };
 
+  // Afficher le rôle de manière lisible
+  const getDisplayRole = (role: string | null) => {
+    if (!role) return 'Non défini';
+    return role.charAt(0).toUpperCase() + role.slice(1).replace('_', ' ');
+  };
+
   // Déterminer si l'utilisateur est un simple utilisateur tentant d'accéder à une zone client
   const isUserTryingClientAccess = userRole === 'user' && 
     (requiredRole === UserRole.Client || requiredRole === 'client');
@@ -55,12 +61,12 @@ const AccessDeniedPage = () => {
             </p>
             {requiredRole && (
               <p className="mb-2">
-                <strong>Rôle requis :</strong> {requiredRole}
+                <strong>Rôle requis :</strong> {getDisplayRole(requiredRole)}
               </p>
             )}
             {user && (
               <p>
-                <strong>Votre rôle :</strong> {user.app_metadata?.role || 'Non défini'}
+                <strong>Votre rôle :</strong> {getDisplayRole(userRole)}
               </p>
             )}
           </div>

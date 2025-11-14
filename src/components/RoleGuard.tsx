@@ -27,64 +27,75 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
     let timeoutId: NodeJS.Timeout;
     
     const checkAccess = async () => {
-      const currentTime = new Date().toISOString();
-      const debug = `[${currentTime}] RoleGuard: Starting access check`;
-      
-      console.log(debug, {
-        loading,
+      console.log('🔐 RoleGuard - Detailed Check:', { 
+        path: location.pathname,
+        userId: user?.id,
+        userEmail: user?.email,
+        loading, 
         isCheckingRole,
-        user: !!user,
         userRole,
+        userRoleType: typeof userRole,
+        userRoleIsNull: userRole === null,
         requiredRole,
-        path: location.pathname
+        requiredRoleType: typeof requiredRole
       });
 
-      setDebugInfo(debug);
-
-      // Timeout de secours : si après 10 secondes on est toujours en loading
-      timeoutId = setTimeout(() => {
-        if (loading || isCheckingRole || hasAccess === null) {
-          console.error('RoleGuard timeout - redirecting to auth');
-          setHasAccess(false);
-        }
-      }, 10000);
-
-      if (loading || isCheckingRole) {
-        console.log('RoleGuard: Still loading...');
+      // Wait for initial auth loading
+      if (loading) {
+        console.log('⏳ RoleGuard - Still loading auth state...');
         return;
       }
 
+      // No user means redirect to auth
       if (!user) {
-        console.log('RoleGuard: No user found, denying access');
+        console.log('❌ RoleGuard - No user, redirecting to auth');
         setHasAccess(false);
         return;
       }
 
+      // CRITICAL: Wait for role to be loaded (don't proceed if role is being checked OR is null)
+      if (isCheckingRole || userRole === null) {
+        console.log('⏳ RoleGuard - Waiting for role to load...', { isCheckingRole, userRole });
+        
+        // Security timeout: if still waiting after 10 seconds, deny access
+        timeoutId = setTimeout(() => {
+          console.error('⚠️ RoleGuard - Timeout waiting for role, denying access');
+          setHasAccess(false);
+        }, 10000);
+        
+        return;
+      }
+
+      // Clear timeout if we got here
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+
+      // Normalize roles for comparison
       const requiredRoleStr = String(requiredRole).toLowerCase();
       const userRoleStr = String(userRole).toLowerCase();
       
-      console.log('RoleGuard: Role comparison', {
-        userRole: userRoleStr,
+      console.log('🔍 RoleGuard - Checking role match:', { 
+        userRole: userRoleStr, 
         requiredRole: requiredRoleStr,
-        match: userRoleStr === requiredRoleStr,
-        userMetadata: user.app_metadata
+        match: userRoleStr === requiredRoleStr 
       });
       
       const hasRole = userRoleStr === requiredRoleStr;
-      setHasAccess(hasRole);
       
       if (!hasRole) {
-        console.log('RoleGuard: Access denied, logging event');
+        console.log('❌ RoleGuard - Access denied, logging audit event');
+        
+        // Log access denial
         try {
           await logAuditEvent(
             AuditLogCategory.DATA_ACCESS,
             'role_access_denied',
             {
               required_role: requiredRole,
-              user_role: userRole || 'unknown',
+              user_role: userRole,
               path: location.pathname,
-              user_metadata: user.app_metadata,
-              timestamp: currentTime
+              timestamp: new Date().toISOString()
             },
             user.id,
             AuditLogSeverity.WARNING,
@@ -93,13 +104,17 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         } catch (e) {
           console.error('Error logging audit event:', e);
         }
-      } else {
-        console.log('RoleGuard: Access granted for user', {
-          userId: user.id,
-          email: user.email,
-          role: userRole
-        });
+        
+        setHasAccess(false);
+        return;
       }
+
+      console.log('✅ RoleGuard - Access granted for user:', {
+        userId: user.id,
+        email: user.email,
+        role: userRole
+      });
+      setHasAccess(true);
     };
     
     checkAccess();
