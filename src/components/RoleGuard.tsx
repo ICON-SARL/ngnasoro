@@ -24,6 +24,8 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
   const location = useLocation();
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const checkAccess = async () => {
       const currentTime = new Date().toISOString();
       const debug = `[${currentTime}] RoleGuard: Starting access check`;
@@ -38,6 +40,14 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
       });
 
       setDebugInfo(debug);
+
+      // Timeout de secours : si après 10 secondes on est toujours en loading
+      timeoutId = setTimeout(() => {
+        if (loading || isCheckingRole || hasAccess === null) {
+          console.error('RoleGuard timeout - redirecting to auth');
+          setHasAccess(false);
+        }
+      }, 10000);
 
       if (loading || isCheckingRole) {
         console.log('RoleGuard: Still loading...');
@@ -93,6 +103,10 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
     };
     
     checkAccess();
+    
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId);
+    };
   }, [user, loading, isCheckingRole, userRole, requiredRole, location.pathname]);
 
   // Still loading auth or checking role

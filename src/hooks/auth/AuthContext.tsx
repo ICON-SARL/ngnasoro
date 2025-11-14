@@ -61,60 +61,65 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return highestRole;
   };
 
-  // Fonction pour synchroniser les métadonnées utilisateur
-  const syncUserMetadata = async (userId: string, role: UserRole): Promise<void> => {
-    try {
-      console.log('Synchronizing user metadata for role:', role);
-      
-      // Mettre à jour les métadonnées dans auth.users
-      const { error } = await supabase.auth.admin.updateUserById(userId, {
-        app_metadata: { role }
-      });
-      
-      if (error) {
-        console.error('Error updating user metadata:', error);
-      } else {
-        console.log('User metadata synchronized successfully');
-      }
-    } catch (err) {
-      console.error('Exception synchronizing user metadata:', err);
-    }
-  };
+  // Cache pour éviter les appels redondants à fetchUserRole
+  let lastRoleFetch: { userId: string; role: UserRole; timestamp: number } | null = null;
 
-  // Fonction pour nettoyer les rôles en doublon
+  // Fonction pour nettoyer les rôles en doublon (optimisée)
   const cleanupDuplicateRoles = async (userId: string, primaryRole: UserRole): Promise<void> => {
     try {
-      console.log('Cleaning up duplicate roles for user:', userId, 'Primary role:', primaryRole);
-      
-      // Si l'utilisateur a un rôle spécifique (admin, sfd_admin, client), supprimer le rôle 'user'
       if (primaryRole !== UserRole.User) {
-        const { error } = await supabase
+        // Vérifier d'abord s'il y a des doublons avant de supprimer
+        const { data: existingRoles } = await supabase
           .from('user_roles')
-          .delete()
-          .eq('user_id', userId)
-          .eq('role', 'user');
+          .select('id, role')
+          .eq('user_id', userId);
         
-        if (error) {
-          console.error('Error cleaning up duplicate roles:', error);
-        } else {
-          console.log('Duplicate user roles cleaned up successfully');
+        const hasUserRole = existingRoles?.some(r => r.role === 'user');
+        const hasOtherRoles = existingRoles?.some(r => r.role !== 'user');
+        
+        // Ne supprimer que si l'utilisateur a un rôle ET le rôle 'user'
+        if (hasUserRole && hasOtherRoles) {
+          console.log('Cleaning up duplicate user role for:', userId);
+          await supabase
+            .from('user_roles')
+            .delete()
+            .eq('user_id', userId)
+            .eq('role', 'user');
         }
       }
     } catch (err) {
-      console.error('Exception cleaning up duplicate roles:', err);
+      console.error('Error cleaning up duplicate roles:', err);
     }
   };
 
-  // Function to fetch user role from database with improved logic
-  const fetchUserRole = async (userId: string): Promise<UserRole | null> => {
+  // Function to fetch user role from database with cache and timeout
+  const fetchUserRole = async (userId: string, forceRefresh = false): Promise<UserRole | null> => {
+    // Cache de 30 secondes pour éviter les appels redondants
+    if (!forceRefresh && lastRoleFetch?.userId === userId) {
+      const age = Date.now() - lastRoleFetch.timestamp;
+      if (age < 30000) {
+        console.log('Using cached role:', lastRoleFetch.role);
+        return lastRoleFetch.role;
+      }
+    }
+
     try {
       setIsCheckingRole(true);
+      
+      // Timeout de sécurité : force isCheckingRole à false après 5 secondes
+      const timeoutId = setTimeout(() => {
+        console.warn('Role check timeout - forcing isCheckingRole to false');
+        setIsCheckingRole(false);
+      }, 5000);
+      
       console.log('Fetching roles for user:', userId);
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
+
+      clearTimeout(timeoutId); // Annuler le timeout si succès
 
       if (error) {
         console.error('Error fetching user roles:', error);
@@ -143,9 +148,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const primaryRole = getHighestRole(roles);
       console.log('Primary role determined:', primaryRole);
       
-      // Synchroniser les métadonnées et nettoyer les doublons en arrière-plan
+      // Mettre en cache
+      lastRoleFetch = { userId, role: primaryRole, timestamp: Date.now() };
+      
+      // Nettoyer les doublons en arrière-plan
       setTimeout(async () => {
-        await syncUserMetadata(userId, primaryRole);
         await cleanupDuplicateRoles(userId, primaryRole);
       }, 0);
       
@@ -207,10 +214,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    // Listen for auth changes
+    // Listen for auth changes with debouncing
+    let authChangeTimeout: NodeJS.Timeout | null = null;
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
         console.log('Auth state change event:', event);
+        
+        // Débouncer : attendre 500ms avant de traiter
+        if (authChangeTimeout) clearTimeout(authChangeTimeout);
+        
+        authChangeTimeout = setTimeout(async () => {
         
         if (newSession?.user) {
           const enhancedUser = enhanceUser(newSession.user);
@@ -224,7 +237,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           });
           
           // Fetch role from database
-          const dbRole = await fetchUserRole(enhancedUser.id);
+          const dbRole = await fetchUserRole(enhancedUser.id, false); // Utiliser le cache
           if (dbRole) {
             setUserRole(dbRole);
             console.log('User role updated to:', dbRole);
@@ -275,6 +288,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         }
+        }, 500); // Fin du setTimeout avec délai de 500ms
       }
     );
 
