@@ -42,16 +42,16 @@ const ModernSfdAdminAuthUI: React.FC = () => {
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
         <div className="glass-card p-8 space-y-6 border border-primary/30">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             <div className="flex justify-center">
               <div className="relative">
-                <AnimatedLogo size={80} withGlow withPulse />
+                <AnimatedLogo size={120} withGlow withPulse />
                 <motion.div className="absolute -bottom-2 -right-2" initial={{ scale: 0 }} animate={{ scale: 1 }}>
                   <div className="bg-gradient-to-br from-primary to-accent p-2 rounded-full"><Building2 className="w-5 h-5 text-white" /></div>
                 </motion.div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">Espace SFD</h1>
+            <p className="text-primary text-lg font-semibold">Administration SFD</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <UltraInput type="email" label="Email SFD" icon={<Mail className="w-5 h-5" />} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />

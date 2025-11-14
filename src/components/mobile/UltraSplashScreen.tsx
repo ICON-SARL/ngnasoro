@@ -105,18 +105,13 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="text-center space-y-2"
+              className="text-center"
             >
-              <motion.h1 
-                className="text-5xl font-bold bg-gradient-to-r from-white via-yellow-200 to-white bg-clip-text text-transparent bg-[length:200%_auto] animate-gradient"
-              >
-                N'GNA SÔRÔ
-              </motion.h1>
               <motion.p
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-white/80 text-lg"
+                className="text-white/90 text-xl font-medium"
               >
                 Microfinance digitale
               </motion.p>

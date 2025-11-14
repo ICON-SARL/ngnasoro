@@ -43,16 +43,16 @@ const ModernAdminAuthUI: React.FC = () => {
       <AnimatePresence>{showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}</AnimatePresence>
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-md relative z-10">
         <div className="glass-card p-8 space-y-6 border border-amber-500/20">
-          <div className="text-center space-y-4">
+          <div className="text-center space-y-3">
             <div className="flex justify-center">
               <div className="relative">
-                <AnimatedLogo size={80} withGlow withPulse />
+                <AnimatedLogo size={120} withGlow withPulse />
                 <motion.div className="absolute -top-2 -right-2" initial={{ scale: 0 }} animate={{ scale: 1 }}>
                   <div className="bg-gradient-to-br from-amber-500 to-yellow-600 p-2 rounded-full shadow-lg"><Shield className="w-5 h-5 text-white" /></div>
                 </motion.div>
               </div>
             </div>
-            <h1 className="text-3xl font-bold bg-gradient-to-r from-amber-400 via-yellow-500 to-amber-400 bg-clip-text text-transparent animate-gradient">Espace MEREF</h1>
+            <p className="text-amber-400 text-lg font-semibold">Administration MEREF</p>
           </div>
           <form onSubmit={handleSubmit} className="space-y-5">
             <UltraInput type="email" label="Email administrateur" icon={<Mail className="w-5 h-5" />} value={formData.email} onChange={(e) => setFormData({ ...formData, email: e.target.value })} required />

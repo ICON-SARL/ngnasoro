@@ -50,11 +50,10 @@ const AuthSelectorPage: React.FC = () => {
             <img 
               src="/lovable-uploads/LOGO_transprant_1763143001713.png" 
               alt="N'GNA SÔRÔ Logo" 
-              className="h-24 mx-auto drop-shadow-2xl"
+              className="h-32 mx-auto drop-shadow-2xl"
             />
           </div>
-          <h1 className="text-4xl font-bold mb-3 gradient-text">N'GNA SÔRÔ</h1>
-          <p className="text-muted-foreground text-lg">Sélectionnez votre espace</p>
+          <p className="text-muted-foreground text-lg mt-4">Sélectionnez votre espace</p>
         </motion.div>
 
         {/* User type cards */}
