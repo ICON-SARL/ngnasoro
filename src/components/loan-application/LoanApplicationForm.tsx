@@ -1,194 +1,366 @@
-
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast'; // Correct import path
-import { Form } from '@/components/ui/form';
-import { Button } from '@/components/ui/button';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { z } from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
-import { Loader2 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
+import { Loader2, DollarSign, Calendar, FileText, AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Badge } from '@/components/ui/badge';
 
-const formSchema = z.object({
-  loanType: z.string({
-    required_error: "Vous devez sélectionner un type de prêt",
-  }),
-  amount: z.coerce.number()
-    .min(10000, "Le montant minimum est de 10,000 FCFA")
-    .max(5000000, "Le montant maximum est de 5,000,000 FCFA"),
-  duration: z.coerce.number()
-    .min(1, "La durée minimum est de 1 mois")
-    .max(60, "La durée maximum est de 60 mois"),
-  purpose: z.string()
-    .min(3, "Veuillez indiquer l'objet du prêt")
-    .max(100, "L'objet du prêt est trop long (max 100 caractères)"),
-  description: z.string()
-    .min(20, "Veuillez donner plus de détails sur votre projet")
-    .max(500, "La description est trop longue (max 500 caractères)"),
-});
+interface LoanPlan {
+  id: string;
+  name: string;
+  description?: string;
+  min_amount: number;
+  max_amount: number;
+  interest_rate: number;
+  duration_months: number;
+  sfd_id: string;
+}
 
-type FormValues = z.infer<typeof formSchema>;
+interface SfdClient {
+  id: string;
+  kyc_level: number;
+  sfd_id: string;
+}
 
 const LoanApplicationForm = () => {
-  const navigate = useNavigate();
-  const { user } = useAuth();
   const { toast } = useToast();
-  
-  const form = useForm<FormValues>({
-    resolver: zodResolver(formSchema),
-    defaultValues: {
-      loanType: "",
-      amount: 100000,
-      duration: 12,
-      purpose: "",
-      description: "",
-    },
-  });
-  
-  const onSubmit = async (data: FormValues) => {
+  const { user } = useAuth();
+  const [loanPlans, setLoanPlans] = useState<LoanPlan[]>([]);
+  const [clientData, setClientData] = useState<SfdClient | null>(null);
+  const [selectedPlan, setSelectedPlan] = useState<LoanPlan | null>(null);
+  const [amount, setAmount] = useState('');
+  const [purpose, setPurpose] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [kycLimit, setKycLimit] = useState(0);
+
+  useEffect(() => {
+    if (user) {
+      fetchClientData();
+    }
+  }, [user]);
+
+  const fetchClientData = async () => {
     try {
-      // Submit loan application logic would go here
-      console.log('Loan application submitted:', data);
-      
-      toast({
-        title: "Application submitted",
-        description: "Your loan application has been submitted successfully. We will review it shortly.",
-      });
-      
-      // Navigate back to the main dashboard or confirmation page
-      navigate('/');
+      const { data: client, error: clientError } = await supabase
+        .from('sfd_clients')
+        .select('id, kyc_level, sfd_id')
+        .eq('user_id', user?.id || '')
+        .single();
+
+      if (clientError) throw clientError;
+
+      setClientData(client);
+
+      const limits: Record<number, number> = {
+        1: 50000,
+        2: 500000,
+        3: Infinity,
+      };
+      setKycLimit(limits[client.kyc_level] || 50000);
+
+      const { data: plans, error: plansError } = await supabase
+        .from('sfd_loan_plans')
+        .select('*')
+        .eq('sfd_id', client.sfd_id)
+        .eq('is_active', true);
+
+      if (plansError) throw plansError;
+      setLoanPlans(plans || []);
     } catch (error) {
-      console.error('Error submitting loan application:', error);
-      
+      console.error('Error fetching data:', error);
       toast({
-        title: "Error",
-        description: "There was a problem submitting your application. Please try again.",
-        variant: "destructive",
+        title: 'Erreur',
+        description: 'Impossible de charger les données',
+        variant: 'destructive',
       });
+    } finally {
+      setLoading(false);
     }
   };
-  
+
+  const handlePlanSelect = (planId: string) => {
+    const plan = loanPlans.find(p => p.id === planId);
+    setSelectedPlan(plan || null);
+    setAmount('');
+  };
+
+  const validateAmount = (): boolean => {
+    const amountNum = parseFloat(amount);
+
+    if (!selectedPlan) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez sélectionner un plan de prêt',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (!amountNum || amountNum <= 0) {
+      toast({
+        title: 'Erreur',
+        description: 'Veuillez entrer un montant valide',
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (amountNum < selectedPlan.min_amount) {
+      toast({
+        title: 'Montant trop faible',
+        description: `Le montant minimum pour ce plan est ${selectedPlan.min_amount.toLocaleString()} FCFA`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (amountNum > selectedPlan.max_amount) {
+      toast({
+        title: 'Montant trop élevé',
+        description: `Le montant maximum pour ce plan est ${selectedPlan.max_amount.toLocaleString()} FCFA`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    if (amountNum > kycLimit) {
+      toast({
+        title: 'Limite KYC dépassée',
+        description: `Votre niveau KYC ${clientData?.kyc_level} limite les prêts à ${kycLimit.toLocaleString()} FCFA`,
+        variant: 'destructive',
+      });
+      return false;
+    }
+
+    return true;
+  };
+
+  const calculateLoanDetails = () => {
+    if (!selectedPlan || !amount) return null;
+
+    const principal = parseFloat(amount);
+    const totalAmount = principal * (1 + selectedPlan.interest_rate);
+    const monthlyPayment = totalAmount / selectedPlan.duration_months;
+
+    return {
+      principal,
+      totalAmount,
+      monthlyPayment,
+      interestAmount: totalAmount - principal,
+    };
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!validateAmount() || !clientData || !selectedPlan) return;
+
+    setSubmitting(true);
+    try {
+      const loanDetails = calculateLoanDetails();
+      if (!loanDetails) throw new Error('Calcul impossible');
+
+      const { error } = await supabase
+        .from('sfd_loans')
+        .insert({
+          sfd_id: clientData.sfd_id,
+          client_id: clientData.id,
+          loan_plan_id: selectedPlan.id,
+          amount: loanDetails.principal,
+          interest_rate: selectedPlan.interest_rate,
+          duration_months: selectedPlan.duration_months,
+          monthly_payment: loanDetails.monthlyPayment,
+          total_amount: loanDetails.totalAmount,
+          remaining_amount: loanDetails.totalAmount,
+          purpose: purpose,
+          status: 'pending',
+        });
+
+      if (error) throw error;
+
+      await supabase
+        .from('audit_logs')
+        .insert({
+          user_id: user?.id,
+          action: 'create_loan_request',
+          category: 'loans',
+          severity: 'info',
+          status: 'success',
+          details: {
+            amount: loanDetails.principal,
+            plan_id: selectedPlan.id,
+            plan_name: selectedPlan.name,
+          },
+        });
+
+      toast({
+        title: 'Succès',
+        description: 'Votre demande de prêt a été soumise avec succès',
+      });
+
+      setSelectedPlan(null);
+      setAmount('');
+      setPurpose('');
+    } catch (error) {
+      console.error('Error submitting loan:', error);
+      toast({
+        title: 'Erreur',
+        description: 'Impossible de soumettre la demande',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const loanDetails = calculateLoanDetails();
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-2xl">Loan Application</CardTitle>
-        <CardDescription>
-          Complete the form below to apply for a loan.
-        </CardDescription>
-      </CardHeader>
-      
-      <CardContent>
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="loanType" className="block text-sm font-medium mb-1">
-                  Loan Type
-                </label>
-                <Select
-                  onValueChange={(value) => form.setValue('loanType', value)}
-                  defaultValue={form.getValues('loanType')}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a loan type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="personal">Personal Loan</SelectItem>
-                    <SelectItem value="business">Business Loan</SelectItem>
-                    <SelectItem value="education">Education Loan</SelectItem>
-                    <SelectItem value="housing">Housing Loan</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.loanType && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.loanType.message}</p>
-                )}
-              </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label htmlFor="amount" className="block text-sm font-medium mb-1">
-                    Loan Amount (FCFA)
-                  </label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    {...form.register('amount', { valueAsNumber: true })}
-                  />
-                  {form.formState.errors.amount && (
-                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.amount.message}</p>
-                  )}
+    <form onSubmit={handleSubmit} className="space-y-6">
+      <Card>
+        <CardHeader>
+          <CardTitle>Demande de Prêt</CardTitle>
+          <CardDescription>
+            Remplissez le formulaire pour soumettre votre demande de prêt
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <Alert>
+            <AlertCircle className="h-4 w-4" />
+            <AlertDescription>
+              Votre niveau KYC actuel est <Badge variant="outline">Niveau {clientData?.kyc_level}</Badge>
+              {' '}avec une limite de prêt de <strong>{kycLimit === Infinity ? 'sans limite' : `${kycLimit.toLocaleString()} FCFA`}</strong>
+            </AlertDescription>
+          </Alert>
+
+          <div>
+            <Label htmlFor="plan">Plan de prêt *</Label>
+            <Select onValueChange={handlePlanSelect} value={selectedPlan?.id}>
+              <SelectTrigger>
+                <SelectValue placeholder="Sélectionnez un plan" />
+              </SelectTrigger>
+              <SelectContent>
+                {loanPlans.map((plan) => (
+                  <SelectItem key={plan.id} value={plan.id}>
+                    {plan.name} - {plan.interest_rate * 100}% sur {plan.duration_months} mois
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {selectedPlan && (
+            <Card className="bg-muted">
+              <CardContent className="pt-6">
+                <div className="space-y-2 text-sm">
+                  <p><strong>Description:</strong> {selectedPlan.description || 'N/A'}</p>
+                  <p><strong>Montant:</strong> {selectedPlan.min_amount.toLocaleString()} - {selectedPlan.max_amount.toLocaleString()} FCFA</p>
+                  <p><strong>Taux d'intérêt:</strong> {selectedPlan.interest_rate * 100}%</p>
+                  <p><strong>Durée:</strong> {selectedPlan.duration_months} mois</p>
                 </div>
-                
-                <div>
-                  <label htmlFor="duration" className="block text-sm font-medium mb-1">
-                    Duration (months)
-                  </label>
-                  <Input
-                    id="duration"
-                    type="number"
-                    {...form.register('duration', { valueAsNumber: true })}
-                  />
-                  {form.formState.errors.duration && (
-                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.duration.message}</p>
-                  )}
+              </CardContent>
+            </Card>
+          )}
+
+          <div>
+            <Label htmlFor="amount">Montant demandé (FCFA) *</Label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="amount"
+                type="number"
+                placeholder="Ex: 100000"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                className="pl-10"
+                disabled={!selectedPlan}
+                required
+              />
+            </div>
+          </div>
+
+          <div>
+            <Label htmlFor="purpose">Objet du prêt *</Label>
+            <div className="relative">
+              <FileText className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Textarea
+                id="purpose"
+                placeholder="Décrivez l'utilisation prévue du prêt..."
+                value={purpose}
+                onChange={(e) => setPurpose(e.target.value)}
+                className="pl-10 min-h-[100px]"
+                required
+              />
+            </div>
+          </div>
+
+          {loanDetails && (
+            <Card className="border-primary">
+              <CardHeader>
+                <CardTitle className="text-lg">Récapitulatif</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-2">
+                <div className="flex justify-between">
+                  <span>Montant principal:</span>
+                  <span className="font-semibold">{loanDetails.principal.toLocaleString()} FCFA</span>
                 </div>
-              </div>
-              
-              <div>
-                <label htmlFor="purpose" className="block text-sm font-medium mb-1">
-                  Loan Purpose
-                </label>
-                <Input
-                  id="purpose"
-                  {...form.register('purpose')}
-                  placeholder="e.g. Business expansion, Education, etc."
-                />
-                {form.formState.errors.purpose && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.purpose.message}</p>
-                )}
-              </div>
-              
-              <div>
-                <label htmlFor="description" className="block text-sm font-medium mb-1">
-                  Project Description
-                </label>
-                <Textarea
-                  id="description"
-                  {...form.register('description')}
-                  rows={4}
-                  placeholder="Provide details about how you plan to use the loan funds..."
-                />
-                {form.formState.errors.description && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.description.message}</p>
-                )}
-              </div>
-            </div>
-            
-            <div className="flex justify-end">
-              <Button 
-                type="button" 
-                variant="outline" 
-                className="mr-2"
-                onClick={() => navigate('/')}
-              >
-                Cancel
-              </Button>
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
-                Submit Application
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </CardContent>
-    </Card>
+                <div className="flex justify-between">
+                  <span>Intérêts ({selectedPlan?.interest_rate * 100}%):</span>
+                  <span className="font-semibold">{loanDetails.interestAmount.toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                  <span>Montant total à rembourser:</span>
+                  <span>{loanDetails.totalAmount.toLocaleString()} FCFA</span>
+                </div>
+                <div className="flex justify-between items-center mt-4 p-3 bg-muted rounded">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4" />
+                    <span>Paiement mensuel:</span>
+                  </div>
+                  <span className="font-bold text-primary">{loanDetails.monthlyPayment.toLocaleString()} FCFA</span>
+                </div>
+                <p className="text-sm text-muted-foreground mt-2">
+                  Sur {selectedPlan?.duration_months} mois
+                </p>
+              </CardContent>
+            </Card>
+          )}
+
+          <Button type="submit" className="w-full" disabled={submitting || !selectedPlan}>
+            {submitting ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Soumission en cours...
+              </>
+            ) : (
+              'Soumettre la demande'
+            )}
+          </Button>
+        </CardContent>
+      </Card>
+    </form>
   );
 };
 
