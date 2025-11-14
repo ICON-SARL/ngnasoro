@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
@@ -6,6 +5,7 @@ import { Loan } from '@/types/sfdClients';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { useCachedSfdData } from '@/hooks/useCachedSfdData';
+import { supabase } from '@/integrations/supabase/client';
 
 export function useSfdLoans() {
   const { user } = useAuth();
@@ -124,7 +124,7 @@ export function useSfdLoans() {
   });
 
   return {
-    data,
+    loans: data,
     isLoading,
     error,
     createLoan,

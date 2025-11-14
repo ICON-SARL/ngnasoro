@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, User, HelpCircle } from 'lucide-react';
+import { Home, User, HelpCircle, CreditCard } from 'lucide-react';
 
 const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
@@ -13,13 +13,14 @@ const MobileNavigation: React.FC = () => {
   
   const navItems = [
     { icon: <Home size={22} />, label: 'Accueil', path: '/mobile-flow/dashboard' },
+    { icon: <CreditCard size={22} />, label: 'Prêts', path: '/mobile-flow/loans' },
     { icon: <HelpCircle size={22} />, label: 'Support', path: '/mobile-flow/support' },
     { icon: <User size={22} />, label: 'Profil', path: '/mobile-flow/profile' },
   ];
   
   return (
     <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-card border-t border-border shadow-lg z-10">
-      <div className="grid grid-cols-3 h-16">
+      <div className="grid grid-cols-4 h-16">
         {navItems.map((item) => (
           <button
             key={item.path}
