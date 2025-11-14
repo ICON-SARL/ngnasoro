@@ -57,8 +57,11 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   };
 
   const formatAmount = (amount: number, type: string) => {
-    const formatted = new Intl.NumberFormat('fr-FR').format(Math.abs(amount));
-    const prefix = type === 'deposit' || type === 'loan_disbursement' ? '+' : '-';
+    const absAmount = Math.abs(amount);
+    const formatted = new Intl.NumberFormat('fr-FR').format(absAmount);
+    // Si le montant est déjà négatif, c'est un retrait/débit
+    const isPositive = amount > 0;
+    const prefix = isPositive ? '+' : '-';
     return `${prefix} ${formatted} FCFA`;
   };
 
