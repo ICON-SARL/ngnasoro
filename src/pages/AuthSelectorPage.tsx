@@ -46,8 +46,12 @@ const AuthSelectorPage: React.FC = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary mb-6 shadow-lg">
-            <span className="text-3xl font-bold text-white">N'G</span>
+          <div className="mb-6">
+            <img 
+              src="/lovable-uploads/LOGO_transprant_1763143001713.png" 
+              alt="N'GNA SÔRÔ Logo" 
+              className="h-24 mx-auto drop-shadow-2xl"
+            />
           </div>
           <h1 className="text-4xl font-bold mb-3 gradient-text">N'GNA SÔRÔ</h1>
           <p className="text-muted-foreground text-lg">Sélectionnez votre espace</p>
