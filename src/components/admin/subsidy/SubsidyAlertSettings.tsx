@@ -4,7 +4,6 @@ import { useSubsidyRequests } from '@/hooks/useSubsidyRequests';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Label } from '@/components/ui/label';
 import {
@@ -29,43 +28,44 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
 }) => {
   const { createAlertThreshold, updateAlertThreshold, deleteAlertThreshold } = useSubsidyRequests();
   const [newThreshold, setNewThreshold] = useState({
-    threshold_name: '',
-    threshold_amount: '',
-    is_active: true
+    low_threshold: '',
+    critical_threshold: '',
+    sfd_id: ''
   });
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editValues, setEditValues] = useState({
-    threshold_name: '',
-    threshold_amount: '',
-    is_active: true
+    low_threshold: '',
+    critical_threshold: ''
   });
   
   const handleCreateThreshold = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!newThreshold.threshold_name || !newThreshold.threshold_amount) return;
+    if (!newThreshold.low_threshold || !newThreshold.sfd_id) return;
     
-    const amount = parseFloat(newThreshold.threshold_amount.replace(/\s/g, '').replace(',', '.'));
+    const lowAmount = parseFloat(newThreshold.low_threshold.replace(/\s/g, '').replace(',', '.'));
+    const criticalAmount = newThreshold.critical_threshold 
+      ? parseFloat(newThreshold.critical_threshold.replace(/\s/g, '').replace(',', '.'))
+      : lowAmount * 0.5;
     
     await createAlertThreshold.mutateAsync({
-      sfd_id: '', // TODO: Ajouter sfd_id approprié
-      low_threshold: amount,
-      critical_threshold: amount * 0.5
+      sfd_id: newThreshold.sfd_id,
+      low_threshold: lowAmount,
+      critical_threshold: criticalAmount
     });
     
     setNewThreshold({
-      threshold_name: '',
-      threshold_amount: '',
-      is_active: true
+      low_threshold: '',
+      critical_threshold: '',
+      sfd_id: ''
     });
   };
   
   const startEditing = (threshold: any) => {
     setEditingId(threshold.id);
     setEditValues({
-      threshold_name: threshold.threshold_name,
-      threshold_amount: threshold.threshold_amount.toString(),
-      is_active: threshold.is_active
+      low_threshold: threshold.low_threshold?.toString() || '',
+      critical_threshold: threshold.critical_threshold?.toString() || ''
     });
   };
   
@@ -74,14 +74,12 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
   };
   
   const handleSaveEdit = async (id: string) => {
-    const amount = parseFloat(editValues.threshold_amount.replace(/\s/g, '').replace(',', '.'));
+    const lowAmount = parseFloat(editValues.low_threshold.replace(/\s/g, '').replace(',', '.'));
     
     await updateAlertThreshold.mutateAsync({
       id,
       updates: {
-        threshold_name: editValues.threshold_name,
-        threshold_amount: amount,
-        is_active: editValues.is_active
+        threshold_amount: lowAmount
       }
     });
     
@@ -95,7 +93,7 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
   };
   
   const formatAmountInput = (value: string) => {
-    value = value.replace(/\D/g, ''); // Enlever tous les caractères non numériques
+    value = value.replace(/\D/g, '');
     
     if (value) {
       const numberValue = parseInt(value, 10);
@@ -115,37 +113,31 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
           <form onSubmit={handleCreateThreshold} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="threshold_name">Nom du seuil</Label>
+                <Label htmlFor="low_threshold">Seuil bas (FCFA)</Label>
                 <Input
-                  id="threshold_name"
-                  value={newThreshold.threshold_name}
-                  onChange={(e) => setNewThreshold({...newThreshold, threshold_name: e.target.value})}
-                  placeholder="Ex: Demande importante"
+                  id="low_threshold"
+                  value={newThreshold.low_threshold}
+                  onChange={(e) => setNewThreshold({
+                    ...newThreshold, 
+                    low_threshold: formatAmountInput(e.target.value)
+                  })}
+                  placeholder="Ex: 1 000 000"
                   required
                 />
               </div>
               <div>
-                <Label htmlFor="threshold_amount">Montant (FCFA)</Label>
+                <Label htmlFor="critical_threshold">Seuil critique (FCFA)</Label>
                 <Input
-                  id="threshold_amount"
-                  value={newThreshold.threshold_amount}
+                  id="critical_threshold"
+                  value={newThreshold.critical_threshold}
                   onChange={(e) => setNewThreshold({
                     ...newThreshold, 
-                    threshold_amount: formatAmountInput(e.target.value)
+                    critical_threshold: formatAmountInput(e.target.value)
                   })}
-                  placeholder="Ex: 5 000 000"
-                  required
+                  placeholder="Ex: 500 000"
                 />
               </div>
               <div className="flex items-end">
-                <div className="flex items-center mr-4 space-x-2">
-                  <Switch
-                    checked={newThreshold.is_active}
-                    onCheckedChange={(checked) => setNewThreshold({...newThreshold, is_active: checked})}
-                    id="is_active"
-                  />
-                  <Label htmlFor="is_active">Actif</Label>
-                </div>
                 <Button type="submit" className="flex-grow">
                   <Plus className="h-4 w-4 mr-1" />
                   Ajouter
@@ -165,9 +157,9 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Nom</TableHead>
-                  <TableHead>Montant</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>SFD</TableHead>
+                  <TableHead>Seuil bas</TableHead>
+                  <TableHead>Seuil critique</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -182,42 +174,32 @@ export const SubsidyAlertSettings: React.FC<SubsidyAlertSettingsProps> = ({
                   thresholds.map((threshold) => (
                     <TableRow key={threshold.id}>
                       <TableCell>
-                        {editingId === threshold.id ? (
-                          <Input
-                            value={editValues.threshold_name}
-                            onChange={(e) => setEditValues({...editValues, threshold_name: e.target.value})}
-                          />
-                        ) : (
-                          threshold.threshold_name
-                        )}
+                        {threshold.sfd_id}
                       </TableCell>
                       <TableCell>
                         {editingId === threshold.id ? (
                           <Input
-                            value={editValues.threshold_amount}
+                            value={editValues.low_threshold}
                             onChange={(e) => setEditValues({
                               ...editValues, 
-                              threshold_amount: formatAmountInput(e.target.value)
+                              low_threshold: formatAmountInput(e.target.value)
                             })}
                           />
                         ) : (
-                          `${threshold.threshold_amount.toLocaleString()} FCFA`
+                          `${threshold.low_threshold?.toLocaleString() || 0} FCFA`
                         )}
                       </TableCell>
                       <TableCell>
                         {editingId === threshold.id ? (
-                          <div className="flex items-center space-x-2">
-                            <Switch
-                              checked={editValues.is_active}
-                              onCheckedChange={(checked) => setEditValues({...editValues, is_active: checked})}
-                            />
-                            <span>{editValues.is_active ? 'Actif' : 'Inactif'}</span>
-                          </div>
+                          <Input
+                            value={editValues.critical_threshold}
+                            onChange={(e) => setEditValues({
+                              ...editValues, 
+                              critical_threshold: formatAmountInput(e.target.value)
+                            })}
+                          />
                         ) : (
-                          <div className="flex items-center space-x-2">
-                            <div className={`h-2 w-2 rounded-full ${threshold.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                            <span>{threshold.is_active ? 'Actif' : 'Inactif'}</span>
-                          </div>
+                          `${threshold.critical_threshold?.toLocaleString() || 0} FCFA`
                         )}
                       </TableCell>
                       <TableCell className="text-right">
