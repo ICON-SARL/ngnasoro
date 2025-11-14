@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowDownToLine, ArrowUpFromLine, Send, CreditCard } from 'lucide-react';
+import { CreditCard, Wallet, ShoppingBag, Users, Gift, Lock, HelpCircle, MoreHorizontal } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const QuickActions: React.FC = () => {
@@ -8,33 +8,63 @@ const QuickActions: React.FC = () => {
 
   const actions = [
     {
-      icon: ArrowDownToLine,
-      label: 'Dépôt',
-      color: 'bg-green-500',
+      icon: CreditCard,
+      label: 'Paiements',
+      color: 'bg-gradient-to-br from-emerald-400 to-teal-500',
       action: () => navigate('/mobile-flow/funds-management?action=deposit')
     },
     {
-      icon: ArrowUpFromLine,
-      label: 'Retrait',
-      color: 'bg-orange-500',
-      action: () => navigate('/mobile-flow/funds-management?action=withdraw')
+      icon: Wallet,
+      label: 'Prêt',
+      color: 'bg-gradient-to-br from-violet-400 to-purple-500',
+      action: () => navigate('/mobile-flow/loan-application')
     },
     {
-      icon: Send,
-      label: 'Transfert',
-      color: 'bg-blue-500',
-      action: () => navigate('/mobile-flow/funds-management?action=transfer')
+      icon: ShoppingBag,
+      label: 'Market',
+      color: 'bg-gradient-to-br from-orange-400 to-pink-500',
+      action: () => {}
     },
     {
       icon: CreditCard,
-      label: 'Prêt',
-      color: 'bg-purple-500',
-      action: () => navigate('/mobile-flow/loan-application')
+      label: 'Carte',
+      color: 'bg-gradient-to-br from-purple-300 to-violet-400',
+      action: () => {}
+    },
+    {
+      icon: Users,
+      label: 'Tontine',
+      color: 'bg-gradient-to-br from-sky-400 to-blue-500',
+      action: () => navigate('/mobile-flow/tontine')
+    },
+    {
+      icon: Gift,
+      label: 'Cadeaux',
+      color: 'bg-gradient-to-br from-pink-400 to-rose-500',
+      action: () => {}
+    },
+    {
+      icon: Lock,
+      label: 'Coffre',
+      color: 'bg-gradient-to-br from-amber-300 to-yellow-400',
+      action: () => {}
+    },
+    {
+      icon: HelpCircle,
+      label: 'Support',
+      color: 'bg-gradient-to-br from-gray-400 to-slate-500',
+      action: () => navigate('/mobile-flow/support')
+    },
+    {
+      icon: MoreHorizontal,
+      label: 'Plus',
+      color: 'bg-gradient-to-br from-gray-300 to-gray-400',
+      action: () => {}
     }
   ];
 
   return (
-    <div className="grid grid-cols-4 gap-3">
+    <div className="grid grid-cols-3 gap-4 px-1">
       {actions.map((action, index) => (
         <motion.button
           key={action.label}
@@ -42,10 +72,10 @@ const QuickActions: React.FC = () => {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.2, delay: index * 0.05 }}
           onClick={action.action}
-          className="flex flex-col items-center gap-2 p-3 rounded-2xl bg-card hover:bg-accent transition-colors active:scale-95"
+          className="flex flex-col items-center gap-3 active:scale-95 transition-transform"
         >
-          <div className={`${action.color} p-3 rounded-xl text-white shadow-md`}>
-            <action.icon className="w-5 h-5" />
+          <div className={`${action.color} w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-lg`}>
+            <action.icon className="w-7 h-7" />
           </div>
           <span className="text-xs font-medium text-foreground">{action.label}</span>
         </motion.button>

@@ -9,6 +9,7 @@ import AccountBalanceCard from './AccountBalanceCard';
 import QuickActions from './QuickActions';
 import RecentTransactions from './RecentTransactions';
 import KycProgressCard from './KycProgressCard';
+import TontineSection from './TontineSection';
 import { AlertCircle } from 'lucide-react';
 
 const MobileDashboard: React.FC = () => {
@@ -198,7 +199,7 @@ const MobileDashboard: React.FC = () => {
         avatarUrl={profile?.avatar_url}
       />
 
-      <div className="px-4 space-y-4 pb-6">
+      <div className="px-4 space-y-6 pb-6">
         {/* Carte de solde principal avec animation */}
         <AccountBalanceCard 
           balance={totalBalance}
@@ -214,6 +215,9 @@ const MobileDashboard: React.FC = () => {
 
         {/* Actions rapides */}
         <QuickActions />
+
+        {/* Section Tontine */}
+        <TontineSection />
 
         {/* Liste des transactions récentes */}
         <RecentTransactions 

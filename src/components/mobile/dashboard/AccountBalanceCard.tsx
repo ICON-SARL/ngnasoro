@@ -1,8 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Eye, EyeOff, TrendingUp } from 'lucide-react';
+import { Eye, EyeOff, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { SfdAccount } from '@/types/sfdAccounts';
+import { useNavigate } from 'react-router-dom';
 
 interface AccountBalanceCardProps {
   balance: number;
@@ -16,6 +17,7 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
   accounts 
 }) => {
   const [isBalanceVisible, setIsBalanceVisible] = React.useState(true);
+  const navigate = useNavigate();
 
   const formatBalance = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -29,18 +31,15 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-gradient-to-br from-primary via-primary/90 to-primary/80 rounded-3xl p-6 text-primary-foreground shadow-xl -mt-4 relative overflow-hidden"
+      className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 rounded-3xl p-6 text-white shadow-2xl -mt-4 relative overflow-hidden"
     >
       {/* Decorative circles */}
-      <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary-foreground/10 rounded-full blur-2xl" />
-      <div className="absolute -bottom-10 -left-10 w-32 h-32 bg-primary-foreground/10 rounded-full blur-2xl" />
+      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
       
       <div className="relative">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-2">
-            <TrendingUp className="w-5 h-5 opacity-80" />
-            <span className="text-sm opacity-90 font-medium">Solde Total</span>
-          </div>
+        <div className="flex items-center justify-between mb-4">
+          <span className="text-sm opacity-90 font-medium">Solde principal</span>
           <Button
             variant="ghost"
             size="icon"
@@ -60,13 +59,32 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
-          className="mb-4"
+          className="mb-6"
         >
-          <h2 className="text-4xl font-bold mb-1">
+          <h2 className="text-5xl font-bold mb-1">
             {isBalanceVisible ? formatBalance(balance) : '••••••'}
           </h2>
           <p className="text-sm opacity-90">{currency}</p>
         </motion.div>
+
+        {/* Action buttons */}
+        <div className="flex gap-3 mb-4">
+          <Button
+            onClick={() => navigate('/mobile-flow/funds-management?action=deposit')}
+            className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 h-12 rounded-2xl font-medium"
+          >
+            <ArrowDownToLine className="w-5 h-5 mr-2" />
+            Recharger
+          </Button>
+          <Button
+            onClick={() => navigate('/mobile-flow/funds-management?action=withdraw')}
+            variant="outline"
+            className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 h-12 rounded-2xl font-medium"
+          >
+            <ArrowUpFromLine className="w-5 h-5 mr-2" />
+            Retirer
+          </Button>
+        </div>
 
         {accounts.length > 1 && (
           <div className="flex gap-2 flex-wrap">
