@@ -21,6 +21,9 @@ import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoginPage from './pages/LoginPage';
 import AdminLoginPage from './pages/AdminLoginPage';
+import SystemSettingsPage from './pages/admin/SystemSettingsPage';
+import ClientAdhesionManagementPage from './pages/admin/ClientAdhesionManagementPage';
+import KycUpgradePage from './pages/KycUpgradePage';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
@@ -62,6 +65,14 @@ const router = createBrowserRouter([
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
         <SuperAdminDashboard />
+      </RoleGuard>
+    ),
+  },
+  {
+    path: '/admin/system-settings',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <SystemSettingsPage />
       </RoleGuard>
     ),
   },
@@ -115,13 +126,7 @@ const router = createBrowserRouter([
     path: '/sfd-adhesion-requests',
     element: (
       <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <div className="min-h-screen bg-gray-50">
-          <SfdHeader />
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold">Demandes d'adhésion</h1>
-            <p className="text-gray-600">Gestion des demandes d'adhésion des clients</p>
-          </div>
-        </div>
+        <ClientAdhesionManagementPage />
       </RoleGuard>
     ),
   },
@@ -184,6 +189,10 @@ const router = createBrowserRouter([
       {
         path: 'profile',
         element: <MobileProfilePage />,
+      },
+      {
+        path: 'kyc-upgrade',
+        element: <KycUpgradePage />,
       },
       {
         path: 'loans',
