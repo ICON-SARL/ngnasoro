@@ -74,14 +74,14 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         {label && (
           <motion.label
             className={cn(
-              'absolute pointer-events-none smooth-transition px-2 bg-background',
+              'absolute pointer-events-none smooth-transition px-2 bg-background font-semibold',
               icon ? 'left-12' : 'left-4',
               isFocused || hasValue
                 ? '-top-2.5 text-xs'
                 : 'top-1/2 -translate-y-1/2 text-base',
               isFocused && !error && 'text-primary',
               error && 'text-destructive',
-              !isFocused && !error && 'text-muted-foreground'
+              !isFocused && !error && 'text-foreground/80'
             )}
             initial={false}
           >
