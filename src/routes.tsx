@@ -13,6 +13,7 @@ import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
+import AccessDeniedPage from './pages/AccessDeniedPage';
 import PendingApprovalPage from './pages/PendingApprovalPage';
 import SfdClientsPage from './pages/SfdClientsPage';
 import LoansPage from './pages/LoansPage';
@@ -221,7 +222,7 @@ const router = createBrowserRouter([
   },
   {
     path: '/access-denied',
-    element: <UnauthorizedPage />,
+    element: <AccessDeniedPage />,
   },
   ],
 }]);

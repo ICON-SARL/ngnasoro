@@ -218,9 +218,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     let authChangeTimeout: NodeJS.Timeout | null = null;
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('Auth state change event:', event);
+        console.log('📢 Auth state change event:', event);
         
-        // Débouncer : attendre 500ms avant de traiter
+        // Débouncer : attendre 200ms avant de traiter (réduit pour réactivité)
         if (authChangeTimeout) clearTimeout(authChangeTimeout);
         
         authChangeTimeout = setTimeout(async () => {
@@ -230,19 +230,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(enhancedUser);
           setSession(newSession);
           
-          console.log('Auth state changed:', {
-            event,
-            userId: enhancedUser.id,
-            role: enhancedUser.app_metadata?.role,
-          });
+          console.log('🔄 Fetching user role for:', enhancedUser.id);
           
-          // Fetch role from database
-          const dbRole = await fetchUserRole(enhancedUser.id, false); // Utiliser le cache
+          // Fetch role from database with cache
+          const dbRole = await fetchUserRole(enhancedUser.id, false);
           if (dbRole) {
+            console.log('✅ Role fetched:', dbRole);
             setUserRole(dbRole);
-            console.log('User role updated to:', dbRole);
           }
         } else {
+          console.log('🚪 User signed out, clearing state');
           setUser(null);
           setSession(newSession);
           setUserRole(null);
@@ -288,7 +285,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             }
           }
         }
-        }, 500); // Fin du setTimeout avec délai de 500ms
+        }, 200); // Fin du setTimeout - réduit à 200ms pour meilleure réactivité
       }
     );
 
