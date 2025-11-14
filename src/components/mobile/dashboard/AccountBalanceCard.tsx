@@ -26,6 +26,16 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
     }).format(amount);
   };
 
+  const handleDeposit = () => {
+    setActionType('deposit');
+    setFundsSheetOpen(true);
+  };
+
+  const handleWithdrawal = () => {
+    setActionType('withdrawal');
+    setFundsSheetOpen(true);
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
