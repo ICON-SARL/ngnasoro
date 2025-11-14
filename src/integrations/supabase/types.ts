@@ -1496,10 +1496,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      generate_client_code: {
-        Args: { sfd_code: string }
-        Returns: string
-      }
+      generate_client_code: { Args: { sfd_code: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
