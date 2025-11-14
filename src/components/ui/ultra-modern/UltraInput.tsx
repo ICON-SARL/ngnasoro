@@ -53,13 +53,15 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         <input
           type={inputType}
           className={cn(
-            'w-full px-4 py-3 rounded-xl border-2 bg-background smooth-transition',
+            'w-full px-4 py-3 rounded-xl border-2 bg-background text-foreground smooth-transition',
             'focus:outline-none focus:scale-[1.01]',
+            'placeholder:text-muted-foreground/50',
             icon && 'pl-12',
             isPassword && 'pr-12',
             error && 'border-destructive focus:border-destructive',
             success && 'border-success focus:border-success',
             !error && !success && 'border-input focus:border-primary',
+            'font-medium', // Rendre le texte plus visible
             className
           )}
           onFocus={() => setIsFocused(true)}
