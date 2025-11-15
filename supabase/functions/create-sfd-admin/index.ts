@@ -121,15 +121,14 @@ serve(async (req: Request) => {
     const newAdminId = newUser.user.id;
     
     try {
-      // 2. Créer l'entrée dans admin_users
+      // 2. Créer le profil dans profiles
       await supabaseAdmin
-        .from('admin_users')
+        .from('profiles')
         .insert({
           id: newAdminId,
-          email: adminData.email,
           full_name: adminData.full_name,
-          role: 'sfd_admin',
-          has_2fa: false
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
         });
       
       // 3. Assigner le rôle SFD_ADMIN
@@ -161,7 +160,7 @@ serve(async (req: Request) => {
         .insert({
           user_id: user.id, // L'administrateur qui a créé cet admin SFD
           action: 'create_sfd_admin',
-          target_resource: `admin_users/${newAdminId}`,
+          target_resource: `profiles/${newAdminId}`,
           category: 'ADMIN_OPERATIONS',
           severity: 'INFO',
           status: 'success',

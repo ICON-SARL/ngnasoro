@@ -66,19 +66,63 @@ serve(async (req) => {
     // Extract user IDs
     const userIds = userSfds.map(item => item.user_id);
     
-    // Now fetch the admin details from admin_users
-    const { data: admins, error: adminsError } = await supabase
-      .from('admin_users')
-      .select('id, email, full_name, role, has_2fa, last_sign_in_at')
+    // Now fetch the admin details from profiles and user_roles
+    const { data: profilesData, error: profilesError } = await supabase
+      .from('profiles')
+      .select('id, full_name')
       .in('id', userIds);
       
-    if (adminsError) {
-      console.error('Error fetching admin details:', adminsError);
+    if (profilesError) {
+      console.error('Error fetching profiles:', profilesError);
       return new Response(
-        JSON.stringify({ error: adminsError.message }),
+        JSON.stringify({ error: profilesError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Fetch user roles
+    const { data: rolesData, error: rolesError } = await supabase
+      .from('user_roles')
+      .select('user_id, role')
+      .in('user_id', userIds);
+      
+    if (rolesError) {
+      console.error('Error fetching roles:', rolesError);
+      return new Response(
+        JSON.stringify({ error: rolesError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Fetch auth users data (email, last_sign_in_at) using service role
+    const { data: { users: authUsers }, error: authError } = await supabase.auth.admin.listUsers();
+    
+    if (authError) {
+      console.error('Error fetching auth users:', authError);
+      return new Response(
+        JSON.stringify({ error: authError.message }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Create a map for quick lookup
+    const authUsersMap = new Map(authUsers.map(u => [u.id, u]));
+    const rolesMap = new Map(rolesData?.map(r => [r.user_id, r.role]) || []);
+
+    // Combine data to match the expected format
+    const admins = profilesData?.filter(profile => userIds.includes(profile.id)).map(profile => {
+      const authUser = authUsersMap.get(profile.id);
+      const role = rolesMap.get(profile.id);
+      
+      return {
+        id: profile.id,
+        email: authUser?.email || '',
+        full_name: profile.full_name || '',
+        role: role || 'sfd_admin',
+        has_2fa: false, // To be implemented later with 2FA system
+        last_sign_in_at: authUser?.last_sign_in_at || null
+      };
+    }) || [];
     
     console.log(`Successfully retrieved ${admins?.length || 0} admins for SFD ${sfdId}`);
     
