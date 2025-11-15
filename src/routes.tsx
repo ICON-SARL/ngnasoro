@@ -305,10 +305,11 @@ const router = createBrowserRouter([
         index: true,
         element: <Navigate to="dashboard" replace />,
       },
-      {
-        path: 'welcome',
-        element: <WelcomePage />,
-      },
+      // Onboarding désactivé - accès direct au dashboard
+      // {
+      //   path: 'welcome',
+      //   element: <WelcomePage />,
+      // },
       {
         path: 'dashboard',
         element: <MobileDashboardPage />,
