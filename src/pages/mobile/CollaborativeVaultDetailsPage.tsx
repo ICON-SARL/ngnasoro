@@ -19,8 +19,10 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
 
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [showInviteModal, setShowInviteModal] = useState(false);
   const [amount, setAmount] = useState('');
   const [reason, setReason] = useState('');
+  const [inviteContact, setInviteContact] = useState('');
 
   const { data: vault, isLoading } = useQuery({
     queryKey: ['collaborative-vault', vaultId],
@@ -35,7 +37,8 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
             status,
             total_contributed,
             is_admin,
-            joined_at
+            joined_at,
+            profiles:user_id(full_name, avatar_url, phone)
           ),
           collaborative_vault_transactions(
             id,
@@ -123,6 +126,29 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     }
   });
 
+  const inviteMutation = useMutation({
+    mutationFn: async (contact: string) => {
+      const isEmail = contact.includes('@');
+      const { data, error } = await supabase.functions.invoke('invite-to-vault', {
+        body: { 
+          vault_id: vaultId, 
+          [isEmail ? 'email' : 'phone']: contact
+        }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collaborative-vault', vaultId] });
+      toast.success('Invitation envoyée avec succès');
+      setShowInviteModal(false);
+      setInviteContact('');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erreur lors de l\'envoi de l\'invitation');
+    }
+  });
+
   const handleDeposit = () => {
     const depositAmount = parseFloat(amount);
     if (isNaN(depositAmount) || depositAmount <= 0) {
@@ -187,6 +213,7 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
   const isCreator = vault.creator_id === user?.id;
   const members = vault.collaborative_vault_members || [];
   const transactions = vault.collaborative_vault_transactions || [];
+  const userMembership = members.find(m => m.user_id === user?.id);
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -202,12 +229,24 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
               <p className="text-sm opacity-90">{vault.description}</p>
             )}
           </div>
-          {isCreator && (
-            <span className="px-3 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
-              <Crown className="w-3 h-3" />
-              Créateur
-            </span>
-          )}
+          <div className="flex gap-2">
+            {isCreator && (
+              <span className="px-3 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
+                <Crown className="w-3 h-3" />
+                Créateur
+              </span>
+            )}
+            {(isCreator || members.find(m => m.user_id === user?.id && m.is_admin)) && (
+              <Button 
+                onClick={() => setShowInviteModal(true)} 
+                variant="ghost"
+                size="icon"
+                className="bg-white/20 hover:bg-white/30 text-white"
+              >
+                <UserPlus className="w-4 h-4" />
+              </Button>
+            )}
+          </div>
         </div>
       </div>
 
@@ -267,40 +306,49 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
           <div className="flex justify-between items-center mb-4">
             <h2 className="font-semibold text-foreground flex items-center gap-2">
               <Users className="w-5 h-5 text-primary" />
-              Membres ({members.length})
+              Membres ({members.filter(m => m.status === 'active').length})
             </h2>
-            {isCreator && (
-              <Button size="sm" variant="outline" className="gap-2">
-                <UserPlus className="w-4 h-4" />
-                Inviter
-              </Button>
-            )}
           </div>
 
-          <div className="space-y-2">
-            {members.map((member: any) => (
-              <div key={member.id} className="flex items-center justify-between p-3 bg-muted rounded-2xl">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center text-white font-semibold">
-                    {member.user_id?.substring(0, 2).toUpperCase()}
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Membre {member.user_id === user?.id ? '(Vous)' : ''}
-                    </p>
-                    {member.is_admin && (
-                      <span className="text-xs text-muted-foreground">Administrateur</span>
+          <div className="space-y-3">
+            {members
+              .filter(m => m.status === 'active')
+              .map((member: any) => {
+                const memberProfile = member.profiles;
+                const initials = memberProfile?.full_name 
+                  ? memberProfile.full_name.split(' ').map((n: string) => n[0]).join('').toUpperCase().slice(0, 2)
+                  : '?';
+                
+                return (
+                  <div key={member.id} className="flex items-center justify-between p-3 rounded-2xl bg-muted/50">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-gradient-to-br from-orange-400 to-pink-500 flex items-center justify-center text-white font-bold text-sm">
+                        {initials}
+                      </div>
+                      <div>
+                        <p className="font-medium text-foreground flex items-center gap-1">
+                          {memberProfile?.full_name || 'Membre'}
+                          {member.user_id === vault.creator_id && (
+                            <Crown className="w-3 h-3 text-yellow-500" />
+                          )}
+                          {member.user_id === user?.id && (
+                            <span className="text-xs text-muted-foreground ml-1">(Vous)</span>
+                          )}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          Contribué: {formatAmount(member.total_contributed || 0)} FCFA
+                        </p>
+                      </div>
+                    </div>
+                    {member.is_admin && member.user_id !== vault.creator_id && (
+                      <span className="text-xs px-2 py-1 bg-primary/10 text-primary rounded-full">
+                        Admin
+                      </span>
                     )}
                   </div>
-                </div>
-                <div className="text-right">
-                  <p className="text-sm font-semibold text-foreground">
-                    {formatAmount(member.total_contributed)} FCFA
-                  </p>
-                  <p className="text-xs text-muted-foreground">Contributions</p>
-                </div>
-              </div>
-            ))}
+                );
+              })
+            }
           </div>
         </motion.div>
 
@@ -426,6 +474,40 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
               disabled={withdrawMutation.isPending || !amount || !reason}
             >
               {withdrawMutation.isPending ? 'Traitement...' : 'Créer la demande'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Invite Modal */}
+      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Inviter un membre</DialogTitle>
+            <DialogDescription>
+              Invitez quelqu'un à rejoindre ce coffre collaboratif
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="invite-contact">Email ou Téléphone</Label>
+              <Input
+                id="invite-contact"
+                type="text"
+                placeholder="exemple@email.com ou 0612345678"
+                value={inviteContact}
+                onChange={(e) => setInviteContact(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Le membre recevra une invitation qu'il pourra accepter ou refuser
+              </p>
+            </div>
+            <Button 
+              onClick={() => inviteMutation.mutate(inviteContact)} 
+              className="w-full"
+              disabled={inviteMutation.isPending || !inviteContact.trim()}
+            >
+              {inviteMutation.isPending ? 'Envoi...' : 'Envoyer l\'invitation'}
             </Button>
           </div>
         </DialogContent>
