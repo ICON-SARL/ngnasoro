@@ -7,10 +7,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useCachedSfdData } from '@/hooks/useCachedSfdData';
 import { supabase } from '@/integrations/supabase/client';
 
+import { LoanHookReturn } from '@/types/loanHook';
+
 /**
  * Hook for Clients - fetches only their own loans
  */
-export function useClientLoans() {
+export function useClientLoans(): LoanHookReturn {
   const { user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -39,6 +41,7 @@ export function useClientLoans() {
         .from('sfd_loans')
         .select(`
           *,
+          sfd_clients(full_name, email, phone),
           sfds:sfd_id (
             name,
             logo_url
@@ -51,7 +54,12 @@ export function useClientLoans() {
         throw loansError;
       }
 
-      return loans || [];
+      // Format loans with client names and reference
+      return (loans || []).map(loan => ({
+        ...loan,
+        client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+        reference: loan.id.substring(0, 8),
+      })) as Loan[];
     },
     meta: {
       errorMessage: "Impossible de charger vos prêts"

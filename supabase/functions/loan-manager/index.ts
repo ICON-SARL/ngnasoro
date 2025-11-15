@@ -154,18 +154,8 @@ serve(async (req) => {
         performed_by: performerId
       });
       
-      // Create notification for SFD admin
-      await supabase.from("admin_notifications").insert({
-        title: "Nouvelle demande de prêt",
-        message: `Nouvelle demande de prêt pour ${data.amount.toLocaleString()} FCFA a été soumise.`,
-        type: "loan_application",
-        recipient_role: "sfd_admin",
-        action_link: `/sfd/loans/${loan.id}`,
-        sender_id: performerId
-      });
-      
       return new Response(
-        JSON.stringify(loan),
+        JSON.stringify({ success: true, loan }),
         { 
           status: 200,
           headers: { 
@@ -174,93 +164,8 @@ serve(async (req) => {
           }
         }
       );
-    }
     
-    // Loan disbursement action
-    if (action === "disburse_loan") {
-      const { payload } = data;
-      
-      if (!payload || !payload.loanId) {
-        throw new Error("Missing loan information");
-      }
-      
-      // Fetch the loan
-      const { data: loan, error: loanError } = await supabase
-        .from("sfd_loans")
-        .select("*, client:client_id(user_id)")
-        .eq("id", payload.loanId)
-        .single();
-      
-      if (loanError || !loan) {
-        throw new Error("Loan not found");
-      }
-      
-      // Check if loan is already disbursed
-      if (loan.disbursement_status === "completed") {
-        throw new Error("Loan has already been disbursed");
-      }
-      
-      // Update loan status
-      const { error: updateError } = await supabase
-        .from("sfd_loans")
-        .update({
-          disbursement_status: "completed",
-          disbursed_at: new Date().toISOString(),
-          status: "active"
-        })
-        .eq("id", payload.loanId);
-        
-      if (updateError) {
-        throw new Error(`Error updating loan: ${updateError.message}`);
-      }
-      
-      // Create transaction for loan disbursement
-      const { data: transactionData, error: transactionError } = await supabase
-        .from("transactions")
-        .insert({
-          user_id: loan.client.user_id,
-          sfd_id: loan.sfd_id,
-          type: "loan_disbursement",
-          amount: loan.amount,
-          status: "success",
-          name: "Décaissement de prêt",
-          description: `Prêt approuvé et montant crédité sur votre compte`,
-          reference_id: loan.id,
-          method: payload.method || "bank_transfer",
-          notes: payload.notes
-        })
-        .select();
-        
-      if (transactionError) {
-        throw new Error(`Error creating transaction: ${transactionError.message}`);
-      }
-      
-      // Create loan activity
-      await supabase
-        .from("loan_activities")
-        .insert({
-          loan_id: loan.id,
-          activity_type: "disbursement",
-          description: `Prêt décaissé pour un montant de ${loan.amount.toLocaleString()} FCFA`,
-          performed_by: payload.disbursedBy || (user ? user.id : 'system')
-        });
-      
-      return new Response(
-        JSON.stringify({ success: true, transaction: transactionData }),
-        { 
-          status: 200,
-          headers: { 
-            ...corsHeaders,
-            "Content-Type": "application/json" 
-          }
-        }
-      );
-    }
-    
-    // If action is not recognized
-    throw new Error(`Unsupported action: ${action}`);
-    
-  } catch (error) {
+  } catch (error: any) {
     console.error("Function error:", error.message);
     return new Response(
       JSON.stringify({ error: error.message }),
