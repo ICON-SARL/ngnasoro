@@ -37,11 +37,11 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 rounded-3xl p-6 text-white shadow-2xl -mt-4 relative overflow-hidden"
+      className="bg-gradient-to-br from-[#fcb041] via-[#fdc158] to-[#fcb041]/90 rounded-3xl p-6 text-white shadow-2xl -mt-4 relative overflow-hidden"
     >
       {/* Decorative circles */}
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
+      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
       
       <div className="relative">
         <div className="flex items-center justify-between mb-4">
