@@ -19,7 +19,7 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
   const [particles, setParticles] = useState<Array<{ x: number; y: number; delay: number }>>([]);
 
   useEffect(() => {
-    const newParticles = Array.from({ length: 20 }, () => ({
+    const newParticles = Array.from({ length: 8 }, () => ({
       x: Math.random() * 100,
       y: Math.random() * 100,
       delay: Math.random() * 0.5,
@@ -56,8 +56,7 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
   }, [duration, navigate, onComplete]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-accent to-primary animate-gradient">
-      <div className="absolute inset-0 mesh-gradient opacity-50" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary/20 via-white to-accent/20">
       
       <div className="absolute inset-0">
         {particles.map((particle, index) => (
@@ -94,7 +93,7 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
               }}
               className="relative"
             >
-              <AnimatedLogo size={140} withGlow withPulse />
+              <AnimatedLogo size={180} withGlow={false} withPulse />
             </motion.div>
           )}
         </AnimatePresence>
@@ -111,7 +110,7 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
-                className="text-white/90 text-xl font-medium"
+                className="text-gray-700 text-lg font-semibold tracking-wide"
               >
                 Microfinance digitale
               </motion.p>
@@ -120,39 +119,28 @@ const UltraSplashScreen: React.FC<UltraSplashScreenProps> = ({
         </AnimatePresence>
 
         <motion.div 
-          className="relative w-24 h-24"
+          className="w-64 h-1.5 bg-white/20 rounded-full overflow-hidden backdrop-blur-sm"
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 1, duration: 0.4 }}
+        >
+          <motion.div
+            className="h-full bg-white rounded-full shadow-lg"
+            style={{
+              width: `${progress}%`,
+            }}
+            transition={{ duration: 0.1 }}
+          />
+        </motion.div>
+
+        <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
+          transition={{ delay: 1.2 }}
+          className="text-white/70 text-sm font-medium mt-3"
         >
-          <svg className="w-full h-full transform -rotate-90">
-            <circle
-              cx="48"
-              cy="48"
-              r="44"
-              stroke="rgba(255, 255, 255, 0.2)"
-              strokeWidth="4"
-              fill="none"
-            />
-            <motion.circle
-              cx="48"
-              cy="48"
-              r="44"
-              stroke="white"
-              strokeWidth="4"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={276.46}
-              strokeDashoffset={276.46 - (276.46 * progress) / 100}
-              style={{
-                filter: 'drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))',
-              }}
-            />
-          </svg>
-          <div className="absolute inset-0 flex items-center justify-center">
-            <span className="text-white text-lg font-bold">{Math.round(progress)}%</span>
-          </div>
-        </motion.div>
+          {Math.round(progress)}% Chargement
+        </motion.p>
       </div>
 
       <div className="absolute inset-0 bg-gradient-radial from-transparent via-transparent to-black/30 pointer-events-none" />

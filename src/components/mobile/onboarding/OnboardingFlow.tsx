@@ -50,13 +50,19 @@ export const OnboardingFlow: React.FC = () => {
   return (
     <div className="fixed inset-0 bg-background overflow-hidden">
       {/* Progress bar */}
-      <div className="absolute top-0 left-0 right-0 h-1 bg-muted z-50">
+      <div className="absolute top-0 left-0 right-0 h-2 bg-gray-100 z-50 shadow-sm">
         <motion.div
-          className="h-full bg-gradient-to-r from-primary to-accent"
+          className="h-full bg-gradient-to-r from-primary via-accent to-primary relative overflow-hidden"
           initial={{ width: '0%' }}
           animate={{ width: `${((currentStep + 1) / steps.length) * 100}%` }}
-          transition={{ duration: 0.3 }}
-        />
+          transition={{ duration: 0.4, ease: [0.4, 0, 0.2, 1] }}
+        >
+          <div className="absolute inset-0 animate-shimmer" 
+               style={{
+                 background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent)',
+                 animation: 'shimmer 2s infinite'
+               }} />
+        </motion.div>
       </div>
 
       {/* Skip button */}
@@ -84,22 +90,23 @@ export const OnboardingFlow: React.FC = () => {
       </AnimatePresence>
 
       {/* Step indicators */}
-      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2 z-50">
+      <div className="absolute bottom-8 left-0 right-0 flex justify-center gap-2.5 z-50 px-4">
         {steps.map((_, index) => (
           <motion.div
             key={index}
-            className={`h-2 rounded-full ${
+            className={`h-2.5 rounded-full transition-all duration-300 ${
               index === currentStep
-                ? 'bg-primary w-8'
+                ? 'bg-gradient-to-r from-primary to-accent shadow-lg'
                 : index < currentStep
-                ? 'bg-accent w-2'
-                : 'bg-muted w-2'
+                ? 'bg-primary/40'
+                : 'bg-gray-200'
             }`}
             initial={false}
             animate={{
-              width: index === currentStep ? 32 : 8,
+              width: index === currentStep ? 40 : 10,
+              scale: index === currentStep ? 1.1 : 1,
             }}
-            transition={{ duration: 0.3 }}
+            transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}
           />
         ))}
       </div>
