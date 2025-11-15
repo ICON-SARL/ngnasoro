@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
+import { useNavigate } from 'react-router-dom';
 import { Shield, Wallet, TrendingUp, CheckCircle2, FileText, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
@@ -35,6 +36,7 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
 
 const ProfileHeader = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const { toast } = useToast();
   const { trigger } = useHapticFeedback();
   const [profileData, setProfileData] = useState<any>(null);
@@ -45,6 +47,7 @@ const ProfileHeader = () => {
   useEffect(() => {
     const fetchProfileData = async () => {
       if (user?.id) {
+        // Récupérer le profil
         const { data, error } = await supabase
           .from('profiles')
           .select('*')
@@ -53,6 +56,21 @@ const ProfileHeader = () => {
           
         if (!error && data) {
           setProfileData(data);
+        }
+        
+        // Récupérer le niveau KYC depuis sfd_clients
+        const { data: clientData, error: clientError } = await supabase
+          .from('sfd_clients')
+          .select('kyc_level, client_code')
+          .eq('user_id', user.id)
+          .maybeSingle();
+        
+        if (!clientError && clientData) {
+          setProfileData((prev: any) => ({
+            ...prev,
+            kyc_level: clientData.kyc_level,
+            client_code: clientData.client_code
+          }));
         }
       }
     };
@@ -235,6 +253,10 @@ const ProfileHeader = () => {
             <Button 
               size="sm" 
               className="w-full bg-white/20 hover:bg-white/30 text-white border-0"
+              onClick={() => {
+                trigger('light');
+                navigate('/mobile-flow/kyc-upgrade');
+              }}
             >
               Augmenter mon niveau
             </Button>
