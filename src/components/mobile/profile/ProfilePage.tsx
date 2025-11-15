@@ -7,7 +7,6 @@ import SecuritySection from './SecuritySection';
 import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
-import ClientCodeSync from './ClientCodeSync';
 import { useAuth } from '@/hooks/useAuth';
 import { Wallet, Shield, User } from 'lucide-react';
 
@@ -59,7 +58,6 @@ const ProfilePage = () => {
         </TabsContent>
         
         <TabsContent value="profile" className="space-y-4">
-          <ClientCodeSync />
           {user && <PersonalInfoSection user={user} />}
         </TabsContent>
       </Tabs>

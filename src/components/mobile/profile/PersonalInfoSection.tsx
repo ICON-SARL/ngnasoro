@@ -1,15 +1,16 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Phone, Mail, Home, Save, User as UserIcon } from 'lucide-react';
+import { Phone, Mail, FileText, Copy, Check, User as UserIcon, Calendar } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { Loader } from '@/components/ui/loader';
 import PhoneNumberInput from './sfd-accounts/PhoneNumberInput';
-import { validateMaliPhoneNumber } from '@/lib/constants';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import { motion } from 'framer-motion';
+import { formatDistanceToNow } from 'date-fns';
+import { fr } from 'date-fns/locale';
 
 interface PersonalInfoSectionProps {
   user: User | null;
@@ -17,20 +18,35 @@ interface PersonalInfoSectionProps {
 
 const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
   const { toast } = useToast();
+  const { trigger } = useHapticFeedback();
+  const [profileData, setProfileData] = useState<any>(null);
   const [formData, setFormData] = useState({
     phone: user?.phone || user?.user_metadata?.phone || '',
     email: user?.email || '',
-    address: 'Bamako, Commune V'
   });
   
   const [isEditing, setIsEditing] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isPhoneValid, setIsPhoneValid] = useState(true);
-  
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
-  };
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    const fetchProfileData = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', user.id)
+          .single();
+          
+        if (!error && data) {
+          setProfileData(data);
+        }
+      }
+    };
+    
+    fetchProfileData();
+  }, [user?.id]);
   
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { value } = e.target;
@@ -42,7 +58,6 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
   };
   
   const handleSaveInfo = async () => {
-    // Validate phone number before saving
     if (!isPhoneValid && formData.phone) {
       toast({
         title: "Numéro de téléphone invalide",
@@ -54,20 +69,16 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
 
     setIsLoading(true);
     try {
-      // Update profile in the database
       if (user?.id) {
-        // Update in profiles table
         const { error: profileError } = await supabase
           .from('profiles')
           .update({ 
             phone: formData.phone || null,
-            // Don't update email here as it's managed by auth
           })
           .eq('id', user.id);
           
         if (profileError) throw profileError;
         
-        // Also update in auth.users via metadata
         const { error: userMetaError } = await supabase.auth.updateUser({
           data: { phone: formData.phone || null }
         });
@@ -75,18 +86,17 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
         if (userMetaError) throw userMetaError;
 
         toast({
-          title: "Informations mises à jour",
-          description: "Vos informations personnelles ont été enregistrées",
+          title: "✓ Mis à jour",
+          description: "Vos informations ont été enregistrées",
         });
         
-        // Reload page to show updated information
         window.location.reload();
       }
     } catch (error) {
       console.error('Error updating profile:', error);
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la mise à jour de vos informations",
+        description: "Une erreur est survenue lors de la mise à jour",
         variant: "destructive",
       });
     } finally {
@@ -95,17 +105,75 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
     }
   };
 
+  const handleCopyCode = async () => {
+    if (profileData?.client_code) {
+      await navigator.clipboard.writeText(profileData.client_code);
+      setCopied(true);
+      trigger('light');
+      
+      toast({
+        title: "✓ Copié",
+        description: "Code client copié dans le presse-papiers",
+        duration: 2000,
+      });
+      
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const createdAt = user?.created_at ? formatDistanceToNow(new Date(user.created_at), { 
+    addSuffix: true, 
+    locale: fr 
+  }) : null;
+
   return (
-    <Card className="mb-4 border-border/50">
-      <CardHeader className="pb-2">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <UserIcon className="h-5 w-5 text-primary" />
-          Informations Personnelles
-        </CardTitle>
+    <Card className="border-border/50 bg-card/50 backdrop-blur-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg flex items-center gap-2">
+            <UserIcon className="h-5 w-5 text-primary" />
+            Informations Personnelles
+          </CardTitle>
+          {!isEditing && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setIsEditing(true)}
+              className="text-primary"
+            >
+              Modifier
+            </Button>
+          )}
+        </div>
       </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-4">
-          <div>
+      <CardContent className="pt-0 space-y-3">
+        {/* Email */}
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/30 dark:to-cyan-950/30 hover:shadow-md transition-all"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+            <Mail className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground mb-0.5">Email</p>
+            <p className="font-medium text-sm truncate">{formData.email}</p>
+          </div>
+        </motion.div>
+        
+        {/* Téléphone */}
+        <motion.div
+          initial={{ opacity: 0, y: 5 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.05 }}
+          className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/30 dark:to-emerald-950/30 hover:shadow-md transition-all"
+        >
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-green-500 to-emerald-500 flex items-center justify-center flex-shrink-0">
+            <Phone className="h-5 w-5 text-white" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs text-muted-foreground mb-0.5">Téléphone</p>
             {isEditing ? (
               <PhoneNumberInput
                 value={formData.phone}
@@ -115,85 +183,79 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
                 required={false}
               />
             ) : (
-              <>
-                <Label htmlFor="phone" className="flex items-center gap-2">
-                  <Phone className="h-4 w-4" /> Numéro de téléphone
-                </Label>
-                <Input 
-                  id="phone" 
-                  name="phone"
-                  value={formData.phone || "Non renseigné"} 
-                  className="mt-1"
-                  disabled={true}
-                />
-              </>
+              <p className="font-medium text-sm">{formData.phone || 'Non renseigné'}</p>
             )}
           </div>
-          
-          <div>
-            <Label htmlFor="email" className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> Adresse e-mail
-            </Label>
-            <Input 
-              id="email" 
-              name="email"
-              type="email" 
-              value={formData.email} 
-              onChange={handleInputChange}
-              className="mt-1"
-              disabled={true} // Email should not be editable here
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="address" className="flex items-center gap-2">
-              <Home className="h-4 w-4" /> Adresse
-            </Label>
-            <Input 
-              id="address" 
-              name="address"
-              value={formData.address} 
-              onChange={handleInputChange}
-              className="mt-1"
-              disabled={!isEditing || isLoading}
-            />
-          </div>
-          
-          {!isEditing ? (
-            <Button 
-              variant="outline" 
-              className="w-full mt-2"
-              onClick={() => setIsEditing(true)}
-            >
-              Modifier mes informations
-            </Button>
-          ) : (
-            <div className="flex gap-2 mt-2">
-              <Button 
-                variant="outline" 
-                className="w-full"
-                onClick={() => setIsEditing(false)}
-                disabled={isLoading}
-              >
-                Annuler
-              </Button>
-              <Button 
-                className="w-full"
-                onClick={handleSaveInfo}
-                disabled={isLoading || (!isPhoneValid && !!formData.phone)}
-              >
-                {isLoading ? (
-                  <>Enregistrement...</>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4 mr-2" />
-                    Enregistrer
-                  </>
-                )}
-              </Button>
+        </motion.div>
+        
+        {/* Code Client */}
+        {profileData?.client_code && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950/30 dark:to-pink-950/30 hover:shadow-md transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center flex-shrink-0">
+              <FileText className="h-5 w-5 text-white" />
             </div>
-          )}
-        </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-0.5">Code Client</p>
+              <code className="font-mono font-medium text-sm">{profileData.client_code}</code>
+            </div>
+            <Button 
+              size="icon" 
+              variant="ghost"
+              className="h-8 w-8 flex-shrink-0"
+              onClick={handleCopyCode}
+            >
+              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+          </motion.div>
+        )}
+
+        {/* Date de création */}
+        {createdAt && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.15 }}
+            className="flex items-center gap-3 p-3 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 dark:from-amber-950/30 dark:to-orange-950/30 hover:shadow-md transition-all"
+          >
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-500 to-orange-500 flex items-center justify-center flex-shrink-0">
+              <Calendar className="h-5 w-5 text-white" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs text-muted-foreground mb-0.5">Membre depuis</p>
+              <p className="font-medium text-sm">{createdAt}</p>
+            </div>
+          </motion.div>
+        )}
+        
+        {/* Boutons d'action */}
+        {isEditing && (
+          <motion.div
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="flex gap-2 pt-2"
+          >
+            <Button
+              onClick={handleSaveInfo}
+              disabled={isLoading}
+              className="flex-1 bg-primary hover:bg-primary/90"
+            >
+              {isLoading ? <Loader className="h-4 w-4" /> : 'Enregistrer'}
+            </Button>
+            <Button
+              onClick={() => setIsEditing(false)}
+              disabled={isLoading}
+              variant="outline"
+              className="flex-1"
+            >
+              Annuler
+            </Button>
+          </motion.div>
+        )}
       </CardContent>
     </Card>
   );
