@@ -42,11 +42,12 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créer compte dédié pour le coffre
+    // Créer compte dédié pour le coffre (avec UUID unique pour éviter conflit avec comptes personnels)
+    const vaultUniqueUserId = crypto.randomUUID(); // UUID unique par coffre
     const { data: vaultAccount, error: accountError } = await supabase
       .from('accounts')
       .insert({
-        user_id: user.id,
+        user_id: vaultUniqueUserId,
         sfd_id: sfd_id,
         balance: 0,
         currency: 'FCFA',
