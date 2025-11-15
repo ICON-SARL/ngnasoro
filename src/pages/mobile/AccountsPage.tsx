@@ -32,27 +32,56 @@ const AccountsPage: React.FC = () => {
     isLoading: sfdLoading 
   } = useSfdDataAccess();
 
-  // Query pour récupérer le solde total de TOUS les comptes du client
+  // Query pour récupérer le solde total du SFD actif uniquement
   const { data: totalBalanceData, isLoading: balanceLoading } = useQuery({
-    queryKey: ['user-total-balance', user?.id],
+    queryKey: ['user-total-balance', user?.id, activeSfdId],
     queryFn: async () => {
-      if (!user?.id) return { total: 0, currency: 'FCFA' };
+      if (!user?.id || !activeSfdId) return { total: 0, currency: 'FCFA' };
       
-      // Récupérer tous les comptes de l'utilisateur, tous SFDs confondus
+      // Récupérer les comptes de l'utilisateur pour le SFD actif uniquement
       const { data: accounts, error } = await supabase
         .from('accounts')
         .select('balance, currency')
-        .eq('user_id', user.id);
+        .eq('user_id', user.id)
+        .eq('sfd_id', activeSfdId);
       
       if (error) throw error;
       
       const total = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
       return { total, currency: accounts?.[0]?.currency || 'FCFA' };
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!activeSfdId
   });
 
-  const isLoading = sfdLoading || balanceLoading;
+  // Query pour récupérer les soldes individuels de chaque SFD
+  const { data: sfdBalances, isLoading: sfdBalancesLoading } = useQuery({
+    queryKey: ['sfd-balances', user?.id, sfdData],
+    queryFn: async () => {
+      if (!user?.id || !sfdData || sfdData.length === 0) return {};
+      
+      const balances: Record<string, number> = {};
+      
+      for (const sfd of sfdData) {
+        const { data: accounts, error } = await supabase
+          .from('accounts')
+          .select('balance')
+          .eq('user_id', user.id)
+          .eq('sfd_id', sfd.id);
+        
+        if (error) {
+          console.error(`Error fetching balance for SFD ${sfd.id}:`, error);
+          balances[sfd.id] = 0;
+        } else {
+          balances[sfd.id] = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+        }
+      }
+      
+      return balances;
+    },
+    enabled: !!user?.id && sfdData.length > 0
+  });
+
+  const isLoading = sfdLoading || balanceLoading || sfdBalancesLoading;
 
   const handleSwitchSfd = async (sfdId: string) => {
     if (sfdId === activeSfdId) return;
@@ -185,7 +214,7 @@ const AccountsPage: React.FC = () => {
                       code: sfd.code,
                       region: sfd.region || '',
                       logo_url: sfd.logo_url,
-                      balance: 0,
+                      balance: sfdBalances?.[sfd.id] || 0,
                       currency: 'FCFA',
                       status: sfd.status || 'active',
                       isVerified: true,
