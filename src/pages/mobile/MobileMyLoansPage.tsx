@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { useSfdLoans } from '@/hooks/useSfdLoans';
 import MobileNavigation from '@/components/MobileNavigation';
-import { ArrowLeft, FileText } from 'lucide-react';
+import { ArrowLeft, FileText, ExternalLink } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
@@ -16,9 +16,21 @@ const MobileMyLoansPage: React.FC = () => {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  // Remove the permission check that was causing the access denied message
-  // Instead of checking for a specific permission, we'll just fetch the loans directly
-  // and handle the case where there are no loans gracefully
+  useEffect(() => {
+    console.log('🔍 MobileMyLoansPage - Debug:', {
+      userId: user?.id,
+      loansCount: loans?.length || 0,
+      loans: loans?.map(l => ({
+        id: l.id,
+        purpose: l.purpose,
+        amount: l.amount,
+        status: l.status,
+        sfd_name: l.sfds?.name
+      })),
+      isLoading,
+      error: error?.message
+    });
+  }, [loans, user, isLoading, error]);
 
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('fr-FR', {
@@ -83,35 +95,55 @@ const MobileMyLoansPage: React.FC = () => {
         ) : (
           <div className="space-y-4">
             {loans.map((loan) => (
-              <Card key={loan.id} className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-medium">{loan.purpose}</h3>
-                    <p className="text-sm text-gray-500">
-                      {loan.sfds?.name || 'SFD'} - {formatDate(loan.created_at)}
+              <Card 
+                key={loan.id} 
+                className="p-4 cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => navigate(`/mobile-flow/loan-details/${loan.id}`)}
+              >
+                <div className="flex justify-between items-start mb-3">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-base">{loan.purpose}</h3>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {loan.sfds?.name || 'SFD'} • {formatDate(loan.created_at)}
                     </p>
                   </div>
                   {getStatusBadge(loan.status)}
                 </div>
 
-                <div className="mt-4 grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                   <div>
-                    <p className="text-sm text-gray-500">Montant</p>
-                    <p className="font-medium">{loan.amount.toLocaleString('fr-FR')} FCFA</p>
+                    <p className="text-xs text-gray-500 mb-1">Montant</p>
+                    <p className="font-semibold text-base">{loan.amount.toLocaleString('fr-FR')} FCFA</p>
                   </div>
                   <div>
-                    <p className="text-sm text-gray-500">Durée</p>
-                    <p className="font-medium">{loan.duration_months} mois</p>
+                    <p className="text-xs text-gray-500 mb-1">Durée</p>
+                    <p className="font-semibold text-base">{loan.duration_months} mois</p>
                   </div>
                 </div>
 
-                <div className="mt-4">
+                {loan.status === 'active' && loan.remaining_amount !== undefined && (
+                  <div className="mt-3 pt-3 border-t">
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-gray-600">Restant :</span>
+                      <span className="font-semibold text-amber-600">
+                        {loan.remaining_amount.toLocaleString('fr-FR')} FCFA
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="mt-3 flex justify-end">
                   <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => navigate(`/mobile-flow/loan-details/${loan.id}`)}
+                    size="sm" 
+                    variant="ghost" 
+                    className="text-[#176455]"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate(`/mobile-flow/loan-details/${loan.id}`);
+                    }}
                   >
-                    Voir les détails
+                    Voir détails
+                    <ExternalLink className="h-4 w-4 ml-1" />
                   </Button>
                 </div>
               </Card>
