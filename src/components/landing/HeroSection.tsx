@@ -114,7 +114,8 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
               variants={fadeInUp}
               initial="hidden"
               animate="visible"
-              className="flex flex-wrap gap-6 justify-center lg:justify-start mt-8 text-white/70 text-sm"
+              className="flex flex-wrap gap-6 justify-center lg:justify-start mt-8 text-white text-sm font-medium"
+              style={{ textShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
             >
               <div className="flex items-center gap-2">
                 <span className="text-2xl">🔒</span>
