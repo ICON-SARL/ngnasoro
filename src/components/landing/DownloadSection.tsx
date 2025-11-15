@@ -11,7 +11,7 @@ interface DownloadSectionProps {
 
 const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) => {
   return (
-    <section id="download" className={`${spacing.sectionPy} relative overflow-hidden ${backgrounds.gradient}`}>
+    <section id="download" className={`${spacing.sectionPy} relative overflow-hidden bg-gradient-to-b from-[#0D6A51] via-[#0F7C5F] to-white`}>
       {/* Animated background elements - reduced for subtlety */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(8)].map((_, i) => (
@@ -56,49 +56,68 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
             }}
             className="inline-block mb-8"
           >
-            <div className={`w-24 h-24 ${borderRadius.card} bg-white shadow-2xl flex items-center justify-center transform hover:scale-110 transition-transform`}>
-              <Smartphone className="w-12 h-12 text-[#0D6A51]" />
+            <div className={`w-24 h-24 ${borderRadius.card} bg-white shadow-2xl flex items-center justify-center transform hover:scale-110 transition-transform border-4 border-white/30 relative`}>
+              {/* Gradient glow */}
+              <div className="absolute -inset-2 bg-gradient-to-r from-[#0D6A51]/20 to-[#FFAB2E]/20 blur-xl rounded-3xl opacity-50" />
+              
+              <Smartphone className="w-12 h-12 text-[#0D6A51] relative z-10" />
             </div>
           </motion.div>
 
           {/* Title */}
-          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6">
+          <h2 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white mb-6 drop-shadow-lg">
             Prêt à transformer votre avenir financier ?
           </h2>
 
           {/* Subtitle */}
-          <p className="text-xl text-white/90 mb-10 max-w-2xl mx-auto">
+          <p className="text-xl text-white mb-10 max-w-2xl mx-auto font-medium drop-shadow-md">
             Rejoignez les 50 000+ Maliens qui gèrent déjà leurs finances avec N'GNA SÔRÔ
           </p>
 
           {/* CTA Button */}
-          <Button
-            onClick={onDownloadClick}
-            size="lg"
-            className={`h-16 px-12 ${borderRadius.button} bg-white text-[#0D6A51] hover:bg-white/90 font-bold text-xl shadow-2xl hover:scale-105 transition-transform mb-8`}
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.98 }}
+            className="inline-block mb-8"
           >
-            <Download className="w-6 h-6 mr-3" />
-            Télécharger N'GNA SÔRÔ
-          </Button>
+            <Button
+              onClick={onDownloadClick}
+              size="lg"
+              className={`h-16 px-12 ${borderRadius.button} bg-white text-[#0D6A51] hover:bg-white/95 font-bold text-xl shadow-2xl border-4 border-white/50 backdrop-blur-sm relative overflow-hidden group transition-all duration-300`}
+            >
+              {/* Effet shine au hover */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              
+              <Download className="w-6 h-6 mr-3 relative z-10" />
+              <span className="relative z-10">Télécharger N'GNA SÔRÔ</span>
+            </Button>
+          </motion.div>
 
           {/* Trust badges */}
-          <div className="flex flex-wrap justify-center gap-8 mt-12 text-white/80">
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🔒</span>
-              <span className="text-sm">100% Sécurisé</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">🇲🇱</span>
-              <span className="text-sm">Soutenu par le MEREF</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">⭐</span>
-              <span className="text-sm">4.8/5 - 5K+ avis</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-2xl">💰</span>
-              <span className="text-sm">Gratuit</span>
-            </div>
+          <div className="flex flex-wrap justify-center gap-4 mt-12 max-w-3xl mx-auto">
+            {[
+              { icon: '🔒', text: '100% Sécurisé' },
+              { icon: '🇲🇱', text: 'Soutenu par le MEREF' },
+              { icon: '⭐', text: '4.8/5 - 5K+ avis' },
+              { icon: '💰', text: 'Gratuit' },
+            ].map((badge, index) => (
+              <motion.div
+                key={index}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+                whileHover={{ scale: 1.05, y: -5 }}
+                className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white shadow-lg border-2 border-white/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group"
+              >
+                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                  {badge.icon}
+                </span>
+                <span className="font-bold text-gray-900 text-base whitespace-nowrap">
+                  {badge.text}
+                </span>
+              </motion.div>
+            ))}
           </div>
         </motion.div>
       </div>
