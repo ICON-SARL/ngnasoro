@@ -13,29 +13,6 @@ const StatsSection: React.FC = () => {
   return (
     <section className="py-24 relative bg-gradient-to-b from-gray-50/50 to-white">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
-        {/* Section Title */}
-        <div className="text-center mb-12">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5 }}
-            className="inline-flex items-center gap-2 bg-primary/5 rounded-full px-4 py-2 mb-4"
-          >
-            <Building2 className="w-5 h-5 text-primary" />
-            <span className="text-sm font-semibold text-primary">Agréé MEREF</span>
-          </motion.div>
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-3xl sm:text-4xl font-bold text-gray-900"
-          >
-            N'GNA SÔRÔ en chiffres
-          </motion.h2>
-        </div>
-
         {/* Stats Grid */}
         <motion.div
           initial={{ opacity: 0, y: 40 }}
