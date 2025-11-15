@@ -1,6 +1,8 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from './components/RootLayout';
+import Index from './pages/Index';
+import LandingPage from './pages/LandingPage';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
 import WelcomePage from './pages/mobile/WelcomePage';
@@ -49,10 +51,14 @@ const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      // Default entry point - redirect to auth
+      // Default entry point - redirect to landing
       {
         path: '/',
-        element: <LoginPage />,
+        element: <Index />,
+      },
+      {
+        path: '/landing',
+        element: <LandingPage />,
       },
   
   // Auth routes
