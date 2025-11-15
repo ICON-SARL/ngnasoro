@@ -180,25 +180,33 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         transition={{ duration: 0.5 }}
         className="w-full max-w-lg relative z-10"
       >
-        <div className="backdrop-blur-2xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 border border-white/30">
+        <div className="backdrop-blur-2xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-5 md:p-8 space-y-5 border border-white/30">
           
-          {/* Logo et titre */}
-          <div className="text-center space-y-4 mb-6">
-            <div className="hidden md:block">
-              <AnimatedLogo size={100} withGlow withPulse />
-            </div>
-            <div className="md:hidden">
-              <AnimatedLogo size={80} withGlow withPulse />
-            </div>
+          {/* Logo et titre optimisé mobile */}
+          <div className="text-center space-y-3 mb-4">
+            <motion.div 
+              className="flex justify-center"
+              initial={{ scale: 0, rotate: -180 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ type: "spring", duration: 0.8 }}
+            >
+              <AnimatedLogo 
+                size={70} 
+                withGlow 
+                withPulse 
+                className="mx-auto"
+              />
+            </motion.div>
+            
             <motion.h1 
-              className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent leading-tight"
+              className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent leading-tight"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
               {config.title}
             </motion.h1>
-            <p className="text-base text-gray-600 dark:text-gray-300 font-medium">
+            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
               {config.subtitle}
             </p>
           </div>
@@ -213,14 +221,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
-                    <UltraInput
-                      type="text"
-                      label="Nom complet"
-                      icon={<User size={20} />}
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      required={!isLogin}
-                    />
+            <UltraInput
+              type="text"
+              label="Nom complet"
+              icon={<User size={20} />}
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              required={!isLogin}
+              placeholder="Jean Dupont"
+            />
                   </motion.div>
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
@@ -240,23 +249,25 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
               )}
             </AnimatePresence>
 
-            <UltraInput
-              type="email"
-              label="Email"
-              icon={<Mail size={20} />}
-              value={formData.email}
-              onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-              required
-            />
+          <UltraInput
+            type="email"
+            label="Email"
+            icon={<Mail size={20} />}
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            required
+            placeholder="votre@email.com"
+          />
 
-            <UltraInput
-              type="password"
-              label="Mot de passe"
-              icon={<Lock size={20} />}
-              value={formData.password}
-              onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-              required
-            />
+          <UltraInput
+            type="password"
+            label="Mot de passe"
+            icon={<Lock size={20} />}
+            value={formData.password}
+            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+            required
+            placeholder="••••••••"
+          />
 
             {/* Checkbox CGU (UNIQUEMENT pour inscription) */}
             {!isLogin && (
