@@ -757,6 +757,7 @@ export type Database = {
           deadline: string | null
           description: string | null
           id: string
+          member_count: number | null
           name: string
           sfd_id: string
           status: string | null
@@ -774,6 +775,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          member_count?: number | null
           name: string
           sfd_id: string
           status?: string | null
@@ -793,6 +795,7 @@ export type Database = {
           deadline?: string | null
           description?: string | null
           id?: string
+          member_count?: number | null
           name?: string
           sfd_id?: string
           status?: string | null
@@ -2303,6 +2306,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_vault_member: {
+        Args: { user_id: string; vault_id: string }
         Returns: boolean
       }
       notify_vault_members: {
