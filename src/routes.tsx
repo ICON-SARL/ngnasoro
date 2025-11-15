@@ -272,10 +272,6 @@ const router = createBrowserRouter([
         path: 'vault/:vaultId',
         element: <VaultDetailsPage />,
       },
-      {
-        path: 'tontine/:tontineId',
-        element: <TontinePage />,
-      },
     ],
   },
   
