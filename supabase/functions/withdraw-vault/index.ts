@@ -41,7 +41,7 @@ Deno.serve(async (req) => {
     // Récupérer le coffre
     const { data: vault, error: vaultError } = await supabase
       .from('vaults')
-      .select('*, vault_account:vault_account_id(*)')
+      .select('*')
       .eq('id', vault_id)
       .eq('user_id', user.id)
       .single();
@@ -96,11 +96,11 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Débiter le compte coffre
+    // Débiter le coffre directement
     const { error: debitError } = await supabase
-      .from('accounts')
-      .update({ balance: vault.vault_account.balance - amount })
-      .eq('id', vault.vault_account_id);
+      .from('vaults')
+      .update({ current_amount: (vault.current_amount || 0) - amount })
+      .eq('id', vault_id);
 
     if (debitError) {
       console.error('Erreur débit coffre:', debitError);

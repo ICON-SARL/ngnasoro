@@ -1,16 +1,26 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Users, TrendingUp, Calendar, Crown, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 
 const CollaborativeVaultDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const { vaultId } = useParams<{ vaultId: string }>();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  const [showDepositModal, setShowDepositModal] = useState(false);
+  const [showWithdrawModal, setShowWithdrawModal] = useState(false);
+  const [amount, setAmount] = useState('');
+  const [reason, setReason] = useState('');
 
   const { data: vault, isLoading } = useQuery({
     queryKey: ['collaborative-vault', vaultId],
@@ -44,6 +54,100 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     },
     enabled: !!vaultId
   });
+
+  const { data: userAccount } = useQuery({
+    queryKey: ['user-account', user?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('accounts')
+        .select('*')
+        .eq('user_id', user?.id)
+        .single();
+      
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user?.id
+  });
+
+  const depositMutation = useMutation({
+    mutationFn: async (depositAmount: number) => {
+      if (!userAccount?.id) throw new Error('Compte introuvable');
+      
+      const { data, error } = await supabase.functions.invoke('deposit-collaborative-vault', {
+        body: { 
+          vault_id: vaultId, 
+          amount: depositAmount,
+          source_account_id: userAccount.id,
+          description: 'Dépôt dans le coffre collaboratif'
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collaborative-vault', vaultId] });
+      queryClient.invalidateQueries({ queryKey: ['user-account', user?.id] });
+      toast.success('Dépôt effectué avec succès');
+      setShowDepositModal(false);
+      setAmount('');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erreur lors du dépôt');
+    }
+  });
+
+  const withdrawMutation = useMutation({
+    mutationFn: async ({ withdrawAmount, withdrawReason }: { withdrawAmount: number; withdrawReason: string }) => {
+      const { data, error } = await supabase.functions.invoke('request-vault-withdrawal', {
+        body: { 
+          vault_id: vaultId, 
+          amount: withdrawAmount,
+          reason: withdrawReason
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['collaborative-vault', vaultId] });
+      toast.success('Demande de retrait créée avec succès');
+      setShowWithdrawModal(false);
+      setAmount('');
+      setReason('');
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erreur lors de la demande de retrait');
+    }
+  });
+
+  const handleDeposit = () => {
+    const depositAmount = parseFloat(amount);
+    if (isNaN(depositAmount) || depositAmount <= 0) {
+      toast.error('Montant invalide');
+      return;
+    }
+    if (!userAccount || userAccount.balance < depositAmount) {
+      toast.error('Solde insuffisant');
+      return;
+    }
+    depositMutation.mutate(depositAmount);
+  };
+
+  const handleWithdraw = () => {
+    const withdrawAmount = parseFloat(amount);
+    if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
+      toast.error('Montant invalide');
+      return;
+    }
+    if (!reason.trim()) {
+      toast.error('Veuillez indiquer une raison');
+      return;
+    }
+    withdrawMutation.mutate({ withdrawAmount, withdrawReason: reason });
+  };
 
   const formatAmount = (amount: number) => {
     return new Intl.NumberFormat('fr-FR').format(amount);
@@ -234,14 +338,98 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
 
         {/* Action Buttons */}
         <div className="grid grid-cols-2 gap-3">
-          <Button className="bg-gradient-to-r from-green-500 to-emerald-600 h-12">
-            Déposer
+          <Button 
+            className="bg-gradient-to-r from-green-500 to-emerald-600 h-12"
+            onClick={() => setShowDepositModal(true)}
+            disabled={depositMutation.isPending}
+          >
+            {depositMutation.isPending ? 'Traitement...' : 'Déposer'}
           </Button>
-          <Button variant="outline" className="h-12">
-            Retirer
+          <Button 
+            variant="outline" 
+            className="h-12"
+            onClick={() => setShowWithdrawModal(true)}
+            disabled={withdrawMutation.isPending}
+          >
+            {withdrawMutation.isPending ? 'Traitement...' : 'Retirer'}
           </Button>
         </div>
       </div>
+
+      {/* Deposit Modal */}
+      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Déposer dans le coffre</DialogTitle>
+            <DialogDescription>
+              Montant disponible : {userAccount ? formatAmount(userAccount.balance) : '0'} FCFA
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="deposit-amount">Montant (FCFA)</Label>
+              <Input
+                id="deposit-amount"
+                type="number"
+                placeholder="Entrez le montant"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                min="0"
+              />
+            </div>
+            <Button 
+              onClick={handleDeposit} 
+              className="w-full"
+              disabled={depositMutation.isPending || !amount}
+            >
+              {depositMutation.isPending ? 'Traitement...' : 'Confirmer le dépôt'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Withdraw Modal */}
+      <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Demander un retrait</DialogTitle>
+            <DialogDescription>
+              Solde du coffre : {formatAmount(vault.current_amount)} FCFA
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="withdraw-amount">Montant (FCFA)</Label>
+              <Input
+                id="withdraw-amount"
+                type="number"
+                placeholder="Entrez le montant"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                min="0"
+                max={vault.current_amount}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="withdraw-reason">Raison du retrait</Label>
+              <Input
+                id="withdraw-reason"
+                type="text"
+                placeholder="Expliquez la raison du retrait"
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </div>
+            <Button 
+              onClick={handleWithdraw} 
+              className="w-full"
+              disabled={withdrawMutation.isPending || !amount || !reason}
+            >
+              {withdrawMutation.isPending ? 'Traitement...' : 'Créer la demande'}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
