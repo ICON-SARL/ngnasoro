@@ -11,14 +11,38 @@ const stats = [
 
 const StatsSection: React.FC = () => {
   return (
-    <section className="py-20 relative">
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 relative bg-gradient-to-b from-gray-50/50 to-white">
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 max-w-7xl">
+        {/* Section Title */}
+        <div className="text-center mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="inline-flex items-center gap-2 bg-primary/5 rounded-full px-4 py-2 mb-4"
+          >
+            <Building2 className="w-5 h-5 text-primary" />
+            <span className="text-sm font-semibold text-primary">Agréé MEREF</span>
+          </motion.div>
+          <motion.h2
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="text-3xl sm:text-4xl font-bold text-gray-900"
+          >
+            N'GNA SÔRÔ en chiffres
+          </motion.h2>
+        </div>
+
+        {/* Stats Grid */}
         <motion.div
-          initial={{ opacity: 0, y: 20 }}
+          initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.3 }}
-          transition={{ duration: 0.6 }}
-          className="grid grid-cols-2 lg:grid-cols-4 gap-6"
+          viewport={{ once: true, amount: 0.2 }}
+          transition={{ duration: 0.6, ease: [0.4, 0, 0.2, 1] }}
+          className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 lg:gap-8"
         >
           {stats.map((stat, index) => (
             <motion.div
@@ -27,31 +51,50 @@ const StatsSection: React.FC = () => {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
               transition={{ delay: index * 0.1, duration: 0.5 }}
-              className="relative group"
+              whileHover={{ y: -8, scale: 1.02 }}
+              className="relative group cursor-default"
             >
-              {/* Glow effect */}
-              <div className="absolute -inset-1 bg-gradient-to-r opacity-0 group-hover:opacity-100 blur-xl transition-opacity duration-500 rounded-3xl from-[#0D6A51]/20 to-[#FFAB2E]/20" />
+              {/* Subtle colored background on hover - NO BLUR */}
+              <div className="absolute -inset-0.5 bg-gradient-to-br from-[#0D6A51]/10 to-[#FFAB2E]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
               
-              {/* Card */}
-              <div className="relative bg-white/70 backdrop-blur-xl rounded-3xl p-6 border border-gray-200/50 shadow-lg hover:shadow-2xl transition-all duration-300">
-                {/* Icon */}
-                <div className={`w-12 h-12 rounded-2xl bg-gradient-to-br ${stat.gradient} flex items-center justify-center mb-4 shadow-lg`}>
-                  <stat.icon className="w-6 h-6 text-white" />
-                </div>
+              {/* Card - Solid white, no blur */}
+              <div className="relative bg-white rounded-3xl p-6 sm:p-8 
+                            border-2 border-gray-100 group-hover:border-primary/20
+                            shadow-[0_2px_20px_rgba(0,0,0,0.06)]
+                            group-hover:shadow-[0_8px_40px_rgba(13,106,81,0.12)]
+                            transition-all duration-300">
                 
-                {/* Value */}
+                {/* Icon with animation */}
+                <motion.div 
+                  className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.gradient} 
+                             flex items-center justify-center mb-4 shadow-lg
+                             group-hover:shadow-xl transition-shadow duration-300`}
+                  whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <stat.icon className="w-7 h-7 text-white" strokeWidth={2.5} />
+                </motion.div>
+                
+                {/* Value with improved typography */}
                 <motion.div
-                  initial={{ scale: 0.5 }}
-                  whileInView={{ scale: 1 }}
+                  initial={{ scale: 0.5, opacity: 0 }}
+                  whileInView={{ scale: 1, opacity: 1 }}
                   viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 + 0.2, type: 'spring', stiffness: 200 }}
-                  className="text-4xl font-bold text-gray-900 mb-2"
+                  transition={{ 
+                    delay: index * 0.1 + 0.2, 
+                    type: 'spring', 
+                    stiffness: 300,
+                    damping: 20
+                  }}
+                  className="text-4xl sm:text-5xl font-bold text-gray-900 mb-2 tracking-tight"
                 >
                   {stat.value}
                 </motion.div>
                 
-                {/* Label */}
-                <p className="text-sm text-gray-600 font-medium">{stat.label}</p>
+                {/* Label with better contrast */}
+                <p className="text-sm sm:text-base text-gray-600 font-semibold">
+                  {stat.label}
+                </p>
               </div>
             </motion.div>
           ))}
