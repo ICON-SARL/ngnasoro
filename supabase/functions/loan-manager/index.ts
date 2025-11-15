@@ -66,23 +66,26 @@ serve(async (req) => {
     
     console.log('Received loan data:', JSON.stringify(loanData, null, 2));
     
+    // Extract data from nested structure if present
+    const data = loanData.data || loanData;
+    
     // Validate required fields
-    if (!loanData.sfd_id || !loanData.amount || !loanData.duration_months) {
+    if (!data.sfd_id || !data.amount || !data.duration_months) {
       throw new Error("Missing required loan data");
     }
     
     // Get client_id either from request or look it up using the user's ID
-    let clientId = loanData.client_id;
+    let clientId = data.client_id;
       
       // If no client_id provided but we have a user, find their client record for this SFD
       if (!clientId && user) {
-        console.log(`No client_id provided, looking up client record for user ${user.id} in SFD ${loanData.sfd_id}`);
+        console.log(`No client_id provided, looking up client record for user ${user.id} in SFD ${data.sfd_id}`);
         
         const { data: clientData, error: clientLookupError } = await supabase
           .from("sfd_clients")
           .select("id")
           .eq("user_id", user.id)
-          .eq("sfd_id", loanData.sfd_id)
+          .eq("sfd_id", data.sfd_id)
           .maybeSingle();
           
         if (clientLookupError) {
@@ -123,15 +126,15 @@ serve(async (req) => {
         .from("sfd_loans")
         .insert({
           client_id: clientId,
-          sfd_id: loanData.sfd_id,
-          amount: loanData.amount,
-          duration_months: loanData.duration_months,
-          interest_rate: loanData.interest_rate || 0,
-          purpose: loanData.purpose || "Non spécifié",
-          loan_plan_id: loanData.loan_plan_id || null,
-          monthly_payment: loanData.monthly_payment || 0,
-          total_amount: loanData.total_amount || loanData.amount,
-          remaining_amount: loanData.remaining_amount || loanData.total_amount || loanData.amount,
+          sfd_id: data.sfd_id,
+          amount: data.amount,
+          duration_months: data.duration_months,
+          interest_rate: data.interest_rate || 0,
+          purpose: data.purpose || "Non spécifié",
+          loan_plan_id: data.loan_plan_id || null,
+          monthly_payment: data.monthly_payment || 0,
+          total_amount: data.total_amount || data.amount,
+          remaining_amount: data.remaining_amount || data.total_amount || data.amount,
           next_payment_date: nextPaymentDate.toISOString(),
           status: "pending",
         })
