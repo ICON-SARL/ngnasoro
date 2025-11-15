@@ -40,5 +40,5 @@ export const shadows = {
 export const backgrounds = {
   glass: 'bg-white/80 backdrop-blur-xl border border-white/20',
   glassCard: 'bg-white/90 backdrop-blur-2xl',
-  gradient: 'bg-gradient-to-br from-[#0D6A51] to-[#176455]',
+  gradient: 'bg-gradient-to-b from-[#0D6A51] via-[#0D6A51]/85 via-[#176455]/60 to-white',
 };
