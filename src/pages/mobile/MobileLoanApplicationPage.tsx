@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ChevronLeft } from 'lucide-react';
 import MobileLoanApplicationForm from '@/components/mobile/loan/MobileLoanApplicationForm';
@@ -11,13 +11,14 @@ import { supabase } from '@/integrations/supabase/client';
 const MobileLoanApplicationPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { planId: urlPlanId } = useParams<{ planId: string }>();
   const { user } = useAuth();
   const [planData, setPlanData] = useState<any>(null);
   const [sfdName, setSfdName] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
-  // Get plan and SFD IDs from location state
-  const planId = location.state?.planId;
+  // Get plan ID from URL params, fallback to location state
+  const planId = urlPlanId || location.state?.planId;
   const sfdId = location.state?.sfdId;
   
   // Redirect if user is not authenticated

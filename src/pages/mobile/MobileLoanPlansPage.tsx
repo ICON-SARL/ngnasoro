@@ -198,14 +198,10 @@ const MobileLoanPlansPage: React.FC = () => {
         )}
         
         <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t">
-          <Button 
-            onClick={() => navigate('/mobile-flow/loan-application')}
-            className="w-full bg-[#0D6A51] hover:bg-[#0D6A51]/90"
-            disabled={isLoading || (!activeSfdId)}
-          >
-            <CreditCard className="h-4 w-4 mr-2" />
-            Faire une demande de prêt
-          </Button>
+          <div className="text-center text-sm text-gray-600">
+            <Info className="h-4 w-4 inline-block mr-1" />
+            Sélectionnez un plan ci-dessus pour faire une demande
+          </div>
         </div>
       </div>
     </div>
