@@ -23,6 +23,7 @@ import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
 import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
 import UnifiedLoansPage from './pages/mobile/UnifiedLoansPage';
 import MobileLoanDetailsPage from './pages/mobile/MobileLoanDetailsPage';
+import LoanRepaymentPage from './pages/mobile/LoanRepaymentPage';
 import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
@@ -281,6 +282,10 @@ const router = createBrowserRouter([
         {
           path: 'loans/:loanId',
           element: <MobileLoanDetailsPage />,
+        },
+        {
+          path: 'loan/:loanId/repayment',
+          element: <LoanRepaymentPage />,
         },
         {
           path: 'loan-application',
