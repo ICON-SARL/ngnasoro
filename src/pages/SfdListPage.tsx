@@ -1,126 +1,112 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
-import { Building2, MapPin, Users, ChevronRight, Search } from 'lucide-react';
+import { Building2, Search, MapPin, Users, ChevronRight, Phone, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
-import { useNavigate } from 'react-router-dom';
+import { SkeletonCard } from '@/components/ui/skeleton-card';
 
-const sfdPartners = [
-  {
-    id: 1,
-    name: 'Kafo Jiginew',
-    region: 'Sikasso',
-    clients: '250K+',
-    services: ['Micro-crédit', 'Épargne', 'Assurance'],
-    logo: '🏦',
-  },
-  {
-    id: 2,
-    name: 'Nyèsigiso',
-    region: 'Ségou',
-    clients: '180K+',
-    services: ['Crédit agricole', 'Épargne', 'Mobile Money'],
-    logo: '🌾',
-  },
-  {
-    id: 3,
-    name: 'Soro Yiriwaso',
-    region: 'Bamako',
-    clients: '120K+',
-    services: ['Micro-crédit', 'Transferts', 'Coffres'],
-    logo: '💼',
-  },
-  {
-    id: 4,
-    name: 'Jemeni',
-    region: 'Kayes',
-    clients: '95K+',
-    services: ['Épargne', 'Crédit habitat', 'Assurance'],
-    logo: '🏠',
-  },
-  {
-    id: 5,
-    name: 'Kokari',
-    region: 'Mopti',
-    clients: '75K+',
-    services: ['Micro-crédit', 'Épargne', 'Formation'],
-    logo: '📚',
-  },
-  {
-    id: 6,
-    name: 'Faso Kanu',
-    region: 'Koulikoro',
-    clients: '60K+',
-    services: ['Crédit artisanal', 'Épargne', 'Groupe solidaire'],
-    logo: '🎨',
-  },
+const regions = [
+  'Toutes',
+  'Bamako',
+  'Kayes',
+  'Koulikoro',
+  'Sikasso',
+  'Ségou',
+  'Mopti',
+  'Tombouctou',
+  'Gao',
+  'Kidal'
 ];
 
-const regions = ['Toutes', 'Bamako', 'Sikasso', 'Ségou', 'Kayes', 'Mopti', 'Koulikoro'];
-
-const SfdListPage: React.FC = () => {
+export default function SfdListPage() {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedRegion, setSelectedRegion] = useState('Toutes');
-  const navigate = useNavigate();
 
-  const filteredSfds = sfdPartners.filter((sfd) => {
-    const matchesSearch = sfd.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Fetch SFDs from Supabase
+  const { data: sfdPartners = [], isLoading, error } = useQuery({
+    queryKey: ['active-sfds'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('sfds')
+        .select('*')
+        .eq('status', 'active')
+        .order('name');
+      
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const filteredSfds = sfdPartners.filter(sfd => {
+    const matchesSearch = sfd.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         sfd.region?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRegion = selectedRegion === 'Toutes' || sfd.region === selectedRegion;
     return matchesSearch && matchesRegion;
   });
 
+  const formatNumber = (num: number) => {
+    return new Intl.NumberFormat('fr-FR').format(num);
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white">
-      {/* Hero Section */}
-      <section className="relative bg-gradient-to-br from-[#0D6A51] to-[#176455] text-white py-20">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      <section className="relative pt-24 pb-16 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <div className="max-w-7xl mx-auto text-center">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            className="max-w-3xl mx-auto text-center"
+            transition={{ duration: 0.6 }}
           >
-            <Badge className="mb-4 bg-white/20 text-white border-white/30">
-              🇲🇱 Réseau national MEREF
+            <Badge variant="outline" className="mb-4 border-primary/20 bg-primary/5">
+              <Building2 className="w-3 h-3 mr-1" />
+              {sfdPartners.length} Institutions Partenaires
             </Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              Nos Partenaires SFD
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+              Nos SFD Partenaires
             </h1>
-            <p className="text-lg text-white/90 mb-8">
-              Découvrez les Structures Financières Décentralisées agréées par le MEREF
-              qui accompagnent les Maliens dans leur développement financier.
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+              Découvrez les institutions de microfinance agréées par le MEREF,
+              au service du développement économique du Mali
             </p>
+          </motion.div>
 
-            {/* Search Bar */}
-            <div className="relative max-w-xl mx-auto">
-              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.2 }}
+            className="mt-8 max-w-xl mx-auto"
+          >
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
-                placeholder="Rechercher une SFD..."
+                placeholder="Rechercher une SFD ou une région..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-12 h-14 rounded-2xl bg-white text-gray-900 border-0 shadow-xl"
+                className="pl-12 h-14 text-base bg-card/80 backdrop-blur-xl border-border/50 focus:border-primary/50"
               />
             </div>
           </motion.div>
         </div>
       </section>
 
-      {/* Filters */}
-      <section className="py-8 border-b bg-white sticky top-0 z-10 shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
+      <section className="sticky top-20 z-30 bg-background/95 backdrop-blur-xl border-b border-border/50 py-4 px-4">
+        <div className="max-w-7xl mx-auto">
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {regions.map((region) => (
               <Button
                 key={region}
                 variant={selectedRegion === region ? 'default' : 'outline'}
+                size="sm"
                 onClick={() => setSelectedRegion(region)}
-                className={`rounded-xl whitespace-nowrap ${
-                  selectedRegion === region
-                    ? 'bg-[#0D6A51] text-white'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
+                className="whitespace-nowrap"
               >
                 {region}
               </Button>
@@ -129,97 +115,183 @@ const SfdListPage: React.FC = () => {
         </div>
       </section>
 
-      {/* SFD Grid */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredSfds.map((sfd, index) => (
-              <motion.div
-                key={sfd.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="group hover:shadow-2xl transition-all duration-300 border-gray-200 hover:border-[#0D6A51]/20 overflow-hidden">
-                  <CardContent className="p-6">
-                    {/* Logo & Name */}
-                    <div className="flex items-start gap-4 mb-4">
-                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-[#0D6A51] to-[#176455] flex items-center justify-center text-3xl shadow-lg group-hover:scale-110 transition-transform">
-                        {sfd.logo}
-                      </div>
-                      <div className="flex-1">
-                        <h3 className="font-bold text-lg text-gray-900 mb-1">
-                          {sfd.name}
-                        </h3>
-                        <div className="flex items-center gap-1 text-sm text-gray-600">
-                          <MapPin className="w-4 h-4" />
-                          {sfd.region}
+      <section className="py-12 px-4">
+        <div className="max-w-7xl mx-auto">
+          {isLoading ? (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3, 4, 5, 6].map(i => (
+                <SkeletonCard key={i} />
+              ))}
+            </div>
+          ) : error ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-16"
+            >
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-destructive/10 flex items-center justify-center">
+                <Building2 className="w-12 h-12 text-destructive" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                Erreur de chargement
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Impossible de charger les SFD. Veuillez réessayer.
+              </p>
+              <Button onClick={() => window.location.reload()}>
+                Réessayer
+              </Button>
+            </motion.div>
+          ) : filteredSfds.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="text-center py-16"
+            >
+              <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-muted flex items-center justify-center">
+                <Building2 className="w-12 h-12 text-muted-foreground" />
+              </div>
+              <h3 className="text-2xl font-bold text-foreground mb-2">
+                Aucune SFD trouvée
+              </h3>
+              <p className="text-muted-foreground mb-6">
+                Essayez de modifier vos critères de recherche
+              </p>
+              <Button onClick={() => {
+                setSearchQuery('');
+                setSelectedRegion('Toutes');
+              }}>
+                Réinitialiser les filtres
+              </Button>
+            </motion.div>
+          ) : (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid md:grid-cols-2 lg:grid-cols-3 gap-6"
+            >
+              {filteredSfds.map((sfd, index) => (
+                <motion.div
+                  key={sfd.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: index * 0.05 }}
+                >
+                  <Card className="group overflow-hidden hover:shadow-xl hover:border-primary/30 transition-all duration-300 bg-card/80 backdrop-blur-sm">
+                    <CardContent className="p-6">
+                      <div className="flex items-start gap-4 mb-4">
+                        <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/10 to-accent/10 flex items-center justify-center overflow-hidden flex-shrink-0">
+                          {sfd.logo_url ? (
+                            <img
+                              src={sfd.logo_url}
+                              alt={sfd.name}
+                              loading="lazy"
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                e.currentTarget.style.display = 'none';
+                                e.currentTarget.parentElement!.innerHTML = `<svg class="w-8 h-8 text-primary" fill="currentColor" viewBox="0 0 20 20"><path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/></svg>`;
+                              }}
+                            />
+                          ) : (
+                            <Building2 className="w-8 h-8 text-primary" />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <h3 className="text-xl font-bold text-foreground mb-1 truncate">
+                            {sfd.name}
+                          </h3>
+                          <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                            <MapPin className="w-3 h-3" />
+                            <span>{sfd.region}</span>
+                          </div>
                         </div>
                       </div>
-                    </div>
 
-                    {/* Stats */}
-                    <div className="flex items-center gap-2 mb-4 p-3 bg-gray-50 rounded-xl">
-                      <Users className="w-4 h-4 text-[#0D6A51]" />
-                      <span className="text-sm font-medium text-gray-700">
-                        {sfd.clients} clients
-                      </span>
-                    </div>
+                      {sfd.description && (
+                        <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
+                          {sfd.description}
+                        </p>
+                      )}
 
-                    {/* Services */}
-                    <div className="flex flex-wrap gap-2 mb-4">
-                      {sfd.services.map((service) => (
-                        <Badge
-                          key={service}
-                          variant="secondary"
-                          className="bg-[#0D6A51]/10 text-[#0D6A51] border-0"
-                        >
-                          {service}
-                        </Badge>
-                      ))}
-                    </div>
+                      {sfd.clients_count && (
+                        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl bg-muted/50">
+                          <Users className="w-4 h-4 text-primary" />
+                          <span className="text-sm font-semibold text-foreground">
+                            {formatNumber(sfd.clients_count)} clients
+                          </span>
+                        </div>
+                      )}
 
-                    {/* CTA */}
-                    <Button
-                      onClick={() => navigate('/sfd-selection')}
-                      className="w-full bg-[#0D6A51] hover:bg-[#176455] text-white rounded-xl"
-                    >
-                      Choisir cette SFD
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+                      {sfd.services && Array.isArray(sfd.services) && sfd.services.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mb-4">
+                          {sfd.services.slice(0, 3).map((service: string, idx: number) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {service}
+                            </Badge>
+                          ))}
+                          {sfd.services.length > 3 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{sfd.services.length - 3}
+                            </Badge>
+                          )}
+                        </div>
+                      )}
 
-          {filteredSfds.length === 0 && (
-            <div className="text-center py-16">
-              <Building2 className="w-16 h-16 mx-auto text-gray-300 mb-4" />
-              <p className="text-gray-600">Aucune SFD trouvée</p>
-            </div>
+                      {(sfd.phone || sfd.contact_email) && (
+                        <div className="space-y-1 mb-4 text-xs text-muted-foreground">
+                          {sfd.phone && (
+                            <div className="flex items-center gap-2">
+                              <Phone className="w-3 h-3" />
+                              <span>{sfd.phone}</span>
+                            </div>
+                          )}
+                          {sfd.contact_email && (
+                            <div className="flex items-center gap-2">
+                              <Mail className="w-3 h-3" />
+                              <span className="truncate">{sfd.contact_email}</span>
+                            </div>
+                          )}
+                        </div>
+                      )}
+
+                      <Button 
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground"
+                        variant="outline"
+                        onClick={() => navigate('/sfd-selection')}
+                      >
+                        Choisir cette SFD
+                        <ChevronRight className="ml-2 w-4 h-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </motion.div>
           )}
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-16 bg-gradient-to-br from-[#0D6A51] to-[#176455] text-white">
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold mb-4">Votre SFD n'est pas listée ?</h2>
-          <p className="text-lg text-white/90 mb-8 max-w-2xl mx-auto">
-            Nous travaillons continuellement à élargir notre réseau de partenaires.
-          </p>
-          <Button
-            onClick={() => navigate('/contact')}
-            size="lg"
-            className="h-14 px-8 rounded-2xl bg-white text-[#0D6A51] hover:bg-white/90 font-semibold"
+      <section className="py-16 px-4 bg-gradient-to-br from-primary/5 via-background to-accent/5">
+        <div className="max-w-4xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
           >
-            Nous contacter
-          </Button>
+            <h2 className="text-3xl md:text-4xl font-bold text-foreground mb-4">
+              Votre SFD n'est pas listée ?
+            </h2>
+            <p className="text-lg text-muted-foreground mb-8">
+              Contactez le MEREF pour devenir partenaire officiel de N'GNASÔRÔ
+            </p>
+            <Button size="lg" onClick={() => navigate('/contact')}>
+              Nous contacter
+              <ChevronRight className="ml-2 w-5 h-5" />
+            </Button>
+          </motion.div>
         </div>
       </section>
     </div>
   );
-};
-
-export default SfdListPage;
+}

@@ -1550,6 +1550,7 @@ export type Database = {
       sfds: {
         Row: {
           address: string | null
+          clients_count: number | null
           code: string
           contact_email: string | null
           created_at: string | null
@@ -1560,6 +1561,7 @@ export type Database = {
           name: string
           phone: string | null
           region: string | null
+          services: Json | null
           status: Database["public"]["Enums"]["sfd_status"] | null
           subsidy_balance: number | null
           suspended_at: string | null
@@ -1568,6 +1570,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          clients_count?: number | null
           code: string
           contact_email?: string | null
           created_at?: string | null
@@ -1578,6 +1581,7 @@ export type Database = {
           name: string
           phone?: string | null
           region?: string | null
+          services?: Json | null
           status?: Database["public"]["Enums"]["sfd_status"] | null
           subsidy_balance?: number | null
           suspended_at?: string | null
@@ -1586,6 +1590,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          clients_count?: number | null
           code?: string
           contact_email?: string | null
           created_at?: string | null
@@ -1596,6 +1601,7 @@ export type Database = {
           name?: string
           phone?: string | null
           region?: string | null
+          services?: Json | null
           status?: Database["public"]["Enums"]["sfd_status"] | null
           subsidy_balance?: number | null
           suspended_at?: string | null
