@@ -21,7 +21,7 @@ const CollaborativeVaultsPage: React.FC = () => {
         .from('collaborative_vaults')
         .select(`
           *,
-          collaborative_vault_members!inner(user_id, status, total_contributed, is_admin)
+          collaborative_vault_members(user_id, status, total_contributed, is_admin)
         `)
         .order('created_at', { ascending: false });
 
@@ -90,9 +90,7 @@ const CollaborativeVaultsPage: React.FC = () => {
             {vaults.map((vault: any) => {
               const progress = (vault.current_amount / vault.target_amount) * 100;
               const isCreator = vault.creator_id === user?.id;
-              const memberCount = Array.isArray(vault.collaborative_vault_members) 
-                ? vault.collaborative_vault_members.length 
-                : 0;
+              const memberCount = vault.member_count || 0;
               
               return (
                 <motion.div
