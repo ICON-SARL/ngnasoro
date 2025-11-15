@@ -36,34 +36,38 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
   return (
     <div 
       className={cn(
-        "flex items-center justify-between p-3 border rounded-lg transition-colors",
-        isActive ? "bg-green-50 border-green-200" : "bg-white border-gray-200",
+        "flex items-center justify-between p-4 border-2 rounded-2xl transition-all",
+        isActive ? "bg-[#176455]/10 border-[#176455]" : "bg-white border-gray-200",
         isProcessing ? "opacity-70" : "hover:bg-gray-50 cursor-pointer"
       )}
       onClick={handleClick}
     >
       <div className="flex items-center">
-        <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center mr-3 text-gray-500 font-medium">
-          {sfd.code || sfd.name.charAt(0)}
+        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-[#176455] to-[#1a7a65] flex items-center justify-center mr-3 text-white font-bold text-lg shadow-md overflow-hidden">
+          {sfd.logo_url ? (
+            <img 
+              src={sfd.logo_url} 
+              alt={sfd.name} 
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            sfd.code || sfd.name.charAt(0)
+          )}
         </div>
         
         <div>
           <h3 className={cn(
-            "font-medium",
-            isActive ? "text-green-800" : "text-gray-800"
+            "font-semibold text-base",
+            isActive ? "text-[#176455]" : "text-gray-800"
           )}>
             {sfd.name}
           </h3>
           
-          <div className="flex items-center space-x-2">
-            <span className="text-sm text-gray-500">
-              {sfd.balance?.toLocaleString() || 0} {sfd.currency || 'FCFA'}
-            </span>
-            
-            {sfd.isVerified && (
-              <span className="flex items-center text-sm text-green-600">
-                <CheckCircle2 className="h-4 w-4 mr-1" />
-                Vérifié
+          <div className="flex items-center space-x-2 text-sm text-gray-500">
+            {sfd.region && <span>{sfd.region}</span>}
+            {sfd.code && (
+              <span className="text-xs bg-gray-100 px-2 py-0.5 rounded">
+                {sfd.code}
               </span>
             )}
           </div>
@@ -72,7 +76,7 @@ const SfdAccountItem: React.FC<SfdAccountItemProps> = ({
       
       <div className="flex items-center">
         {isActive && (
-          <Badge variant="outline" className="border-green-200 text-green-800 bg-green-50 mr-2">
+          <Badge variant="outline" className="border-[#176455] text-[#176455] bg-[#176455]/10 mr-2 font-medium">
             Actif
           </Badge>
         )}

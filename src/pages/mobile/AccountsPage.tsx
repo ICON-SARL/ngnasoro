@@ -3,58 +3,68 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Wallet, PiggyBank, CreditCard, TrendingUp, ArrowDownToLine, ArrowUpFromLine, Building2 } from 'lucide-react';
+import { ArrowLeft, TrendingUp, ArrowDownToLine, ArrowUpFromLine, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
+import SfdAccountItem from '@/components/mobile/profile/sfd-accounts/SfdAccountItem';
+import { useToast } from '@/hooks/use-toast';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, activeSfdId } = useAuth();
+  const { user, setActiveSfdId } = useAuth();
+  const { toast } = useToast();
+  
+  const { 
+    activeSfdId, 
+    sfds: sfdData, 
+    isLoading: sfdLoading 
+  } = useSfdDataAccess();
 
-  const { data: sfdAccounts, isLoading } = useQuery({
-    queryKey: ['user-sfd-accounts', user?.id],
+  // Query pour récupérer le solde total de TOUS les comptes du client
+  const { data: totalBalanceData, isLoading: balanceLoading } = useQuery({
+    queryKey: ['user-total-balance', user?.id],
     queryFn: async () => {
-      if (!user?.id) return [];
+      if (!user?.id) return { total: 0, currency: 'FCFA' };
       
-      // Récupérer tous les SFD auxquels l'utilisateur est associé
-      const { data: userSfds, error: sfdError } = await supabase
-        .from('user_sfds')
-        .select(`
-          sfd_id,
-          sfds (
-            id,
-            name,
-            code,
-            logo_url,
-            region
-          )
-        `)
+      // Récupérer tous les comptes de l'utilisateur, tous SFDs confondus
+      const { data: accounts, error } = await supabase
+        .from('accounts')
+        .select('balance, currency')
         .eq('user_id', user.id);
       
-      if (sfdError) throw sfdError;
+      if (error) throw error;
       
-      // Pour chaque SFD, récupérer les comptes
-      const allAccounts = [];
-      for (const userSfd of userSfds || []) {
-        const { data: accounts } = await supabase
-          .from('accounts')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('sfd_id', userSfd.sfd_id);
-        
-        if (accounts && accounts.length > 0) {
-          allAccounts.push({
-            sfd: userSfd.sfds,
-            accounts: accounts
-          });
-        }
-      }
-      
-      return allAccounts;
+      const total = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+      return { total, currency: accounts?.[0]?.currency || 'FCFA' };
     },
     enabled: !!user?.id
   });
+
+  const isLoading = sfdLoading || balanceLoading;
+
+  const handleSwitchSfd = async (sfdId: string) => {
+    if (sfdId === activeSfdId) return;
+    
+    try {
+      setActiveSfdId(sfdId);
+      
+      const selectedSfd = sfdData.find(sfd => sfd.id === sfdId);
+      toast({
+        title: "SFD changée",
+        description: `Vous êtes maintenant connecté à ${selectedSfd?.name || 'cette SFD'}`,
+      });
+    } catch (error) {
+      console.error('Error switching SFD:', error);
+      toast({
+        title: "Erreur",
+        description: "Impossible de changer de SFD pour le moment",
+        variant: "destructive"
+      });
+    }
+  };
 
   const formatBalance = (amount: number) => {
     return new Intl.NumberFormat('fr-FR', {
@@ -63,17 +73,6 @@ const AccountsPage: React.FC = () => {
     }).format(amount);
   };
 
-  const getAccountIcon = (currency: string) => {
-    switch (currency) {
-      case 'FCFA': return Wallet;
-      case 'USD': return CreditCard;
-      default: return PiggyBank;
-    }
-  };
-
-  const totalBalance = sfdAccounts?.reduce((sum, sfdGroup) => 
-    sum + sfdGroup.accounts.reduce((accSum, acc) => accSum + (acc.balance || 0), 0), 0
-  ) || 0;
 
   if (isLoading) {
     return (
@@ -119,7 +118,9 @@ const AccountsPage: React.FC = () => {
             <TrendingUp className="w-6 h-6" />
             <span className="text-sm opacity-90">Solde total</span>
           </div>
-          <h2 className="text-4xl font-bold mb-6">{formatBalance(totalBalance)} FCFA</h2>
+          <h2 className="text-4xl font-bold mb-6">
+            {formatBalance(totalBalanceData?.total || 0)} {totalBalanceData?.currency}
+          </h2>
           
           <div className="flex gap-3">
             <Button
@@ -139,6 +140,66 @@ const AccountsPage: React.FC = () => {
             </Button>
           </div>
         </motion.div>
+      </div>
+
+      {/* Liste des SFDs */}
+      <div className="px-4 space-y-4">
+        <div className="flex items-center justify-between mb-3">
+          <h2 className="text-lg font-semibold">Mes SFDs</h2>
+          <Badge variant="outline" className="text-xs">
+            {sfdData.length} {sfdData.length > 1 ? 'comptes' : 'compte'}
+          </Badge>
+        </div>
+        
+        {sfdData && sfdData.length > 0 ? (
+          <div className="space-y-3">
+            {sfdData.map((sfd, index) => {
+              const isActive = sfd.id === activeSfdId;
+              
+              return (
+                <motion.div
+                  key={sfd.id}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <SfdAccountItem
+                    sfd={{
+                      id: sfd.id,
+                      name: sfd.name,
+                      code: sfd.code,
+                      region: sfd.region || '',
+                      logo_url: sfd.logo_url,
+                      balance: 0,
+                      currency: 'FCFA',
+                      status: sfd.status || 'active',
+                      isVerified: true,
+                      isActive: isActive,
+                      is_default: false
+                    }}
+                    status={isActive ? 'active' : 'inactive'}
+                    isActive={isActive}
+                    onSwitchSfd={handleSwitchSfd}
+                    isProcessing={false}
+                  />
+                </motion.div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-gray-50 rounded-3xl">
+            <Building2 className="w-16 h-16 mx-auto mb-4 text-gray-300" />
+            <p className="text-gray-500 mb-6">
+              Vous n'êtes pas encore associé à un SFD
+            </p>
+            <Button
+              onClick={() => navigate('/mobile-flow/adhesion')}
+              className="bg-[#176455] hover:bg-[#1a7a65]"
+            >
+              Rejoindre un SFD
+            </Button>
+          </div>
+        )}
       </div>
 
     </div>
