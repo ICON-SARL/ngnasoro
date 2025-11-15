@@ -61,15 +61,33 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
             {/* Logo */}
             <motion.button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center gap-3 cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer group"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <img 
-                src={logoNgnaSoro} 
-                alt="N'GNA SÔRÔ Logo" 
-                className="w-12 h-12 object-contain"
-              />
+              <div className="relative">
+                {/* Bordure gradient */}
+                <div className="absolute -inset-0.5 bg-gradient-to-br from-primary via-[#FFAB2E] to-primary 
+                                rounded-2xl opacity-75 group-hover:opacity-100 
+                                transition-opacity duration-300" />
+                
+                {/* Container logo */}
+                <div className={`
+                  relative w-12 h-12 rounded-2xl overflow-hidden
+                  transition-all duration-300
+                  ${scrolled 
+                    ? 'bg-white shadow-md' 
+                    : 'bg-white/95 backdrop-blur-sm shadow-lg'
+                  }
+                  group-hover:shadow-xl
+                `}>
+                  <img 
+                    src={logoNgnaSoro} 
+                    alt="N'GNA SÔRÔ Logo" 
+                    className="w-full h-full object-cover p-1.5"
+                  />
+                </div>
+              </div>
               <span
                 className={`text-xl font-bold transition-colors ${
                   scrolled ? 'text-gray-900' : 'text-white'
