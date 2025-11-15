@@ -11,13 +11,16 @@ import { DataTable } from '@/components/shared/DataTable';
 import { Wallet, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AdminLogout from '@/components/admin/shared/AdminLogout';
+import { CashSessionManager } from '@/components/cash/CashSessionManager';
 
 export default function CashierDashboard() {
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [currentSession, setCurrentSession] = useState<any>(null);
   const [todayOperations, setTodayOperations] = useState<any[]>([]);
+  const [sessionDialogOpen, setSessionDialogOpen] = useState(false);
+  const [sessionDialogMode, setSessionDialogMode] = useState<'open' | 'close'>('open');
   const [stats, setStats] = useState({
     openingBalance: 0,
     currentBalance: 0,
@@ -37,24 +40,24 @@ export default function CashierDashboard() {
       setLoading(true);
       const today = new Date().toISOString().split('T')[0];
 
-      // Fetch current session
+      // Fetch current session for today
       const { data: session } = await supabase
-        .from('cash_sessions' as any)
+        .from('cash_sessions')
         .select('*')
         .eq('cashier_id', user?.id)
-        .eq('session_date', today)
         .eq('status', 'open')
-        .maybeSingle() as any;
+        .gte('opened_at', today)
+        .maybeSingle();
 
       setCurrentSession(session);
 
       if (session) {
         // Fetch today's operations
         const { data: operations } = await supabase
-          .from('cash_operations' as any)
+          .from('cash_operations')
           .select('*, client:sfd_clients(full_name)')
-          .eq('cash_session_id', session.id)
-          .order('performed_at', { ascending: false }) as any;
+          .eq('session_id', session.id)
+          .order('created_at', { ascending: false });
 
         setTodayOperations(operations || []);
 
@@ -87,20 +90,14 @@ export default function CashierDashboard() {
     }
   };
 
-  const handleOpenSession = async () => {
-    // TODO: Implement open session dialog
-    toast({
-      title: 'Ouverture de caisse',
-      description: 'Fonctionnalité à implémenter'
-    });
+  const handleOpenSession = () => {
+    setSessionDialogMode('open');
+    setSessionDialogOpen(true);
   };
 
-  const handleCloseSession = async () => {
-    // TODO: Implement close session dialog
-    toast({
-      title: 'Fermeture de caisse',
-      description: 'Fonctionnalité à implémenter'
-    });
+  const handleCloseSession = () => {
+    setSessionDialogMode('close');
+    setSessionDialogOpen(true);
   };
 
   if (loading) {
@@ -291,6 +288,15 @@ export default function CashierDashboard() {
           </Card>
         </>
       )}
+      
+      <CashSessionManager
+        open={sessionDialogOpen}
+        onOpenChange={setSessionDialogOpen}
+        mode={sessionDialogMode}
+        sfdId={activeSfdId}
+        currentSession={currentSession}
+        onSuccess={fetchDashboardData}
+      />
     </div>
   );
 }

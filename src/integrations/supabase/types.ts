@@ -2420,6 +2420,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      validate_password_strength: {
+        Args: { password: string }
+        Returns: boolean
+      }
     }
     Enums: {
       account_status: "active" | "inactive" | "frozen" | "closed"
