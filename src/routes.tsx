@@ -18,7 +18,9 @@ import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SupportPage from './pages/mobile/SupportPage';
 import FAQPage from './pages/mobile/FAQPage';
 import AccountsPage from './pages/mobile/AccountsPage';
-import TontinePage from './pages/mobile/TontinePage';
+import VaultsPage from './pages/mobile/VaultsPage';
+import CreateVaultPage from './pages/mobile/CreateVaultPage';
+import VaultDetailsPage from './pages/mobile/VaultDetailsPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
@@ -259,8 +261,16 @@ const router = createBrowserRouter([
         element: <AccountsPage />,
       },
       {
-        path: 'tontine',
-        element: <TontinePage />,
+        path: 'vaults',
+        element: <VaultsPage />,
+      },
+      {
+        path: 'create-vault',
+        element: <CreateVaultPage />,
+      },
+      {
+        path: 'vault/:vaultId',
+        element: <VaultDetailsPage />,
       },
       {
         path: 'tontine/:tontineId',

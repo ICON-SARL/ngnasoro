@@ -13,7 +13,7 @@ import SecurePaymentTab from '../secure-payment/SecurePaymentTab';
 import TransferPage from '@/pages/mobile/TransferPage';
 import SupportPage from '@/pages/mobile/SupportPage';
 import AccountsPage from '@/pages/mobile/AccountsPage';
-import TontinePage from '@/pages/mobile/TontinePage';
+
 
 interface MobileFlowRoutesProps {
   onAction: (action: string, data?: any) => void;
@@ -52,7 +52,7 @@ const MobileFlowRoutes: React.FC<MobileFlowRoutesProps> = ({
       <Route path="profile" element={<ProfilePage />} />
       <Route path="support" element={<SupportPage />} />
       <Route path="accounts" element={<AccountsPage />} />
-      <Route path="tontine" element={<TontinePage />} />
+      
       <Route path="sfd-selector" element={<SfdSelectorPage />} />
       <Route path="sfd-adhesion/:sfdId" element={<SfdAdhesionPage />} />
       <Route path="funds-management" element={<FundsManagementView />} />

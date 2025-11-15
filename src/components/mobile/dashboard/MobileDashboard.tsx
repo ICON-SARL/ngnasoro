@@ -8,7 +8,7 @@ import DashboardHeader from './DashboardHeader';
 import AccountBalanceCard from './AccountBalanceCard';
 import QuickActions from './QuickActions';
 import RecentTransactions from './RecentTransactions';
-import TontineSection from './TontineSection';
+import VaultSection from './VaultSection';
 import { AlertCircle } from 'lucide-react';
 
 const MobileDashboard: React.FC = () => {
@@ -210,7 +210,7 @@ const MobileDashboard: React.FC = () => {
         <QuickActions />
 
         {/* Section Tontine */}
-        <TontineSection />
+        <VaultSection />
 
         {/* Liste des transactions récentes */}
         <RecentTransactions 
