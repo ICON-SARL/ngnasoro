@@ -1,11 +1,13 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, User, HelpCircle, CreditCard } from 'lucide-react';
+import { Home, User, HelpCircle, CreditCard, Menu } from 'lucide-react';
+import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
 
 const MobileNavigation: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   
   const isActive = (path: string) => {
     return location.pathname.includes(path);
@@ -19,24 +21,38 @@ const MobileNavigation: React.FC = () => {
   ];
   
   return (
-    <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-card border-t border-border shadow-lg z-10">
-      <div className="grid grid-cols-4 h-16">
-        {navItems.map((item) => (
+    <>
+      <div className="fixed bottom-0 left-0 right-0 bg-white dark:bg-card border-t border-border shadow-lg z-10">
+        <div className="grid grid-cols-5 h-16">
+          {navItems.map((item) => (
+            <button
+              key={item.path}
+              className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
+                isActive(item.path) 
+                  ? 'text-primary' 
+                  : 'text-muted-foreground hover:text-foreground'
+              }`}
+              onClick={() => navigate(item.path)}
+            >
+              {item.icon}
+              <span className="text-xs font-medium">{item.label}</span>
+            </button>
+          ))}
           <button
-            key={item.path}
-            className={`flex flex-col items-center justify-center space-y-1 transition-colors ${
-              isActive(item.path) 
-                ? 'text-primary' 
-                : 'text-muted-foreground hover:text-foreground'
-            }`}
-            onClick={() => navigate(item.path)}
+            className="flex flex-col items-center justify-center space-y-1 transition-colors text-muted-foreground hover:text-foreground"
+            onClick={() => setIsMenuOpen(true)}
           >
-            {item.icon}
-            <span className="text-xs font-medium">{item.label}</span>
+            <Menu size={22} />
+            <span className="text-xs font-medium">Menu</span>
           </button>
-        ))}
+        </div>
       </div>
-    </div>
+      
+      <MobileDrawerMenu 
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+      />
+    </>
   );
 };
 

@@ -10,6 +10,7 @@ import { StatusBadge } from '@/components/shared/StatusBadge';
 import { DataTable } from '@/components/shared/DataTable';
 import { Wallet, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 export default function CashierDashboard() {
   const { user } = useAuth();
@@ -146,15 +147,18 @@ export default function CashierDashboard() {
           <h1 className="text-3xl font-bold">Tableau de bord Caissier</h1>
           <p className="text-muted-foreground">Gérez vos opérations de caisse</p>
         </div>
-        {currentSession ? (
-          <Button onClick={handleCloseSession} variant="destructive">
-            Fermer la caisse
-          </Button>
-        ) : (
-          <Button onClick={handleOpenSession}>
-            Ouvrir la caisse
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {currentSession ? (
+            <Button onClick={handleCloseSession} variant="destructive">
+              Fermer la caisse
+            </Button>
+          ) : (
+            <Button onClick={handleOpenSession}>
+              Ouvrir la caisse
+            </Button>
+          )}
+          <AdminLogout variant="ghost" size="sm" />
+        </div>
       </div>
 
       {!currentSession ? (
