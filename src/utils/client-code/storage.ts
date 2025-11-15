@@ -9,9 +9,14 @@ export const getClientCodeForUser = async (userId: string): Promise<string | nul
   try {
     console.log('Fetching client code for user:', userId);
     
-    // profiles table doesn't have client_code column
-    console.warn('getClientCodeForUser: client_code column does not exist in profiles table');
-    return null;
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('client_code')
+      .eq('id', userId)
+      .single();
+      
+    if (error) throw error;
+    return data?.client_code || null;
   } catch (error) {
     console.error('Error getting client code:', error);
     handleError(error);
@@ -23,9 +28,13 @@ export const storeClientCode = async (userId: string, clientCode: string): Promi
   try {
     console.log('Storing client code for user:', userId, 'code:', clientCode);
     
-    // profiles table doesn't have client_code column
-    console.warn('storeClientCode: client_code column does not exist in profiles table');
-    return false;
+    const { error } = await supabase
+      .from('profiles')
+      .update({ client_code: clientCode })
+      .eq('id', userId);
+      
+    if (error) throw error;
+    return true;
   } catch (error) {
     console.error('Error storing client code:', error);
     handleError(error);

@@ -8,7 +8,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import MobileMenu from '@/components/mobile/MobileMenu';
-import ClientCodeSection from '@/components/mobile/account/ClientCodeSection';
 import LogoutButton from '@/components/LogoutButton';
 import JoinSfdSection from '@/components/mobile/account/JoinSfdSection';
 
@@ -62,8 +61,6 @@ const AccountPage: React.FC = () => {
             </Button>
           </CardContent>
         </Card>
-        
-        <ClientCodeSection />
         
         <JoinSfdSection />
         

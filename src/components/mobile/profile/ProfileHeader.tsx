@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
-import { Shield, Wallet, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { Shield, Wallet, TrendingUp, CheckCircle2, FileText, Copy, Check } from 'lucide-react';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
@@ -8,6 +8,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { motion } from 'framer-motion';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -32,9 +34,12 @@ const StatCard: React.FC<StatCardProps> = ({ icon, value, label }) => (
 
 const ProfileHeader = () => {
   const { user } = useAuth();
+  const { toast } = useToast();
+  const { trigger } = useHapticFeedback();
   const [profileData, setProfileData] = useState<any>(null);
   const [accountsCount, setAccountsCount] = useState(0);
   const [activeLoans, setActiveLoans] = useState(0);
+  const [copied, setCopied] = useState(false);
   
   useEffect(() => {
     const fetchProfileData = async () => {
@@ -114,6 +119,23 @@ const ProfileHeader = () => {
   };
 
   const kycInfo = getKycInfo(kycLevel);
+  const clientCode = profileData?.client_code;
+
+  const handleCopyCode = async () => {
+    if (clientCode) {
+      await navigator.clipboard.writeText(clientCode);
+      setCopied(true);
+      trigger('light');
+      
+      toast({
+        title: "✓ Copié",
+        description: "Code client copié dans le presse-papiers",
+        duration: 2000,
+      });
+      
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
 
   return (
     <div className="relative overflow-hidden bg-gradient-to-br from-primary via-primary to-accent/20 text-white">
@@ -162,10 +184,33 @@ const ProfileHeader = () => {
         >
           <h2 className="text-2xl font-bold mb-1">{userName}</h2>
           <p className="text-sm opacity-90 mb-2">{phoneNumber}</p>
-          <div className="flex items-center justify-center gap-2 text-sm">
+          <div className="flex items-center justify-center gap-2 text-sm mb-3">
             <CheckCircle2 className="h-4 w-4 text-green-300" />
             <span>Compte vérifié</span>
           </div>
+          
+          {/* Code Client avec bouton copier */}
+          {clientCode && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.15 }}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 hover:bg-white/15 transition-colors"
+            >
+              <FileText className="h-4 w-4 text-accent" />
+              <code className="text-sm font-mono font-medium tracking-wide">
+                {clientCode}
+              </code>
+              <Button
+                size="icon"
+                variant="ghost"
+                className="h-6 w-6 text-white hover:bg-white/20 rounded-lg"
+                onClick={handleCopyCode}
+              >
+                {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+              </Button>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Section KYC détaillée */}
