@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Building, Users, CreditCard, TrendingUp, AlertTriangle, CheckCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -39,6 +40,7 @@ export function MerefEnhancedDashboard() {
     loanStatus: []
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -47,6 +49,7 @@ export function MerefEnhancedDashboard() {
   const fetchDashboardData = async () => {
     try {
       setIsLoading(true);
+      setError(null);
 
       // Fetch SFD stats
       const { data: sfdsData, error: sfdsError } = await supabase
@@ -151,10 +154,37 @@ export function MerefEnhancedDashboard() {
 
     } catch (error) {
       console.error('Error fetching dashboard data:', error);
+      setError('Erreur lors du chargement des données. Veuillez rafraîchir la page.');
     } finally {
       setIsLoading(false);
     }
   };
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <Card className="border-red-200 bg-red-50">
+          <CardContent className="p-6">
+            <div className="flex items-center gap-3">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+              <div>
+                <h3 className="font-semibold text-red-900">Erreur de Chargement</h3>
+                <p className="text-sm text-red-700">{error}</p>
+                <Button 
+                  onClick={() => fetchDashboardData()} 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                >
+                  Réessayer
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (
@@ -163,10 +193,22 @@ export function MerefEnhancedDashboard() {
           {[1, 2, 3, 4].map(i => (
             <Card key={i}>
               <CardContent className="pt-6">
-                <Skeleton className="h-20 w-full" />
+                <Skeleton className="h-24 w-full" />
               </CardContent>
             </Card>
           ))}
+        </div>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <Skeleton className="h-64 w-full" />
+            </CardContent>
+          </Card>
         </div>
       </div>
     );
