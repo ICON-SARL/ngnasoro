@@ -130,11 +130,6 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     mutationFn: async (contact: string) => {
       const isEmail = contact.includes('@');
       
-      // Vérification côté client : ne pas s'inviter soi-même
-      if (isEmail && user?.email && contact.toLowerCase() === user.email.toLowerCase()) {
-        throw new Error('Vous ne pouvez pas vous inviter vous-même');
-      }
-      
       const { data, error } = await supabase.functions.invoke('invite-to-vault', {
         body: { 
           vault_id: vaultId, 
@@ -154,7 +149,10 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
       setInviteContact('');
     },
     onError: (error: any) => {
-      toast.error(error.message || 'Erreur lors de l\'envoi de l\'invitation');
+      const errorMessage = error.message || 'Erreur lors de l\'envoi de l\'invitation';
+      toast.error(errorMessage, {
+        duration: 5000
+      });
     }
   });
 

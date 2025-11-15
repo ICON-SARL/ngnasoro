@@ -81,6 +81,18 @@ Deno.serve(async (req) => {
       invited_user_id = matchedUser?.id;
     }
 
+    // Vérifier que l'utilisateur invité existe (compte actif requis)
+    if (!invited_user_id) {
+      return new Response(
+        JSON.stringify({ 
+          error: phone 
+            ? 'Ce numéro de téléphone n\'a pas de compte actif sur N\'gnasoro' 
+            : 'Cet email n\'a pas de compte actif sur N\'gnasoro'
+        }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Vérifier si l'utilisateur essaie de s'inviter lui-même
     if (invited_user_id === user.id) {
       return new Response(
@@ -90,20 +102,18 @@ Deno.serve(async (req) => {
     }
 
     // Vérifier si déjà membre
-    if (invited_user_id) {
-      const { data: existingMember } = await supabase
-        .from('collaborative_vault_members')
-        .select('id')
-        .eq('vault_id', vault_id)
-        .eq('user_id', invited_user_id)
-        .single();
+    const { data: existingMember } = await supabase
+      .from('collaborative_vault_members')
+      .select('id')
+      .eq('vault_id', vault_id)
+      .eq('user_id', invited_user_id)
+      .single();
 
-      if (existingMember) {
-        return new Response(
-          JSON.stringify({ error: 'Cet utilisateur est déjà membre' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
-      }
+    if (existingMember) {
+      return new Response(
+        JSON.stringify({ error: 'Cet utilisateur est déjà membre' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
     // Créer l'invitation
