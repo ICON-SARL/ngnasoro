@@ -1,9 +1,9 @@
 
 import React from 'react';
-import ClientAuthUI from '@/components/auth/ClientAuthUI';
+import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
 
 const ClientLoginPage = () => {
-  return <ClientAuthUI />;
+  return <UnifiedModernAuthUI mode="client" />;
 };
 
 export default ClientLoginPage;

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import ModernAuthUI from '@/components/auth/ModernAuthUI';
+import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
 
 const LoginPage: React.FC = () => {
-  return <ModernAuthUI />;
+  return <UnifiedModernAuthUI mode="client" />;
 };
 
 export default LoginPage;

@@ -1,9 +1,9 @@
 
 import React from 'react';
-import AuthUI from '@/components/AuthUI';
+import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
 
 const RegisterPage = () => {
-  return <AuthUI />;
+  return <UnifiedModernAuthUI mode="client" />;
 };
 
 export default RegisterPage;
