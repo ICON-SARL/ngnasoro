@@ -8,6 +8,7 @@ import { StatsOverview } from './dashboard/StatsOverview';
 import { SfdAccountsManager } from './sfd-accounts/SfdAccountsManager';
 import { SfdStatusAlert } from './dashboard/SfdStatusAlert';
 import { useSfdStatusCheck } from '@/hooks/useSfdStatusCheck';
+import { LoanManagement } from '@/components/sfd/LoanManagement';
 
 const SfdAdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -54,14 +55,7 @@ const SfdAdminDashboard: React.FC = () => {
         </TabsContent>
         
         <TabsContent value="loans" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle>Prêts en cours</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p>La gestion des prêts sera disponible prochainement.</p>
-            </CardContent>
-          </Card>
+          <LoanManagement />
         </TabsContent>
       </Tabs>
     </div>
