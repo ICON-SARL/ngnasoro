@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Home, CreditCard, FileText, PiggyBank, User } from 'lucide-react';
+import { Home, Building2, MessageCircle, User } from 'lucide-react';
 
 interface MobileNavigationProps {
   onAction?: (action: string, data?: any) => void;
@@ -35,16 +35,16 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       path: '/mobile-flow/dashboard'
     },
     {
-      id: 'loans',
-      label: 'Prêts',
-      icon: CreditCard,
-      path: '/mobile-flow/loans'
+      id: 'accounts',
+      label: 'Comptes',
+      icon: Building2,
+      path: '/mobile-flow/accounts'
     },
     {
-      id: 'funds',
-      label: 'Mes fonds',
-      icon: PiggyBank,
-      path: '/mobile-flow/funds-management'
+      id: 'support',
+      label: 'Support',
+      icon: MessageCircle,
+      path: '/mobile-flow/support'
     },
     {
       id: 'profile',
@@ -59,10 +59,10 @@ const MobileNavigation: React.FC<MobileNavigationProps> = ({
       {navigationItems.map((item) => (
         <div 
           key={item.id}
-          className={`flex flex-col items-center ${isActive(item.path) ? 'text-[#0D6A51]' : 'text-gray-500'}`}
+          className={`flex flex-col items-center ${isActive(item.path) ? 'text-[#176455]' : 'text-gray-500'}`}
           onClick={() => handleNavigation(item.path, `Navigate to ${item.label}`)}
         >
-          <div className={`p-2 rounded-full ${isActive(item.path) ? 'bg-[#0D6A51]/10' : ''}`}>
+          <div className={`p-2 rounded-full ${isActive(item.path) ? 'bg-[#176455]/10' : ''}`}>
             <item.icon className="h-5 w-5" />
           </div>
           <span className="text-xs mt-1">{item.label}</span>

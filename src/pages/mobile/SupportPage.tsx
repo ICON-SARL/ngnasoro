@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, MessageCircle, Phone, Mail, HelpCircle, FileText, User } from 'lucide-react';
+import { ArrowLeft, MessageCircle, Phone, Mail, HelpCircle, MessageSquare } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -29,7 +29,7 @@ const SupportPage: React.FC = () => {
       icon: Phone,
       title: 'Appelez-nous',
       description: '+225 07 00 00 00 00',
-      color: 'bg-blue-500',
+      color: 'bg-[#176455]',
       action: callSupport
     }
   ];
@@ -39,15 +39,15 @@ const SupportPage: React.FC = () => {
       icon: Mail,
       title: 'Email',
       description: 'support@ngnasoro.com',
-      color: 'bg-purple-500',
+      color: 'bg-[#fcb041]',
       action: () => window.location.href = 'mailto:support@ngnasoro.com'
     },
     {
-      icon: User,
-      title: 'Mon conseiller',
-      description: 'Contacter mon agent SFD',
-      color: 'bg-indigo-500',
-      action: () => {}
+      icon: MessageSquare,
+      title: 'Messagerie interne',
+      description: 'Chat avec le support',
+      color: 'bg-[#176455]',
+      action: () => navigate('/mobile-flow/chat-support')
     }
   ];
 
@@ -119,33 +119,28 @@ const SupportPage: React.FC = () => {
         </div>
 
         {/* Aide rapide */}
-        <div className="bg-card rounded-3xl p-6 border border-border">
-          <h2 className="text-lg font-semibold mb-4">Aide Rapide</h2>
-          <div className="space-y-3">
-            <Button variant="outline" className="w-full justify-start rounded-xl h-auto py-3">
-              <div className="text-left">
-                <p className="font-medium text-sm">Comment faire un dépôt ?</p>
-                <p className="text-xs text-muted-foreground">Guide étape par étape</p>
-              </div>
-            </Button>
-            <Button variant="outline" className="w-full justify-start rounded-xl h-auto py-3">
-              <div className="text-left">
-                <p className="font-medium text-sm">Demander un prêt</p>
-                <p className="text-xs text-muted-foreground">Conditions et procédure</p>
-              </div>
-            </Button>
-            <Button variant="outline" className="w-full justify-start rounded-xl h-auto py-3">
-              <div className="text-left">
-                <p className="font-medium text-sm">Rejoindre une tontine</p>
-                <p className="text-xs text-muted-foreground">Épargner ensemble</p>
-              </div>
-            </Button>
-            <Button variant="outline" className="w-full justify-start rounded-xl h-auto py-3">
-              <div className="text-left">
-                <p className="font-medium text-sm">Sécurité du compte</p>
-                <p className="text-xs text-muted-foreground">Protégez vos données</p>
-              </div>
-            </Button>
+        <div>
+          <h2 className="text-lg font-semibold mb-4 px-2">Aide Rapide</h2>
+          <div className="space-y-2">
+            {[
+              { icon: HelpCircle, label: 'Comment faire un prêt ?', path: '/mobile-flow/help/loan' },
+              { icon: HelpCircle, label: 'Gérer mon compte SFD', path: '/mobile-flow/help/sfd' },
+              { icon: HelpCircle, label: 'Questions fréquentes', path: '/mobile-flow/help/faq' }
+            ].map((item, index) => (
+              <motion.button
+                key={item.label}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: index * 0.05 }}
+                onClick={() => navigate(item.path)}
+                className="w-full bg-card rounded-2xl p-4 text-left shadow-sm border border-border hover:shadow-md transition-all active:scale-98"
+              >
+                <div className="flex items-center gap-3">
+                  <item.icon className="w-5 h-5 text-[#fcb041]" />
+                  <span className="font-medium">{item.label}</span>
+                </div>
+              </motion.button>
+            ))}
           </div>
         </div>
       </div>

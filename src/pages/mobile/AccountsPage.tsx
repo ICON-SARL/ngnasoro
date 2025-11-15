@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Wallet, PiggyBank, CreditCard, TrendingUp, ArrowDownToLine, ArrowUpFromLine } from 'lucide-react';
+import { ArrowLeft, Wallet, PiggyBank, CreditCard, TrendingUp, ArrowDownToLine, ArrowUpFromLine, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,21 +12,48 @@ const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeSfdId } = useAuth();
 
-  const { data: accounts, isLoading } = useQuery({
-    queryKey: ['user-accounts-page', user?.id, activeSfdId],
+  const { data: sfdAccounts, isLoading } = useQuery({
+    queryKey: ['user-sfd-accounts', user?.id],
     queryFn: async () => {
-      if (!user?.id || !activeSfdId) return [];
+      if (!user?.id) return [];
       
-      const { data, error } = await supabase
-        .from('accounts')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('sfd_id', activeSfdId);
+      // Récupérer tous les SFD auxquels l'utilisateur est associé
+      const { data: userSfds, error: sfdError } = await supabase
+        .from('user_sfds')
+        .select(`
+          sfd_id,
+          sfds (
+            id,
+            name,
+            code,
+            logo_url,
+            region
+          )
+        `)
+        .eq('user_id', user.id);
       
-      if (error) throw error;
-      return data || [];
+      if (sfdError) throw sfdError;
+      
+      // Pour chaque SFD, récupérer les comptes
+      const allAccounts = [];
+      for (const userSfd of userSfds || []) {
+        const { data: accounts } = await supabase
+          .from('accounts')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('sfd_id', userSfd.sfd_id);
+        
+        if (accounts && accounts.length > 0) {
+          allAccounts.push({
+            sfd: userSfd.sfds,
+            accounts: accounts
+          });
+        }
+      }
+      
+      return allAccounts;
     },
-    enabled: !!user?.id && !!activeSfdId
+    enabled: !!user?.id
   });
 
   const formatBalance = (amount: number) => {
@@ -44,7 +71,9 @@ const AccountsPage: React.FC = () => {
     }
   };
 
-  const totalBalance = accounts?.reduce((sum, acc) => sum + (acc.balance || 0), 0) || 0;
+  const totalBalance = sfdAccounts?.reduce((sum, sfdGroup) => 
+    sum + sfdGroup.accounts.reduce((accSum, acc) => accSum + (acc.balance || 0), 0), 0
+  ) || 0;
 
   if (isLoading) {
     return (
@@ -84,7 +113,7 @@ const AccountsPage: React.FC = () => {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-gradient-to-br from-violet-500 via-purple-500 to-indigo-600 rounded-3xl p-6 text-white shadow-xl"
+          className="bg-gradient-to-br from-[#fcb041] via-[#fdc158] to-[#fcb041]/90 rounded-3xl p-6 text-white shadow-xl"
         >
           <div className="flex items-center gap-3 mb-4">
             <TrendingUp className="w-6 h-6" />
@@ -112,65 +141,6 @@ const AccountsPage: React.FC = () => {
         </motion.div>
       </div>
 
-      {/* Accounts list */}
-      <div className="px-4 space-y-3">
-        <h2 className="font-semibold mb-3">Comptes individuels</h2>
-        {accounts && accounts.length > 0 ? (
-          accounts.map((account, index) => {
-            const Icon = getAccountIcon(account.currency || 'FCFA');
-            return (
-              <motion.div
-                key={account.id}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-card rounded-3xl p-5 border border-border shadow-sm"
-              >
-                <div className="flex items-center gap-4">
-                  <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center">
-                    <Icon className="w-7 h-7 text-primary" />
-                  </div>
-                  <div className="flex-1">
-                    <h3 className="font-semibold mb-1">
-                      Compte {account.currency}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      {account.status === 'active' ? 'Actif' : account.status}
-                    </p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-2xl font-bold">{formatBalance(account.balance || 0)}</p>
-                    <p className="text-xs text-muted-foreground">{account.currency}</p>
-                  </div>
-                </div>
-                
-                <div className="flex gap-2 mt-4 pt-4 border-t border-border">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="flex-1 rounded-xl"
-                    onClick={() => navigate(`/mobile-flow/transactions?account=${account.id}`)}
-                  >
-                    Historique
-                  </Button>
-                  <Button
-                    size="sm"
-                    className="flex-1 rounded-xl"
-                    onClick={() => navigate('/mobile-flow/funds-management')}
-                  >
-                    Opération
-                  </Button>
-                </div>
-              </motion.div>
-            );
-          })
-        ) : (
-          <div className="bg-muted/50 rounded-3xl p-8 text-center">
-            <PiggyBank className="w-12 h-12 text-muted-foreground mx-auto mb-3" />
-            <p className="text-muted-foreground">Aucun compte disponible</p>
-          </div>
-        )}
-      </div>
     </div>
   );
 };
