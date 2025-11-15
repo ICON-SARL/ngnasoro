@@ -1,22 +1,71 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, Plus, Crown, TrendingUp } from 'lucide-react';
+import { ArrowLeft, Users, Plus, Crown, TrendingUp, Check, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
+import { toast } from 'sonner';
 
 const CollaborativeVaultsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [filter, setFilter] = useState<'my_vaults' | 'invited' | 'public'>('my_vaults');
+
+  const respondMutation = useMutation({
+    mutationFn: async ({ invitation_id, action }: { invitation_id: string; action: 'accept' | 'reject' }) => {
+      const { data, error } = await supabase.functions.invoke('respond-vault-invitation', {
+        body: { invitation_id, action }
+      });
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data, variables) => {
+      queryClient.invalidateQueries({ queryKey: ['collaborative-vaults'] });
+      if (variables.action === 'accept') {
+        toast.success('Invitation acceptée avec succès');
+        if (data?.vault_id) {
+          navigate(`/mobile-flow/collaborative-vault/${data.vault_id}`);
+        }
+      } else {
+        toast.success('Invitation refusée');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erreur lors de la réponse à l\'invitation');
+    }
+  });
 
   const { data: vaults, isLoading } = useQuery({
     queryKey: ['collaborative-vaults', user?.id, filter],
     queryFn: async () => {
       if (!user?.id) return [];
       
+      if (filter === 'invited') {
+        // Récupérer les invitations pendantes pour l'utilisateur
+        const { data: invitations, error: invError } = await supabase
+          .from('collaborative_vault_invitations')
+          .select(`
+            *,
+            collaborative_vaults(
+              *,
+              collaborative_vault_members(user_id, status, total_contributed, is_admin)
+            )
+          `)
+          .eq('invited_user_id', user.id)
+          .eq('status', 'pending')
+          .order('created_at', { ascending: false });
+        
+        if (invError) throw invError;
+        return invitations?.map(inv => ({
+          ...inv.collaborative_vaults,
+          invitation_id: inv.id,
+          is_invitation: true
+        })) || [];
+      }
+
       let query = supabase
         .from('collaborative_vaults')
         .select(`
@@ -27,9 +76,6 @@ const CollaborativeVaultsPage: React.FC = () => {
 
       if (filter === 'my_vaults') {
         query = query.eq('creator_id', user.id);
-      } else if (filter === 'invited') {
-        query = query.eq('collaborative_vault_members.user_id', user.id)
-                     .neq('creator_id', user.id);
       } else if (filter === 'public') {
         query = query.eq('visibility', 'public');
       }
@@ -91,14 +137,14 @@ const CollaborativeVaultsPage: React.FC = () => {
               const progress = (vault.current_amount / vault.target_amount) * 100;
               const isCreator = vault.creator_id === user?.id;
               const memberCount = vault.member_count || 0;
+              const isInvitation = vault.is_invitation;
               
               return (
                 <motion.div
                   key={vault.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  onClick={() => navigate(`/mobile-flow/collaborative-vault/${vault.id}`)}
-                  className="bg-card rounded-3xl p-5 cursor-pointer hover:shadow-lg transition-all border border-border"
+                  className="bg-card rounded-3xl p-5 border border-border"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
@@ -139,7 +185,7 @@ const CollaborativeVaultsPage: React.FC = () => {
                   </div>
 
                   {/* Amounts */}
-                  <div className="flex justify-between items-end">
+                  <div className="flex justify-between items-end mb-3">
                     <div>
                       <p className="text-xs text-muted-foreground">Montant actuel</p>
                       <p className="text-lg font-bold text-foreground">
@@ -153,6 +199,37 @@ const CollaborativeVaultsPage: React.FC = () => {
                       </p>
                     </div>
                   </div>
+
+                  {/* Invitation Actions */}
+                  {isInvitation && (
+                    <div className="flex gap-2 mt-3 pt-3 border-t border-border">
+                      <Button 
+                        onClick={() => respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'accept' })}
+                        disabled={respondMutation.isPending}
+                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                      >
+                        <Check className="w-4 h-4 mr-2" />
+                        Accepter
+                      </Button>
+                      <Button 
+                        onClick={() => respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'reject' })}
+                        disabled={respondMutation.isPending}
+                        variant="outline"
+                        className="flex-1"
+                      >
+                        <X className="w-4 h-4 mr-2" />
+                        Refuser
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Navigate to details for non-invitations */}
+                  {!isInvitation && (
+                    <div 
+                      onClick={() => navigate(`/mobile-flow/collaborative-vault/${vault.id}`)}
+                      className="absolute inset-0 cursor-pointer"
+                    />
+                  )}
                 </motion.div>
               );
             })}
