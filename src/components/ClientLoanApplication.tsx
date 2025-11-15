@@ -9,14 +9,14 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import { useClientLoans } from '@/hooks/useClientLoans';
+import { useSfdLoans } from '@/hooks/useSfdLoans';
 import { LoanApplication } from '@/hooks/useLoanApplication';
 
 const ClientLoanApplication: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { toast } = useToast();
-  const { applyForLoan, isUploading } = useClientLoans();
+  const { createLoan } = useSfdLoans();
   
   const [formData, setFormData] = useState<LoanApplication>({
     sfd_id: '',
@@ -71,7 +71,7 @@ const ClientLoanApplication: React.FC = () => {
     setIsSubmitting(true);
     
     try {
-      await applyForLoan.mutateAsync(formData);
+      await createLoan.mutateAsync(formData);
       
       toast({
         title: "Demande envoyée",
@@ -168,7 +168,7 @@ const ClientLoanApplication: React.FC = () => {
             <Button
               type="submit"
               className="w-full"
-              disabled={isSubmitting || isUploading}
+              disabled={isSubmitting}
             >
               {isSubmitting ? (
                 <span className="flex items-center">
