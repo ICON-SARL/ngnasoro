@@ -9,6 +9,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Shield, FileText, Upload, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Input } from '@/components/ui/input';
+import { kycService } from '@/services/client/kycService';
 
 interface KycLevel {
   level: number;
@@ -128,7 +129,22 @@ const KycLevelUpgrade = () => {
         description: 'Document téléchargé avec succès',
       });
 
-      fetchKycData();
+      // Rafraîchir les données
+      await fetchKycData();
+      
+      // Calculer si le niveau peut être augmenté
+      const suggestedLevel = await kycService.calculateSuggestedKYCLevel(clientId);
+      if (suggestedLevel > currentLevel) {
+        // Mettre à jour automatiquement le niveau
+        const success = await kycService.updateKYCLevel(clientId, suggestedLevel as 1 | 2 | 3);
+        if (success) {
+          toast({
+            title: 'Niveau KYC mis à jour !',
+            description: `Votre niveau KYC a été augmenté au niveau ${suggestedLevel}`,
+          });
+          setCurrentLevel(suggestedLevel);
+        }
+      }
     } catch (error) {
       console.error('Error uploading document:', error);
       toast({
