@@ -62,6 +62,7 @@ import SubsidyApprovalsPage from './pages/meref/SubsidyApprovalsPage';
 import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
 import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
 import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
+import SfdSetupPage from './pages/SfdSetupPage';
 
 const router = createBrowserRouter([
   {
@@ -420,6 +421,16 @@ const router = createBrowserRouter([
           element: <CollaborativeVaultDetailsPage />,
         },
     ],
+  },
+  
+  // SFD Management route for clients
+  {
+    path: '/sfd-setup',
+    element: (
+      <RoleGuard requiredRole="client" fallbackPath="/access-denied">
+        <SfdSetupPage />
+      </RoleGuard>
+    ),
   },
   
   // Error pages
