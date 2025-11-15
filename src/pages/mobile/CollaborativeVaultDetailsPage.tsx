@@ -129,13 +129,22 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
   const inviteMutation = useMutation({
     mutationFn: async (contact: string) => {
       const isEmail = contact.includes('@');
+      
+      // Vérification côté client : ne pas s'inviter soi-même
+      if (isEmail && user?.email && contact.toLowerCase() === user.email.toLowerCase()) {
+        throw new Error('Vous ne pouvez pas vous inviter vous-même');
+      }
+      
       const { data, error } = await supabase.functions.invoke('invite-to-vault', {
         body: { 
           vault_id: vaultId, 
           [isEmail ? 'email' : 'phone']: contact
         }
       });
+      
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
+      
       return data;
     },
     onSuccess: () => {
