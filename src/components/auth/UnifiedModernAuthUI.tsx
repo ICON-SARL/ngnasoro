@@ -191,7 +191,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
               transition={{ type: "spring", duration: 0.8 }}
             >
               <AnimatedLogo 
-                size={70} 
+                size={100} 
                 withGlow 
                 withPulse 
                 className="mx-auto"
