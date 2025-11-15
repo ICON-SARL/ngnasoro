@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { Eye, EyeOff } from 'lucide-react';
@@ -22,8 +22,14 @@ export const UltraInput: React.FC<UltraInputProps> = ({
   ...props
 }) => {
   const [isFocused, setIsFocused] = useState(false);
-  const [hasValue, setHasValue] = useState(!!props.value || !!props.defaultValue);
+  const [hasValue, setHasValue] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Synchroniser hasValue avec props.value
+  useEffect(() => {
+    const currentValue = props.value !== undefined ? props.value : props.defaultValue;
+    setHasValue(!!currentValue && String(currentValue).length > 0);
+  }, [props.value, props.defaultValue]);
   
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setHasValue(e.target.value.length > 0);
@@ -62,12 +68,13 @@ export const UltraInput: React.FC<UltraInputProps> = ({
             error && 'border-destructive focus:border-destructive focus:ring-destructive/20',
             success && 'border-success focus:border-success',
             !error && !success && 'border-gray-300 dark:border-gray-700 focus:border-primary',
-            'font-medium',
+            'font-semibold',
             className
           )}
           onFocus={() => setIsFocused(true)}
           onBlur={() => setIsFocused(false)}
           onChange={handleChange}
+          placeholder={!label || (isFocused || hasValue) ? props.placeholder : ''}
           {...props}
         />
         
