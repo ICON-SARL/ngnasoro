@@ -40,7 +40,7 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         {icon && (
           <motion.div 
             className={cn(
-              'absolute left-4 top-1/2 -translate-y-1/2 smooth-transition',
+              'absolute left-3.5 top-1/2 -translate-y-1/2 smooth-transition',
               isFocused ? 'text-primary' : 'text-muted-foreground'
             )}
             animate={{ scale: isFocused ? 1.1 : 1 }}
@@ -53,15 +53,16 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         <input
           type={inputType}
           className={cn(
-            'w-full px-4 py-3 rounded-xl border-2 bg-background text-foreground smooth-transition',
-            'focus:outline-none focus:scale-[1.01]',
-            'placeholder:text-muted-foreground/50',
-            icon && 'pl-12',
+            'w-full px-4 py-4 rounded-xl border-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-base smooth-transition',
+            'min-h-[56px]',
+            'focus:outline-none focus:ring-2 focus:ring-primary/20',
+            'placeholder:text-muted-foreground/40',
+            icon && 'pl-11',
             isPassword && 'pr-12',
-            error && 'border-destructive focus:border-destructive',
+            error && 'border-destructive focus:border-destructive focus:ring-destructive/20',
             success && 'border-success focus:border-success',
-            !error && !success && 'border-input focus:border-primary',
-            'font-medium', // Rendre le texte plus visible
+            !error && !success && 'border-gray-300 dark:border-gray-700 focus:border-primary',
+            'font-medium',
             className
           )}
           onFocus={() => setIsFocused(true)}
@@ -74,14 +75,15 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         {label && (
           <motion.label
             className={cn(
-              'absolute pointer-events-none smooth-transition px-2 bg-background font-semibold',
-              icon ? 'left-12' : 'left-4',
+              'absolute pointer-events-none smooth-transition px-3 font-semibold',
+              'bg-white dark:bg-gray-900',
+              icon ? 'left-11' : 'left-4',
               isFocused || hasValue
-                ? '-top-2.5 text-xs'
+                ? '-top-3 text-xs'
                 : 'top-1/2 -translate-y-1/2 text-base',
               isFocused && !error && 'text-primary',
               error && 'text-destructive',
-              !isFocused && !error && 'text-foreground/80'
+              !isFocused && !error && 'text-gray-600 dark:text-gray-400'
             )}
             initial={false}
           >

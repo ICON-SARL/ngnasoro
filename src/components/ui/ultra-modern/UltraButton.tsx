@@ -54,15 +54,15 @@ export const UltraButton: React.FC<UltraButtonProps> = ({
     primary: 'bg-primary text-primary-foreground hover:opacity-90 focus:ring-primary shadow-lg hover:shadow-xl',
     secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary',
     ghost: 'bg-transparent border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary',
-    gradient: 'bg-gradient-to-r from-primary to-accent text-white hover:opacity-90 focus:ring-accent shadow-lg hover:shadow-xl',
+    gradient: 'bg-gradient-to-r from-[#0D6A51] via-[#0F7C5F] to-[#FFAB2E] text-white font-bold shadow-xl hover:shadow-2xl border-2 border-white/30',
     success: 'bg-success text-white hover:opacity-90 focus:ring-success shadow-lg',
     danger: 'bg-destructive text-destructive-foreground hover:opacity-90 focus:ring-destructive shadow-lg',
   };
   
   const sizeClasses = {
-    sm: 'px-4 py-2 text-sm',
-    md: 'px-6 py-3 text-base',
-    lg: 'px-8 py-4 text-lg',
+    sm: 'h-9 px-4 text-sm',
+    md: 'h-11 px-6 text-base',
+    lg: 'h-14 px-8 text-lg',
   };
 
   return (

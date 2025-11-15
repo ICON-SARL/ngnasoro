@@ -136,7 +136,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
   const config = modeConfig[mode];
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${config.gradient} flex items-center justify-center p-4 relative overflow-hidden`}>
+    <div className={`min-h-screen bg-gradient-to-br ${config.gradient} flex items-center justify-center p-3 md:p-4 relative overflow-hidden`}>
       <ParticleBackground particleCount={50} />
       
       {/* Blobs animés */}
@@ -178,28 +178,33 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="w-full max-w-md relative z-10"
+        className="w-full max-w-lg relative z-10"
       >
-        <div className="backdrop-blur-2xl bg-white/90 dark:bg-gray-900/90 rounded-3xl shadow-2xl p-8 space-y-6 border border-white/20">
+        <div className="backdrop-blur-2xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-6 md:p-8 space-y-6 border border-white/30">
           
-          {/* Logo */}
-          <div className="text-center space-y-3">
-            <AnimatedLogo size={100} withGlow withPulse />
+          {/* Logo et titre */}
+          <div className="text-center space-y-4 mb-6">
+            <div className="hidden md:block">
+              <AnimatedLogo size={100} withGlow withPulse />
+            </div>
+            <div className="md:hidden">
+              <AnimatedLogo size={80} withGlow withPulse />
+            </div>
             <motion.h1 
-              className="text-3xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent"
+              className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent leading-tight"
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
             >
               {config.title}
             </motion.h1>
-            <p className="text-muted-foreground">
+            <p className="text-base text-gray-600 dark:text-gray-300 font-medium">
               {config.subtitle}
             </p>
           </div>
 
           {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-5">
             <AnimatePresence mode="wait">
               {!isLogin && (
                 <>
@@ -258,53 +263,82 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
               <motion.div
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex items-start space-x-3 p-4 bg-primary/5 rounded-xl border border-primary/20"
+                className="p-5 bg-green-50/80 dark:bg-green-900/10 rounded-2xl border-2 border-green-200 dark:border-green-800"
               >
-                <Checkbox
-                  id="terms"
-                  checked={formData.acceptTerms}
-                  onCheckedChange={(checked) => 
-                    setFormData({ ...formData, acceptTerms: checked as boolean })
-                  }
-                  className="mt-1"
-                />
-                <Label htmlFor="terms" className="text-sm leading-relaxed cursor-pointer">
-                  J'accepte les{" "}
-                  <a href="/legal/terms" className="underline text-[#0D6A51] font-medium hover:text-[#0F7C5F]" target="_blank" rel="noopener noreferrer">
-                    Conditions d'utilisation
-                  </a>{" "}
-                  et la{" "}
-                  <a href="/legal/privacy" className="underline text-[#0D6A51] font-medium hover:text-[#0F7C5F]" target="_blank" rel="noopener noreferrer">
-                    Politique de confidentialité
-                  </a>
-                </Label>
+                <div className="flex items-start space-x-4">
+                  <Checkbox
+                    id="terms"
+                    checked={formData.acceptTerms}
+                    onCheckedChange={(checked) => 
+                      setFormData({ ...formData, acceptTerms: checked as boolean })
+                    }
+                    className="mt-1 scale-125 data-[state=checked]:bg-[#0D6A51] data-[state=checked]:border-[#0D6A51]"
+                  />
+                  <Label 
+                    htmlFor="terms" 
+                    className="text-sm md:text-base leading-relaxed cursor-pointer text-gray-800 dark:text-gray-200 flex-1"
+                  >
+                    <span className="block mb-2 font-medium">J'accepte :</span>
+                    <span className="block space-y-1">
+                      <a 
+                        href="/legal/terms" 
+                        className="text-[#0D6A51] dark:text-green-400 font-semibold underline hover:text-[#0F7C5F] transition-colors block" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        📋 Les Conditions d'utilisation
+                      </a>
+                      <a 
+                        href="/legal/privacy" 
+                        className="text-[#0D6A51] dark:text-green-400 font-semibold underline hover:text-[#0F7C5F] transition-colors block" 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        🔒 La Politique de confidentialité
+                      </a>
+                    </span>
+                  </Label>
+                </div>
               </motion.div>
             )}
 
-            <UltraButton
-              type="submit"
-              loading={loading}
-              fullWidth
-              variant="gradient"
-              size="lg"
-              disabled={!isLogin && !formData.acceptTerms}
-            >
-              {isLogin ? 'Se connecter' : 'Créer mon compte'}
-            </UltraButton>
+            <div className="pt-2">
+              <UltraButton
+                type="submit"
+                loading={loading}
+                fullWidth
+                variant="gradient"
+                size="lg"
+                disabled={!isLogin && !formData.acceptTerms}
+                className="h-14 text-lg font-bold shadow-lg"
+              >
+                {isLogin ? 'Se connecter' : 'Créer mon compte'}
+              </UltraButton>
+            </div>
           </form>
 
           {/* Toggle Login/Register */}
-          <div className="text-center">
+          <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+              {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+            </p>
             <button
               type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              onClick={() => {
+                setIsLogin(!isLogin);
+                setFormData({
+                  fullName: '',
+                  email: '',
+                  phone: '',
+                  password: '',
+                  acceptTerms: false
+                });
+              }}
+              className="text-[#0D6A51] dark:text-green-400 font-bold text-base hover:underline hover:scale-105 transition-all"
             >
-              {isLogin ? (
-                <>Pas encore de compte ? <span className="font-semibold">S'inscrire</span></>
-              ) : (
-                <>Déjà inscrit ? <span className="font-semibold">Se connecter</span></>
-              )}
+              {isLogin ? "Créer un compte →" : "← Se connecter"}
             </button>
           </div>
         </div>
