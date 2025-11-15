@@ -37,15 +37,15 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
-      className="bg-gradient-to-br from-[#fcb041] via-[#fdc158] to-[#fcb041]/90 rounded-3xl p-6 text-white shadow-2xl -mt-4 relative overflow-hidden"
+      className="bg-gradient-to-br from-[#fcb041] via-[#fdc158] to-[#fcb041]/90 rounded-3xl p-5 text-white shadow-lg -mt-4 relative overflow-hidden"
     >
       {/* Decorative circles */}
       <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
       <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
       
       <div className="relative">
-        <div className="flex items-center justify-between mb-4">
-          <span className="text-sm opacity-90 font-medium">Solde principal</span>
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-xs opacity-90 font-medium">Solde principal</span>
           <Button
             variant="ghost"
             size="icon"
@@ -65,24 +65,24 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.2 }}
-          className="mb-6"
+          className="mb-4"
         >
-          <h2 className="text-5xl font-bold mb-1">
+          <h2 className="text-4xl font-bold mb-0.5">
             {isBalanceVisible ? formatBalance(balance) : '••••••'}
           </h2>
-          <p className="text-sm opacity-90">{currency}</p>
+          <p className="text-xs opacity-80">{currency}</p>
         </motion.div>
 
         {/* Action buttons */}
-        <div className="flex gap-3 mb-4">
+        <div className="flex gap-2 mb-3">
           <Button
             onClick={() => {
               setFundsActionType('deposit');
               setShowFundsSheet(true);
             }}
-            className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 h-12 rounded-2xl font-medium"
+            className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 h-10 rounded-xl font-medium text-sm"
           >
-            <ArrowDownToLine className="w-5 h-5 mr-2" />
+            <ArrowDownToLine className="w-4 h-4 mr-1.5" />
             Recharger
           </Button>
           <Button
@@ -91,19 +91,19 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
               setShowFundsSheet(true);
             }}
             variant="outline"
-            className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 h-12 rounded-2xl font-medium"
+            className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 h-10 rounded-xl font-medium text-sm"
           >
-            <ArrowUpFromLine className="w-5 h-5 mr-2" />
+            <ArrowUpFromLine className="w-4 h-4 mr-1.5" />
             Retirer
           </Button>
         </div>
 
         {accounts.length > 1 && (
-          <div className="flex gap-2 flex-wrap">
+          <div className="flex gap-1.5 flex-wrap">
             {accounts.map((account, index) => (
               <div 
                 key={account.id}
-                className="bg-primary-foreground/10 backdrop-blur-sm px-3 py-1.5 rounded-full text-xs"
+                className="bg-primary-foreground/10 backdrop-blur-sm px-2.5 py-1 rounded-full text-[10px]"
               >
                 <span className="opacity-90">{account.name}:</span>
                 <span className="font-semibold ml-1">
