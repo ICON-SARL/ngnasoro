@@ -63,13 +63,16 @@ export const FeaturesCarousel: React.FC<FeaturesCarouselProps> = ({
             className="text-center"
           >
             <motion.div
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              transition={{ delay: 0.2, type: 'spring' }}
+              initial={{ scale: 0, rotate: -10 }}
+              animate={{ scale: 1, rotate: 0 }}
+              transition={{ delay: 0.2, type: 'spring', stiffness: 200, damping: 15 }}
               className="mb-8"
             >
-              <div className={`w-40 h-40 mx-auto rounded-3xl bg-gradient-to-br ${currentFeature.color} flex items-center justify-center shadow-2xl`}>
-                <Icon className="w-20 h-20 text-white" />
+              <div className="relative">
+                <div className={`absolute -inset-4 bg-gradient-to-br ${currentFeature.color} opacity-20 blur-2xl rounded-3xl`} />
+                <div className={`relative w-48 h-48 mx-auto rounded-3xl bg-gradient-to-br ${currentFeature.color} flex items-center justify-center shadow-2xl border-4 border-white`}>
+                  <Icon className="w-24 h-24 text-white" strokeWidth={1.5} />
+                </div>
               </div>
             </motion.div>
 
@@ -77,7 +80,7 @@ export const FeaturesCarousel: React.FC<FeaturesCarouselProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="text-3xl font-bold mb-4"
+              className="text-3xl font-bold mb-3 text-gray-900"
             >
               {currentFeature.title}
             </motion.h2>
@@ -86,7 +89,7 @@ export const FeaturesCarousel: React.FC<FeaturesCarouselProps> = ({
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.4 }}
-              className="text-lg text-muted-foreground"
+              className="text-base text-gray-600 leading-relaxed px-4"
             >
               {currentFeature.description}
             </motion.p>
@@ -95,15 +98,18 @@ export const FeaturesCarousel: React.FC<FeaturesCarouselProps> = ({
       </div>
 
       <div className="w-full max-w-md space-y-6">
-        <div className="flex justify-center gap-2">
+        <div className="flex justify-center gap-2.5">
           {features.map((_, index) => (
-            <div
+            <motion.div
               key={index}
-              className={`h-2 rounded-full transition-all ${
+              className={`h-2.5 rounded-full transition-all duration-300 ${
                 index === currentIndex
-                  ? 'bg-primary w-8'
-                  : 'bg-muted w-2'
+                  ? 'bg-gradient-to-r from-primary to-accent w-10 shadow-md'
+                  : 'bg-gray-200 w-2.5'
               }`}
+              animate={{
+                scale: index === currentIndex ? 1.1 : 1,
+              }}
             />
           ))}
         </div>
