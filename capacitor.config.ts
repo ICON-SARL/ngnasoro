@@ -2,11 +2,11 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'app.lovable.6419ce7ac12b4202935f2f82ad556905',
+  appId: 'com.ngnasoro.app',
   appName: 'ngnasoro',
   webDir: 'dist',
   server: {
-    url: 'https://6419ce7a-c12b-4202-935f-2f82ad556905.lovableproject.com?forceHideBadge=true',
+    url: 'https://ngnasoro.com?forceHideBadge=true',
     cleartext: true
   },
   android: {
