@@ -6,10 +6,12 @@ import { useToast } from '@/hooks/use-toast';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { Loan } from '@/types/sfdClients';
 
+import { LoanHookReturn } from '@/types/loanHook';
+
 /**
  * Hook for SFD Admins - fetches all loans in their SFD
  */
-export function useSfdAdminLoans() {
+export function useSfdAdminLoans(): LoanHookReturn {
   const { user, activeSfdId } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
