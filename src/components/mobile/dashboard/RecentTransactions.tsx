@@ -1,10 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownToLine, ArrowUpFromLine, CreditCard, MoreHorizontal } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { FundsActionSheet } from '@/components/mobile/funds/FundsActionSheet';
+import { Dialog } from '@/components/ui/dialog';
+import MobileMoneyModal from '@/components/mobile/loan/MobileMoneyModal';
 
 interface Transaction {
   id: string;
@@ -26,6 +29,22 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   isLoading 
 }) => {
   const navigate = useNavigate();
+  const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false);
+  const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
+
+  const handleDepositClick = () => {
+    setIsDepositSheetOpen(true);
+  };
+
+  const handleMobileMoneySelected = () => {
+    setIsDepositSheetOpen(false);
+    setShowMobileMoneyModal(true);
+  };
+
+  const handleCashierScanSelected = () => {
+    setIsDepositSheetOpen(false);
+    navigate('/mobile-flow/cashier-qr-scan');
+  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -91,18 +110,35 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </div>
         <div className="flex gap-2 justify-center pt-2">
           <button
-            onClick={() => navigate('/mobile-flow/funds-management')}
+            onClick={handleDepositClick}
             className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
           >
             Faire un dépôt
           </button>
           <button
-            onClick={() => navigate('/mobile-flow/loans')}
+            onClick={() => navigate('/mobile-flow/loan-plans')}
             className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-accent transition-colors"
           >
             Demander un prêt
           </button>
         </div>
+
+        {/* Sheet pour choisir le mode de dépôt */}
+        <FundsActionSheet 
+          isOpen={isDepositSheetOpen}
+          onClose={() => setIsDepositSheetOpen(false)}
+          actionType="deposit"
+          onMobileMoneySelected={handleMobileMoneySelected}
+          onCashierScanSelected={handleCashierScanSelected}
+        />
+
+        {/* Modal Mobile Money */}
+        <Dialog open={showMobileMoneyModal} onOpenChange={setShowMobileMoneyModal}>
+          <MobileMoneyModal 
+            onClose={() => setShowMobileMoneyModal(false)}
+            isWithdrawal={false}
+          />
+        </Dialog>
       </div>
     );
   }
