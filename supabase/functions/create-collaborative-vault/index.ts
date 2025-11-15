@@ -42,35 +42,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créer compte dédié pour le coffre (avec UUID unique pour éviter conflit avec comptes personnels)
-    const vaultUniqueUserId = crypto.randomUUID(); // UUID unique par coffre
-    const { data: vaultAccount, error: accountError } = await supabase
-      .from('accounts')
-      .insert({
-        user_id: vaultUniqueUserId,
-        sfd_id: sfd_id,
-        balance: 0,
-        currency: 'FCFA',
-        status: 'active'
-      })
-      .select()
-      .single();
-
-    if (accountError) {
-      console.error('Erreur création compte:', accountError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la création du compte' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Créer coffre collaboratif
+    // Créer coffre collaboratif directement (sans compte séparé, utilise current_amount)
     const { data: vault, error: vaultError } = await supabase
       .from('collaborative_vaults')
       .insert({
         creator_id: user.id,
         sfd_id,
-        vault_account_id: vaultAccount.id,
+        vault_account_id: null,
         name,
         description,
         target_amount,
@@ -85,8 +63,6 @@ Deno.serve(async (req) => {
 
     if (vaultError) {
       console.error('Erreur création coffre collaboratif:', vaultError);
-      await supabase.from('accounts').delete().eq('id', vaultAccount.id);
-      
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la création du coffre' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

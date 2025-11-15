@@ -762,7 +762,7 @@ export type Database = {
           status: string | null
           target_amount: number
           updated_at: string | null
-          vault_account_id: string
+          vault_account_id: string | null
           visibility: Database["public"]["Enums"]["vault_visibility"] | null
           withdrawal_rule: Database["public"]["Enums"]["withdrawal_rule"] | null
         }
@@ -779,7 +779,7 @@ export type Database = {
           status?: string | null
           target_amount: number
           updated_at?: string | null
-          vault_account_id: string
+          vault_account_id?: string | null
           visibility?: Database["public"]["Enums"]["vault_visibility"] | null
           withdrawal_rule?:
             | Database["public"]["Enums"]["withdrawal_rule"]
@@ -798,7 +798,7 @@ export type Database = {
           status?: string | null
           target_amount?: number
           updated_at?: string | null
-          vault_account_id?: string
+          vault_account_id?: string | null
           visibility?: Database["public"]["Enums"]["vault_visibility"] | null
           withdrawal_rule?:
             | Database["public"]["Enums"]["withdrawal_rule"]
