@@ -3,6 +3,12 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from './components/RootLayout';
 import Index from './pages/Index';
 import LandingPage from './pages/LandingPage';
+import SfdListPage from './pages/SfdListPage';
+import FAQLandingPage from './pages/FAQLandingPage';
+import ContactPage from './pages/ContactPage';
+import CGUPage from './pages/legal/CGUPage';
+import PrivacyPage from './pages/legal/PrivacyPage';
+import LegalMentionsPage from './pages/legal/LegalMentionsPage';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
 import WelcomePage from './pages/mobile/WelcomePage';
@@ -59,6 +65,30 @@ const router = createBrowserRouter([
       {
         path: '/landing',
         element: <LandingPage />,
+      },
+      {
+        path: '/sfd-partners',
+        element: <SfdListPage />,
+      },
+      {
+        path: '/faq',
+        element: <FAQLandingPage />,
+      },
+      {
+        path: '/contact',
+        element: <ContactPage />,
+      },
+      {
+        path: '/legal/cgu',
+        element: <CGUPage />,
+      },
+      {
+        path: '/legal/privacy',
+        element: <PrivacyPage />,
+      },
+      {
+        path: '/legal/mentions',
+        element: <LegalMentionsPage />,
       },
   
   // Auth routes
