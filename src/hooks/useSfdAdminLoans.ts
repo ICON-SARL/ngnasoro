@@ -53,6 +53,7 @@ export function useSfdAdminLoans(): LoanHookReturn {
         return (loans || []).map(loan => ({
           ...loan,
           client_name: loan.sfd_clients?.full_name || 'Client #' + loan.client_id.substring(0, 4),
+          sfd_name: loan.sfds?.name || 'SFD',
           reference: loan.id.substring(0, 8),
         })) as Loan[];
       } catch (err) {

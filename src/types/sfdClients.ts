@@ -29,6 +29,7 @@ export interface Loan {
   disbursement_reference?: string;
   reference?: string;
   client_name?: string;
+  sfd_name?: string;
   sfds?: {
     name: string;
     logo_url?: string;

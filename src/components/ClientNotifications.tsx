@@ -5,10 +5,13 @@ import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Bell, AlertCircle, CheckCircle, ExternalLink } from 'lucide-react';
-import { useClientLoans } from '@/hooks/useClientLoans';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 import { formatDistanceToNow } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { Link } from 'react-router-dom';
+import { useToast } from '@/hooks/use-toast';
 
 const NotificationItem = ({ notification, markAsRead }: { notification: any, markAsRead: (id: string) => void }) => {
   const [isRead, setIsRead] = useState(notification.is_read);
@@ -59,7 +62,49 @@ const NotificationItem = ({ notification, markAsRead }: { notification: any, mar
 };
 
 const ClientNotifications = () => {
-  const { notifications = [], notificationsLoading, markNotificationAsRead, refetchNotifications } = useClientLoans();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  // Fetch notifications
+  const { data: notifications = [], isLoading: notificationsLoading } = useQuery({
+    queryKey: ['client-notifications', user?.id],
+    queryFn: async () => {
+      if (!user?.id) return [];
+      
+      const { data, error } = await supabase
+        .from('admin_notifications')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!user?.id
+  });
+
+  // Mark notification as read
+  const markNotificationAsRead = useMutation({
+    mutationFn: async (notificationId: string) => {
+      const { error } = await supabase
+        .from('admin_notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+      
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['client-notifications'] });
+    },
+    onError: () => {
+      toast({
+        title: "Erreur",
+        description: "Impossible de marquer la notification comme lue",
+        variant: "destructive"
+      });
+    }
+  });
   
   // Ensure notifications is an array before filtering
   const unreadNotifications = Array.isArray(notifications) 
