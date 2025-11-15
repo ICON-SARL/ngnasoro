@@ -15,17 +15,15 @@ export const OnboardingFlow: React.FC = () => {
   const steps = [
     { id: 'welcome', component: WelcomeStep },
     { id: 'features', component: FeaturesCarousel },
-    { id: 'sfd-selection', component: SfdSelectionStep },
-    { id: 'account-creation', component: AccountCreationStep },
-    { id: 'security', component: SecuritySetupStep },
   ];
 
   const handleNext = () => {
     if (currentStep < steps.length - 1) {
       setCurrentStep(currentStep + 1);
     } else {
-      // Onboarding complete
-      navigate('/mobile-flow/dashboard');
+      // Onboarding complete - marquer comme vu et rediriger vers auth
+      localStorage.setItem('hasSeenOnboarding', 'true');
+      navigate('/auth', { replace: true });
     }
   };
 
@@ -36,7 +34,8 @@ export const OnboardingFlow: React.FC = () => {
   };
 
   const handleSkip = () => {
-    navigate('/mobile-flow/dashboard');
+    localStorage.setItem('hasSeenOnboarding', 'true');
+    navigate('/auth', { replace: true });
   };
 
   const CurrentStepComponent = steps[currentStep].component;
