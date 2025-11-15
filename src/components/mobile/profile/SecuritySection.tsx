@@ -122,17 +122,20 @@ const SecuritySection = () => {
             
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-amber-100 rounded-full flex items-center justify-center text-amber-600">
-                  <Key className="h-4 w-4" />
+                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
+                  <Lock className="h-5 w-5" />
                 </div>
                 <div>
-                  <p className="font-medium">Authentification 2FA</p>
-                  <p className="text-xs text-gray-500">
-                    Double sécurité avec Google Authenticator
-                  </p>
+                  <p className="font-medium">Authentification à 2 facteurs</p>
+                  <p className="text-xs text-muted-foreground">Code de vérification SMS</p>
                 </div>
               </div>
-              <Switch onCheckedChange={() => handleToggleSecurity('2FA')} />
+              <Switch 
+                checked={securitySettings.twoFactorAuth}
+                onCheckedChange={(checked) => handleToggleSecurity('twoFactorAuth')}
+                disabled={isLoading}
+                className="data-[state=checked]:bg-primary"
+              />
             </div>
 
             <Button 
