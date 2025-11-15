@@ -3,6 +3,8 @@ import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from './components/RootLayout';
 import MobileFlowPage from './pages/mobile/MobileFlowPage';
 import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
+import WelcomePage from './pages/mobile/WelcomePage';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import MobileLoansPage from './pages/mobile/MobileLoansPage';
 import MobileProfilePage from './pages/mobile/MobileProfilePage';
 import FundsManagementPage from './pages/mobile/FundsManagementPage';
@@ -187,10 +189,15 @@ const router = createBrowserRouter([
         <MobileFlowPage />
       </RoleGuard>
     ),
+    errorElement: <ErrorBoundary />,
     children: [
       {
         index: true,
         element: <Navigate to="dashboard" replace />,
+      },
+      {
+        path: 'welcome',
+        element: <WelcomePage />,
       },
       {
         path: 'dashboard',
