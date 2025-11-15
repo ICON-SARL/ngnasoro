@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { CreditCard, Wallet, ShoppingBag, Users, Gift, Lock, HelpCircle, MoreHorizontal } from 'lucide-react';
+import { Wallet, Vault } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const QuickActions: React.FC = () => {
@@ -14,16 +14,10 @@ const QuickActions: React.FC = () => {
       action: () => navigate('/mobile-flow/loan-application')
     },
     {
-      icon: Lock,
-      label: 'Mes Coffres',
-      color: 'bg-gradient-to-br from-purple-500 to-indigo-600',
-      action: () => navigate('/mobile-flow/vaults')
-    },
-    {
-      icon: Users,
-      label: 'Coffres Collaboratifs',
-      color: 'bg-gradient-to-br from-orange-500 to-pink-600',
-      action: () => navigate('/mobile-flow/collaborative-vaults')
+      icon: Vault,
+      label: 'Coffre',
+      color: 'bg-gradient-to-br from-purple-500 via-indigo-600 to-pink-600',
+      action: () => navigate('/mobile-flow/vaults-hub')
     }
   ];
 
