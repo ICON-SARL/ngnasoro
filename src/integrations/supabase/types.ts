@@ -2291,6 +2291,69 @@ export type Database = {
           },
         ]
       }
+      vaults: {
+        Row: {
+          created_at: string | null
+          current_amount: number | null
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          sfd_id: string
+          status: string | null
+          target_amount: number
+          type: string
+          updated_at: string | null
+          user_id: string
+          vault_account_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_amount?: number | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          sfd_id: string
+          status?: string | null
+          target_amount: number
+          type?: string
+          updated_at?: string | null
+          user_id: string
+          vault_account_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_amount?: number | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          sfd_id?: string
+          status?: string | null
+          target_amount?: number
+          type?: string
+          updated_at?: string | null
+          user_id?: string
+          vault_account_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vaults_vault_account_id_fkey"
+            columns: ["vault_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
