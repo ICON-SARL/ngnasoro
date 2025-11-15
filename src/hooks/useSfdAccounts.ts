@@ -61,35 +61,10 @@ export function useSfdAccounts(sfdId?: string) {
         
         console.log('Fetched accounts from DB:', data);
         
-        // If no accounts found, return mock data for testing
+        // If no accounts found, return empty array
         if (!data || data.length === 0) {
-          console.log('No accounts found, returning mock data');
-          return [
-            {
-              id: 'test-account-1',
-              user_id: user.id,
-              sfd_id: effectiveSfdId || 'test-sfd-1',
-              account_type: 'operation',
-              description: 'Compte courant',
-              name: 'Compte courant',
-              balance: 150000,
-              currency: 'FCFA',
-              status: 'active',
-              last_updated: new Date().toISOString()
-            },
-            {
-              id: 'test-account-2',
-              user_id: user.id,
-              sfd_id: effectiveSfdId || 'test-sfd-1',
-              account_type: 'epargne',
-              description: 'Compte épargne',
-              name: 'Compte épargne',
-              balance: 250000,
-              currency: 'FCFA',
-              status: 'active',
-              last_updated: new Date().toISOString()
-            }
-          ] as FetchedAccount[];
+          console.log('No accounts found for this user/SFD');
+          return [] as FetchedAccount[];
         }
         
         // Get SFD info to enhance the accounts with type information
