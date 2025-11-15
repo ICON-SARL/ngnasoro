@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet } from 'react-router-dom';
 import UltraSplashScreen from '@/components/mobile/UltraSplashScreen';
+import { ScrollToTop } from '@/components/ScrollToTop';
 
 const RootLayout: React.FC = () => {
   const [showSplash, setShowSplash] = useState(true);
@@ -21,7 +22,12 @@ const RootLayout: React.FC = () => {
     return <UltraSplashScreen onComplete={handleSplashComplete} />;
   }
 
-  return <Outlet />;
+  return (
+    <>
+      <ScrollToTop />
+      <Outlet />
+    </>
+  );
 };
 
 export default RootLayout;
