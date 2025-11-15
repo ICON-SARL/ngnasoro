@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
@@ -11,11 +11,21 @@ import { Badge } from '@/components/ui/badge';
 import { useSfdDataAccess } from '@/hooks/useSfdDataAccess';
 import SfdAccountItem from '@/components/mobile/profile/sfd-accounts/SfdAccountItem';
 import { useToast } from '@/hooks/use-toast';
+import { FundsActionSheet } from '@/components/mobile/funds/FundsActionSheet';
+import { CashierQRScanner } from '@/components/mobile/funds/CashierQRScanner';
+import MobileMoneyModal from '@/components/mobile/loan/MobileMoneyModal';
+import { Dialog } from '@/components/ui/dialog';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
   const { user, activeSfdId, setActiveSfdId } = useAuth();
   const { toast } = useToast();
+  
+  // États pour gérer les modaux de fonds
+  const [fundsActionType, setFundsActionType] = useState<'deposit' | 'withdrawal'>('deposit');
+  const [showFundsSheet, setShowFundsSheet] = useState(false);
+  const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
+  const [showQRScanner, setShowQRScanner] = useState(false);
   
   const { 
     sfds: sfdData, 
@@ -123,14 +133,20 @@ const AccountsPage: React.FC = () => {
           
           <div className="flex gap-3">
             <Button
-              onClick={() => navigate('/mobile-flow/funds-management?action=deposit')}
+              onClick={() => {
+                setFundsActionType('deposit');
+                setShowFundsSheet(true);
+              }}
               className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 rounded-2xl"
             >
               <ArrowDownToLine className="w-4 h-4 mr-2" />
               Recharger
             </Button>
             <Button
-              onClick={() => navigate('/mobile-flow/funds-management?action=withdraw')}
+              onClick={() => {
+                setFundsActionType('withdrawal');
+                setShowFundsSheet(true);
+              }}
               variant="outline"
               className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 rounded-2xl"
             >
@@ -200,6 +216,36 @@ const AccountsPage: React.FC = () => {
           </div>
         )}
       </div>
+
+      {/* Funds Action Sheet */}
+      <FundsActionSheet
+        isOpen={showFundsSheet}
+        onClose={() => setShowFundsSheet(false)}
+        actionType={fundsActionType}
+        onMobileMoneySelected={() => {
+          setShowFundsSheet(false);
+          setShowMobileMoneyModal(true);
+        }}
+        onCashierScanSelected={() => {
+          setShowFundsSheet(false);
+          setShowQRScanner(true);
+        }}
+      />
+
+      {/* Mobile Money Modal */}
+      <Dialog open={showMobileMoneyModal} onOpenChange={setShowMobileMoneyModal}>
+        <MobileMoneyModal
+          onClose={() => setShowMobileMoneyModal(false)}
+          isWithdrawal={fundsActionType === 'withdrawal'}
+        />
+      </Dialog>
+
+      {/* QR Scanner */}
+      <CashierQRScanner
+        isOpen={showQRScanner}
+        onClose={() => setShowQRScanner(false)}
+        transactionType={fundsActionType}
+      />
 
     </div>
   );
