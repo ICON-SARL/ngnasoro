@@ -1,6 +1,4 @@
-
 import React from 'react';
-import { Menu } from 'lucide-react';
 import SfdSelector from './SfdSelector';
 
 const ContextualHeader = () => {
@@ -25,10 +23,6 @@ const ContextualHeader = () => {
           
           <SfdSelector className="mt-2" />
         </div>
-        
-        <button className="text-white p-2 hover:bg-white/10 rounded-full transition-colors">
-          <Menu className="h-6 w-6" />
-        </button>
       </div>
     </div>
   );

@@ -1,17 +1,14 @@
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import MobileDrawerMenu from '@/components/mobile/menu/MobileDrawerMenu';
-import FloatingMenuButton from '@/components/mobile/FloatingMenuButton';
 import MobileNavigation from '@/components/MobileNavigation';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  const [menuOpen, setMenuOpen] = useState(false);
   
   const { user, loading, signOut, isClient, isCheckingRole } = useAuth();
 
@@ -74,10 +71,6 @@ const MobileFlowPage: React.FC = () => {
     }
   };
 
-  const toggleMenu = () => {
-    setMenuOpen(!menuOpen);
-  };
-
   if (loading || isCheckingRole) {
     console.log('MobileFlowPage: Still loading...');
     return <div className="p-8 text-center">Chargement...</div>;
@@ -86,12 +79,6 @@ const MobileFlowPage: React.FC = () => {
   console.log('MobileFlowPage: Rendering mobile interface');
   return (
     <div className="min-h-screen bg-white pb-16">
-      <FloatingMenuButton onClick={toggleMenu} />
-      <MobileDrawerMenu 
-        isOpen={menuOpen} 
-        onClose={() => setMenuOpen(false)} 
-        onLogout={handleLogout} 
-      />
       <Outlet />
       <MobileNavigation />
     </div>
