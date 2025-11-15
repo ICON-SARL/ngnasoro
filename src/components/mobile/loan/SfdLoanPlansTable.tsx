@@ -41,10 +41,9 @@ export function SfdLoanPlansTable({ sfdId, subsidizedOnly = false }: SfdLoanPlan
       return;
     }
     
-    // Naviguer vers la page de demande de prêt en passant le plan et la SFD
-    navigate('/mobile-flow/loan-application', { 
+    // Naviguer vers la page de demande de prêt avec planId dans l'URL
+    navigate(`/mobile-flow/loan-application/${plan.id}`, { 
       state: { 
-        planId: plan.id, 
         sfdId: plan.sfd_id || activeSfdId 
       }
     });
