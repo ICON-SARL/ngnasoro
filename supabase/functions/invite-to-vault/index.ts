@@ -81,6 +81,14 @@ Deno.serve(async (req) => {
       invited_user_id = matchedUser?.id;
     }
 
+    // Vérifier si l'utilisateur essaie de s'inviter lui-même
+    if (invited_user_id === user.id) {
+      return new Response(
+        JSON.stringify({ error: 'Vous ne pouvez pas vous inviter vous-même' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Vérifier si déjà membre
     if (invited_user_id) {
       const { data: existingMember } = await supabase
