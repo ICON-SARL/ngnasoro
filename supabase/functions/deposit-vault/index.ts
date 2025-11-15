@@ -116,27 +116,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Enregistrer la contribution (le trigger mettra à jour current_amount automatiquement)
-    const { data: contribution, error: contribError } = await supabase
-      .from('vault_contributions')
-      .insert({
-        vault_id,
-        user_id: user.id,
-        source_account_id,
-        amount,
-        description: description || `Dépôt de ${amount} FCFA`
-      })
-      .select()
-      .single();
-
-    if (contribError) {
-      console.error('Erreur contribution:', contribError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de l\'enregistrement' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
     // Enregistrer la transaction
     await supabase.from('transactions').insert({
       user_id: user.id,
