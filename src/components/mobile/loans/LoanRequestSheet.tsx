@@ -75,24 +75,19 @@ const LoanRequestSheet = ({ plan, sfdId, open, onOpenChange }: LoanRequestSheetP
         throw new Error('Vous n\'êtes pas encore client de cette SFD');
       }
 
-      // Create loan via edge function
+      // Create loan via edge function (direct loan data, no wrapper)
       const { data, error } = await supabase.functions.invoke('loan-manager', {
         body: {
-          action: 'create_loan',
-          data: {
-            loan: {
-              client_id: clientData.id,
-              sfd_id: sfdId,
-              amount: amount,
-              duration_months: durationMonths,
-              interest_rate: plan.interest_rate,
-              purpose: purpose,
-              loan_plan_id: plan.id,
-              monthly_payment: monthlyPayment,
-              total_amount: totalAmount,
-              remaining_amount: totalAmount,
-            }
-          }
+          client_id: clientData.id,
+          sfd_id: sfdId,
+          amount: amount,
+          duration_months: durationMonths,
+          interest_rate: plan.interest_rate,
+          purpose: purpose,
+          loan_plan_id: plan.id,
+          monthly_payment: monthlyPayment,
+          total_amount: totalAmount,
+          remaining_amount: totalAmount,
         }
       });
 

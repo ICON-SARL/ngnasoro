@@ -47,10 +47,10 @@ serve(async (req) => {
       console.log("No auth header provided, proceeding with anonymous request");
     }
     
-    // Parse the request body
-    let body;
+    // Parse the request body - expecting direct loan data
+    let loanData;
     try {
-      body = await req.json();
+      loanData = await req.json();
     } catch (error) {
       return new Response(
         JSON.stringify({ error: "Invalid JSON" }),
@@ -64,27 +64,25 @@ serve(async (req) => {
       );
     }
     
-    const { action, data } = body;
-    console.log(`Processing ${action} action with data:`, JSON.stringify(data, null, 2));
+    console.log('Received loan data:', JSON.stringify(loanData, null, 2));
     
-    if (action === "create_loan") {
-      // Validate required fields
-      if (!data || !data.sfd_id || !data.amount || !data.duration_months) {
-        throw new Error("Missing required loan data");
-      }
-      
-      // Get client_id either from request or look it up using the user's ID
-      let clientId = data.client_id;
+    // Validate required fields
+    if (!loanData.sfd_id || !loanData.amount || !loanData.duration_months) {
+      throw new Error("Missing required loan data");
+    }
+    
+    // Get client_id either from request or look it up using the user's ID
+    let clientId = loanData.client_id;
       
       // If no client_id provided but we have a user, find their client record for this SFD
       if (!clientId && user) {
-        console.log(`No client_id provided, looking up client record for user ${user.id} in SFD ${data.sfd_id}`);
+        console.log(`No client_id provided, looking up client record for user ${user.id} in SFD ${loanData.sfd_id}`);
         
         const { data: clientData, error: clientLookupError } = await supabase
           .from("sfd_clients")
           .select("id")
           .eq("user_id", user.id)
-          .eq("sfd_id", data.sfd_id)
+          .eq("sfd_id", loanData.sfd_id)
           .maybeSingle();
           
         if (clientLookupError) {
@@ -114,33 +112,28 @@ serve(async (req) => {
         throw new Error("Missing client_id and couldn't determine it from user session");
       }
       
-      // Verify the client exists
-      const { data: clientCheck, error: clientCheckError } = await supabase
-        .from("sfd_clients")
-        .select("id, user_id, sfd_id")
-        .eq("id", clientId)
-        .single();
+      console.log(`Creating loan for client ${clientId}`);
       
-      if (clientCheckError || !clientCheck) {
-        console.error("Error checking client:", clientCheckError || "Client not found");
-        throw new Error("Client not found or unauthorized");
-      }
-      
-      console.log("Creating loan record in database...");
+      // Calculate next payment date (30 days from now)
+      const nextPaymentDate = new Date();
+      nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
       
       // Create loan record using service role to bypass RLS
       const { data: loan, error: loanError } = await supabase
         .from("sfd_loans")
         .insert({
           client_id: clientId,
-          sfd_id: data.sfd_id,
-          amount: data.amount,
-          duration_months: data.duration_months,
-          purpose: data.purpose,
-          loan_plan_id: data.loan_plan_id || null,
-          interest_rate: data.interest_rate || 5.5,
-          monthly_payment: data.monthly_payment || 0,
-          status: data.status || "pending"
+          sfd_id: loanData.sfd_id,
+          amount: loanData.amount,
+          duration_months: loanData.duration_months,
+          interest_rate: loanData.interest_rate || 0,
+          purpose: loanData.purpose || "Non spécifié",
+          loan_plan_id: loanData.loan_plan_id || null,
+          monthly_payment: loanData.monthly_payment || 0,
+          total_amount: loanData.total_amount || loanData.amount,
+          remaining_amount: loanData.remaining_amount || loanData.total_amount || loanData.amount,
+          next_payment_date: nextPaymentDate.toISOString(),
+          status: "pending",
         })
         .select()
         .single();

@@ -10,17 +10,14 @@ export const createLoan = async (loanData: any): Promise<any> => {
     console.log("Creating loan with data:", JSON.stringify(loanData, null, 2));
     
     // Make sure required fields exist
-    if (!loanData.client_id || !loanData.sfd_id || !loanData.amount || !loanData.duration_months) {
+    if (!loanData.sfd_id || !loanData.amount || !loanData.duration_months) {
       throw new Error('Missing required loan data fields');
     }
 
-    // Create loan directly through the database using service role
+    // Call edge function with direct loan data (no action wrapper)
     const { data: loan, error } = await supabase.functions
       .invoke('loan-manager', {
-        body: {
-          action: 'create_loan',
-          data: loanData
-        }
+        body: loanData
       });
 
     if (error) {
