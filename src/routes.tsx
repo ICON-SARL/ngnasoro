@@ -23,6 +23,9 @@ import AccountsPage from './pages/mobile/AccountsPage';
 import VaultsPage from './pages/mobile/VaultsPage';
 import CreateVaultPage from './pages/mobile/CreateVaultPage';
 import VaultDetailsPage from './pages/mobile/VaultDetailsPage';
+import CollaborativeVaultsPage from './pages/mobile/CollaborativeVaultsPage';
+import CreateCollaborativeVaultPage from './pages/mobile/CreateCollaborativeVaultPage';
+import CollaborativeVaultDetailsPage from './pages/mobile/CollaborativeVaultDetailsPage';
 import SfdLoginPage from './pages/SfdLoginPage';
 import UnauthorizedPage from './pages/UnauthorizedPage';
 import AccessDeniedPage from './pages/AccessDeniedPage';
@@ -275,10 +278,22 @@ const router = createBrowserRouter([
         path: 'create-vault',
         element: <CreateVaultPage />,
       },
-      {
-        path: 'vault/:vaultId',
-        element: <VaultDetailsPage />,
-      },
+        {
+          path: 'vault/:vaultId',
+          element: <VaultDetailsPage />,
+        },
+        {
+          path: 'collaborative-vaults',
+          element: <CollaborativeVaultsPage />,
+        },
+        {
+          path: 'create-collaborative-vault',
+          element: <CreateCollaborativeVaultPage />,
+        },
+        {
+          path: 'collaborative-vault/:vaultId',
+          element: <CollaborativeVaultDetailsPage />,
+        },
     ],
   },
   

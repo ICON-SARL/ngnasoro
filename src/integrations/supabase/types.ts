@@ -498,6 +498,329 @@ export type Database = {
           },
         ]
       }
+      collaborative_vault_invitations: {
+        Row: {
+          created_at: string | null
+          email: string | null
+          expires_at: string | null
+          id: string
+          invited_by: string
+          invited_user_id: string | null
+          phone: string | null
+          responded_at: string | null
+          status: string | null
+          vault_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by: string
+          invited_user_id?: string | null
+          phone?: string | null
+          responded_at?: string | null
+          status?: string | null
+          vault_id: string
+        }
+        Update: {
+          created_at?: string | null
+          email?: string | null
+          expires_at?: string | null
+          id?: string
+          invited_by?: string
+          invited_user_id?: string | null
+          phone?: string | null
+          responded_at?: string | null
+          status?: string | null
+          vault_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vault_invitations_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_vault_members: {
+        Row: {
+          created_at: string | null
+          id: string
+          invited_by: string | null
+          is_admin: boolean | null
+          joined_at: string | null
+          status: Database["public"]["Enums"]["member_status"] | null
+          total_contributed: number | null
+          user_id: string
+          vault_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          invited_by?: string | null
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: Database["public"]["Enums"]["member_status"] | null
+          total_contributed?: number | null
+          user_id: string
+          vault_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          invited_by?: string | null
+          is_admin?: boolean | null
+          joined_at?: string | null
+          status?: Database["public"]["Enums"]["member_status"] | null
+          total_contributed?: number | null
+          user_id?: string
+          vault_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vault_members_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_vault_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string | null
+          description: string | null
+          id: string
+          member_id: string | null
+          payment_method: string | null
+          reference: string | null
+          transaction_type: Database["public"]["Enums"]["vault_transaction_type"]
+          user_id: string
+          vault_id: string
+        }
+        Insert: {
+          amount: number
+          balance_after: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_id?: string | null
+          payment_method?: string | null
+          reference?: string | null
+          transaction_type: Database["public"]["Enums"]["vault_transaction_type"]
+          user_id: string
+          vault_id: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          member_id?: string | null
+          payment_method?: string | null
+          reference?: string | null
+          transaction_type?: Database["public"]["Enums"]["vault_transaction_type"]
+          user_id?: string
+          vault_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vault_transactions_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vault_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_vault_transactions_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_vault_withdrawal_requests: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          processed_at: string | null
+          reason: string
+          requested_by: string
+          status: string | null
+          total_votes_required: number | null
+          vault_id: string
+          votes_no: number | null
+          votes_yes: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason: string
+          requested_by: string
+          status?: string | null
+          total_votes_required?: number | null
+          vault_id: string
+          votes_no?: number | null
+          votes_yes?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          processed_at?: string | null
+          reason?: string
+          requested_by?: string
+          status?: string | null
+          total_votes_required?: number | null
+          vault_id?: string
+          votes_no?: number | null
+          votes_yes?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vault_withdrawal_requests_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_vault_withdrawal_votes: {
+        Row: {
+          comment: string | null
+          id: string
+          member_id: string
+          vault_id: string
+          vote: boolean
+          voted_at: string | null
+          withdrawal_request_id: string
+        }
+        Insert: {
+          comment?: string | null
+          id?: string
+          member_id: string
+          vault_id: string
+          vote: boolean
+          voted_at?: string | null
+          withdrawal_request_id: string
+        }
+        Update: {
+          comment?: string | null
+          id?: string
+          member_id?: string
+          vault_id?: string
+          vote?: boolean
+          voted_at?: string | null
+          withdrawal_request_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vault_withdrawal_votes_member_id_fkey"
+            columns: ["member_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vault_members"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_vault_withdrawal_votes_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_vault_withdrawal_votes_withdrawal_request_id_fkey"
+            columns: ["withdrawal_request_id"]
+            isOneToOne: false
+            referencedRelation: "collaborative_vault_withdrawal_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      collaborative_vaults: {
+        Row: {
+          allow_withdrawal_before_goal: boolean | null
+          created_at: string | null
+          creator_id: string
+          current_amount: number | null
+          deadline: string | null
+          description: string | null
+          id: string
+          name: string
+          sfd_id: string
+          status: string | null
+          target_amount: number
+          updated_at: string | null
+          vault_account_id: string
+          visibility: Database["public"]["Enums"]["vault_visibility"] | null
+          withdrawal_rule: Database["public"]["Enums"]["withdrawal_rule"] | null
+        }
+        Insert: {
+          allow_withdrawal_before_goal?: boolean | null
+          created_at?: string | null
+          creator_id: string
+          current_amount?: number | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          sfd_id: string
+          status?: string | null
+          target_amount: number
+          updated_at?: string | null
+          vault_account_id: string
+          visibility?: Database["public"]["Enums"]["vault_visibility"] | null
+          withdrawal_rule?:
+            | Database["public"]["Enums"]["withdrawal_rule"]
+            | null
+        }
+        Update: {
+          allow_withdrawal_before_goal?: boolean | null
+          created_at?: string | null
+          creator_id?: string
+          current_amount?: number | null
+          deadline?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          sfd_id?: string
+          status?: string | null
+          target_amount?: number
+          updated_at?: string | null
+          vault_account_id?: string
+          visibility?: Database["public"]["Enums"]["vault_visibility"] | null
+          withdrawal_rule?:
+            | Database["public"]["Enums"]["withdrawal_rule"]
+            | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "collaborative_vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "collaborative_vaults_vault_account_id_fkey"
+            columns: ["vault_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       generated_reports: {
         Row: {
           completed_at: string | null
@@ -1832,6 +2155,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      notify_vault_members: {
+        Args: {
+          _exclude_user_id?: string
+          _message: string
+          _title: string
+          _type: string
+          _vault_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       account_status: "active" | "inactive" | "frozen" | "closed"
@@ -1848,9 +2181,13 @@ export type Database = {
         | "completed"
         | "defaulted"
         | "rejected"
+      member_status: "pending" | "active" | "removed"
       payment_method: "cash" | "bank_transfer" | "mobile_money" | "check"
       sfd_status: "active" | "suspended" | "pending" | "inactive"
       transaction_status: "completed" | "pending" | "failed" | "cancelled"
+      vault_transaction_type: "deposit" | "withdrawal" | "penalty" | "bonus"
+      vault_visibility: "private" | "invite_only" | "public"
+      withdrawal_rule: "creator_only" | "majority_vote" | "unanimous"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1994,9 +2331,13 @@ export const Constants = {
         "defaulted",
         "rejected",
       ],
+      member_status: ["pending", "active", "removed"],
       payment_method: ["cash", "bank_transfer", "mobile_money", "check"],
       sfd_status: ["active", "suspended", "pending", "inactive"],
       transaction_status: ["completed", "pending", "failed", "cancelled"],
+      vault_transaction_type: ["deposit", "withdrawal", "penalty", "bonus"],
+      vault_visibility: ["private", "invite_only", "public"],
+      withdrawal_rule: ["creator_only", "majority_vote", "unanimous"],
     },
   },
 } as const
