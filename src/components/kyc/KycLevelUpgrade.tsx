@@ -50,6 +50,22 @@ interface ClientDocument {
   verified: boolean;
 }
 
+// Helper function pour mapper les noms d'affichage vers les enums de la base de données
+const mapDocumentTypeToEnum = (displayName: string): 'identity' | 'proof_of_address' | 'bank_statement' | 'other' => {
+  const normalized = displayName.toLowerCase();
+  
+  if (normalized.includes('identité') || normalized.includes('identity')) {
+    return 'identity';
+  }
+  if (normalized.includes('domicile') || normalized.includes('address')) {
+    return 'proof_of_address';
+  }
+  if (normalized.includes('revenu') || normalized.includes('bank') || normalized.includes('statement')) {
+    return 'bank_statement';
+  }
+  return 'other';
+};
+
 const KycLevelUpgrade = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -115,7 +131,7 @@ const KycLevelUpgrade = () => {
         .from('client_documents')
         .insert([{
           client_id: clientId,
-          document_type: documentType as 'identity' | 'proof_of_address' | 'bank_statement' | 'other',
+          document_type: mapDocumentTypeToEnum(documentType),
           document_url: publicUrl,
           uploaded_by: user?.id,
           status: 'pending',
