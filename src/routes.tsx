@@ -15,6 +15,7 @@ import SfdSelectorPage from './pages/SfdSelectorPage';
 import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
 import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
 import SupportPage from './pages/mobile/SupportPage';
+import FAQPage from './pages/mobile/FAQPage';
 import AccountsPage from './pages/mobile/AccountsPage';
 import TontinePage from './pages/mobile/TontinePage';
 import SfdLoginPage from './pages/SfdLoginPage';
@@ -247,6 +248,10 @@ const router = createBrowserRouter([
       {
         path: 'support',
         element: <SupportPage />,
+      },
+      {
+        path: 'faq',
+        element: <FAQPage />,
       },
       {
         path: 'accounts',
