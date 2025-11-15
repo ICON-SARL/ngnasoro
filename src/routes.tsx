@@ -2,7 +2,6 @@
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 import RootLayout from './components/RootLayout';
 import Index from './pages/Index';
-import OnboardingPage from './pages/OnboardingPage';
 import LandingPage from './pages/LandingPage';
 import SfdListPage from './pages/SfdListPage';
 import FAQLandingPage from './pages/FAQLandingPage';
@@ -102,12 +101,6 @@ const router = createBrowserRouter([
         element: <LegalMentionsPage />,
       },
   
-  // Onboarding route - AVANT l'authentification
-  {
-    path: '/onboarding',
-    element: <OnboardingPage />,
-  },
-
   // Auth routes
   {
     path: '/auth',
