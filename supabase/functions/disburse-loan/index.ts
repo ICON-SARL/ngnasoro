@@ -228,6 +228,44 @@ serve(async (req) => {
       });
     }
 
+    // Générer l'échéancier de remboursement
+    console.log('Generating loan schedule...');
+    try {
+      const { data: scheduleResult, error: scheduleError } = await supabase.functions.invoke(
+        'generate-loan-schedule',
+        {
+          body: { loanId: loanId }
+        }
+      );
+
+      if (scheduleError) {
+        console.error('Failed to generate loan schedule:', scheduleError);
+        // Ne pas bloquer le décaissement si échec, mais logger
+        await supabase.from('audit_logs').insert({
+          user_id: user.id,
+          action: 'schedule_generation_failed',
+          category: 'LOAN',
+          severity: 'error',
+          status: 'failed',
+          target_resource: loanId,
+          details: { loan_id: loanId, error: scheduleError.message }
+        });
+      } else {
+        console.log('Loan schedule generated successfully:', scheduleResult);
+      }
+    } catch (scheduleGenError: any) {
+      console.error('Error calling generate-loan-schedule:', scheduleGenError);
+      await supabase.from('audit_logs').insert({
+        user_id: user.id,
+        action: 'schedule_generation_error',
+        category: 'LOAN',
+        severity: 'error',
+        status: 'failed',
+        target_resource: loanId,
+        error_message: scheduleGenError.message
+      });
+    }
+
     console.log('Loan disbursement successful:', loanId);
 
     return new Response(

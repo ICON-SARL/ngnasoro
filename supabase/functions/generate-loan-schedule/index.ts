@@ -89,9 +89,14 @@ Deno.serve(async (req) => {
       throw new Error('Loan not found');
     }
 
-    // Vérifier que le prêt est décaissé
-    if (loan.status !== 'disbursed') {
-      throw new Error('Loan must be disbursed before generating schedule');
+    // Vérifier que le prêt est décaissé ou actif
+    if (loan.status !== 'disbursed' && loan.status !== 'active') {
+      throw new Error(`Loan must be disbursed or active (current status: ${loan.status})`);
+    }
+
+    // Vérifier que disbursed_at existe
+    if (!loan.disbursed_at) {
+      throw new Error('Loan has not been disbursed yet. Cannot generate schedule without disbursement date.');
     }
 
     // Vérifier si un échéancier existe déjà
