@@ -7,6 +7,7 @@ import { DataTable } from '@/components/shared/DataTable';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { Building2, Users, DollarSign, TrendingUp, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 export default function MEREFDashboard() {
   const { toast } = useToast();
@@ -138,9 +139,12 @@ export default function MEREFDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Tableau de bord MEREF</h1>
-        <p className="text-muted-foreground">Vue d'ensemble du système de microfinance</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">Tableau de bord MEREF</h1>
+          <p className="text-muted-foreground">Vue d'ensemble du système de microfinance</p>
+        </div>
+        <AdminLogout variant="ghost" size="sm" />
       </div>
 
       {/* Stats Cards */}

@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingState, AmountDisplay, DateDisplay, DataTable, StatusBadge } from '@/components/shared';
 import { Users, DollarSign, TrendingUp, AlertCircle, Wallet, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import AdminLogout from '@/components/admin/shared/AdminLogout';
 
 export default function SfdAdminDashboard() {
   const { user } = useAuth();
@@ -136,9 +137,12 @@ export default function SfdAdminDashboard() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">{sfd?.name}</h1>
-        <p className="text-muted-foreground">Tableau de bord administrateur SFD</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">{sfd?.name}</h1>
+          <p className="text-muted-foreground">Tableau de bord administrateur SFD</p>
+        </div>
+        <AdminLogout variant="ghost" size="sm" />
       </div>
 
       {/* Stats Cards */}

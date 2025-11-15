@@ -10,6 +10,7 @@ import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { useHapticFeedback } from '@/hooks/useHapticFeedback';
+import LogoutButton from '@/components/LogoutButton';
 
 interface StatCardProps {
   icon: React.ReactNode;
@@ -241,7 +242,7 @@ const ProfileHeader = () => {
         </motion.div>
 
         {/* Stats rapides */}
-        <div className="grid grid-cols-3 gap-3 w-full">
+        <div className="grid grid-cols-3 gap-3 w-full mb-4">
           <StatCard 
             icon={<Wallet className="w-5 h-5" />} 
             value={accountsCount.toString()} 
@@ -259,7 +260,18 @@ const ProfileHeader = () => {
           />
         </div>
 
-        <p className="text-xs opacity-70 mt-4">
+        {/* Bouton de déconnexion visible */}
+        <div className="w-full mt-2 mb-4">
+          <LogoutButton 
+            variant="destructive" 
+            size="lg"
+            className="w-full bg-red-600 hover:bg-red-700 text-white"
+            text="Se déconnecter"
+            redirectPath="/auth"
+          />
+        </div>
+
+        <p className="text-xs opacity-70">
           Dernière connexion: {formattedLastLogin}
         </p>
       </div>
