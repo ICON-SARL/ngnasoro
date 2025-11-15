@@ -14,11 +14,10 @@ import { useToast } from '@/hooks/use-toast';
 
 const AccountsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { user, setActiveSfdId } = useAuth();
+  const { user, activeSfdId, setActiveSfdId } = useAuth();
   const { toast } = useToast();
   
   const { 
-    activeSfdId, 
     sfds: sfdData, 
     isLoading: sfdLoading 
   } = useSfdDataAccess();
