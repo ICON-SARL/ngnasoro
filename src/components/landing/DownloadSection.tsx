@@ -2,6 +2,8 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Download, Smartphone } from 'lucide-react';
+import { spacing, borderRadius, backgrounds } from '@/lib/design-tokens';
+import { fadeInUp } from '@/lib/animation-variants';
 
 interface DownloadSectionProps {
   onDownloadClick: () => void;
@@ -9,23 +11,23 @@ interface DownloadSectionProps {
 
 const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) => {
   return (
-    <section className="py-24 bg-gradient-to-br from-[#0D6A51] via-[#176455] to-[#0D6A51] relative overflow-hidden">
-      {/* Background decoration */}
-      <div className="absolute inset-0">
-        {[...Array(15)].map((_, i) => (
+    <section id="download" className={`${spacing.sectionPy} relative overflow-hidden ${backgrounds.gradient}`}>
+      {/* Animated background elements - reduced for subtlety */}
+      <div className="absolute inset-0 overflow-hidden">
+        {[...Array(8)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-[#FFAB2E] rounded-full opacity-20"
+            className="absolute w-3 h-3 bg-[#FFAB2E] rounded-full opacity-30"
             style={{
               left: `${Math.random() * 100}%`,
               top: `${Math.random() * 100}%`,
             }}
             animate={{
               scale: [1, 1.5, 1],
-              opacity: [0.2, 0.5, 0.2],
+              opacity: [0.3, 0.5, 0.3],
             }}
             transition={{
-              duration: 3,
+              duration: 5 + Math.random() * 2,
               repeat: Infinity,
               delay: Math.random() * 2,
             }}
@@ -33,22 +35,30 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
         ))}
       </div>
 
-      <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className={`container mx-auto ${spacing.containerPx} relative z-10`}>
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
+          variants={fadeInUp}
+          initial="hidden"
+          whileInView="visible"
           viewport={{ once: true }}
           className="max-w-4xl mx-auto text-center"
         >
           {/* Icon */}
           <motion.div
-            initial={{ scale: 0 }}
-            whileInView={{ scale: 1 }}
-            viewport={{ once: true }}
-            transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-            className="w-20 h-20 mx-auto mb-8 rounded-3xl bg-white/20 backdrop-blur-xl flex items-center justify-center shadow-2xl"
+            animate={{
+              y: [0, -10, 0],
+              rotate: [0, 2, -2, 0],
+            }}
+            transition={{
+              duration: 4,
+              repeat: Infinity,
+              ease: "easeInOut",
+            }}
+            className="inline-block mb-8"
           >
-            <Smartphone className="w-10 h-10 text-white" />
+            <div className={`w-24 h-24 ${borderRadius.card} bg-white shadow-2xl flex items-center justify-center transform hover:scale-110 transition-transform`}>
+              <Smartphone className="w-12 h-12 text-[#0D6A51]" />
+            </div>
           </motion.div>
 
           {/* Title */}
@@ -62,19 +72,14 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
           </p>
 
           {/* CTA Button */}
-          <motion.div
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
+          <Button
+            onClick={onDownloadClick}
+            size="lg"
+            className={`h-16 px-12 ${borderRadius.button} bg-white text-[#0D6A51] hover:bg-white/90 font-bold text-xl shadow-2xl hover:scale-105 transition-transform mb-8`}
           >
-            <Button
-              onClick={onDownloadClick}
-              size="lg"
-              className="h-16 px-12 rounded-2xl bg-white text-[#0D6A51] hover:bg-white/90 font-bold text-xl shadow-2xl"
-            >
-              <Download className="w-6 h-6 mr-3" />
-              Télécharger N'GNA SÔRÔ
-            </Button>
-          </motion.div>
+            <Download className="w-6 h-6 mr-3" />
+            Télécharger N'GNA SÔRÔ
+          </Button>
 
           {/* Trust badges */}
           <div className="flex flex-wrap justify-center gap-8 mt-12 text-white/80">
@@ -84,7 +89,7 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl">🇲🇱</span>
-              <span className="text-sm">Projet MEREF Mali</span>
+              <span className="text-sm">Soutenu par le MEREF</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-2xl">⭐</span>

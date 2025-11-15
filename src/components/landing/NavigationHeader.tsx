@@ -25,7 +25,14 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
     if (element) {
-      element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      const offset = 80; // Header height
+      const elementPosition = element.getBoundingClientRect().top;
+      const offsetPosition = elementPosition + window.pageYOffset - offset;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: 'smooth'
+      });
       setMobileMenuOpen(false);
     }
   };
