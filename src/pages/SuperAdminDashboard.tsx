@@ -3,16 +3,13 @@ import React, { useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { SuperAdminHeader } from '@/components/SuperAdminHeader';
 import { 
-  DashboardWidgets, 
   SuperAdminDashboardHeader, 
   DashboardTabs,
-  SimplifiedMerefDashboard,
   SfdStatusAlert
 } from '@/components/admin/dashboard';
 import { MerefEnhancedDashboard } from '@/components/admin/meref/dashboard/MerefEnhancedDashboard';
 import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
-import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { FileText, Building, Users, Shield, UserPlus } from 'lucide-react';
@@ -23,8 +20,6 @@ const SuperAdminDashboard = () => {
   const activeTab = searchParams.get('tab') || 'dashboard';
   const navigate = useNavigate();
   const [isAddAdminDialogOpen, setIsAddAdminDialogOpen] = useState(false);
-  
-  const { dashboardData, isLoading } = useAdminDashboardData ? useAdminDashboardData() : { dashboardData: null, isLoading: false };
   
   const handleTabChange = (value: string) => {
     setSearchParams({ tab: value });
@@ -126,10 +121,17 @@ const SuperAdminDashboard = () => {
           </div>
         </div>
         
+        {/* Tabs Navigation */}
+        <div className="mb-6">
+          <DashboardTabs 
+            activeTab={activeTab}
+            onTabChange={handleTabChange}
+          />
+        </div>
+        
+        {/* Tab Content */}
         {activeTab === 'dashboard' && (
-          <div className="space-y-6">
-            <MerefEnhancedDashboard />
-          </div>
+          <MerefEnhancedDashboard />
         )}
         
         {activeTab === 'admins' && (
@@ -151,21 +153,18 @@ const SuperAdminDashboard = () => {
           <div className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-semibold">Utilisateurs</h2>
-              <Button>
+              <Button onClick={() => navigate('/admin/users')}>
                 <UserPlus className="h-4 w-4 mr-2" />
-                Nouvel Utilisateur
+                Voir Tous les Utilisateurs
               </Button>
             </div>
             <div className="bg-white p-6 rounded-lg shadow border border-gray-100">
-              <AdminUsersList />
+              <p className="text-muted-foreground">
+                Cette section affichera la liste des utilisateurs. Cliquez sur le bouton ci-dessus pour accéder à la page complète.
+              </p>
             </div>
           </div>
         )}
-        
-        <DashboardTabs 
-          activeTab={activeTab}
-          onTabChange={handleTabChange}
-        />
 
         <AddAdminDialog 
           open={isAddAdminDialogOpen} 
