@@ -1,6 +1,9 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { useMobileNotifications } from '@/hooks/useMobileNotifications';
 import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 interface DashboardHeaderProps {
@@ -9,6 +12,9 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName, avatarUrl }) => {
+  const navigate = useNavigate();
+  const { unreadCount } = useMobileNotifications();
+  
   const getInitials = (name: string) => {
     if (!name) return '??';
     return name
@@ -48,9 +54,18 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName, avatarUrl }
         <Button 
           variant="ghost" 
           size="icon"
-          className="text-primary-foreground hover:bg-primary-foreground/10"
+          onClick={() => navigate('/mobile-flow/notifications')}
+          className="text-primary-foreground hover:bg-primary-foreground/10 relative"
         >
           <Bell className="h-5 w-5" />
+          {unreadCount > 0 && (
+            <Badge 
+              variant="destructive" 
+              className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+            >
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </Badge>
+          )}
         </Button>
       </div>
     </div>

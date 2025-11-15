@@ -61,6 +61,7 @@ import { MerefAdminLayout } from './components/admin/meref/layout/MerefAdminLayo
 import SubsidyApprovalsPage from './pages/meref/SubsidyApprovalsPage';
 import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
 import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
+import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
 
 const router = createBrowserRouter([
   {
@@ -381,6 +382,10 @@ const router = createBrowserRouter([
       {
         path: 'faq',
         element: <FAQPage />,
+      },
+      {
+        path: 'notifications',
+        element: <MobileNotificationsPage />,
       },
       {
         path: 'accounts',

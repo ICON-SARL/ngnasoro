@@ -134,17 +134,49 @@ Deno.serve(async (req) => {
         console.error('Erreur mise à jour invitation:', updateError);
       }
 
+      // Get user profile for notification
+      const { data: userProfile } = await supabase
+        .from('profiles')
+        .select('full_name')
+        .eq('id', user.id)
+        .single();
+
+      const userName = userProfile?.full_name || 'Un membre';
+
       // Send notification to vault creator
       const vaultData = invitation.collaborative_vaults as any;
       await supabase
         .from('admin_notifications')
         .insert({
           user_id: vaultData.creator_id,
-          title: 'Nouvelle adhésion au coffre',
-          message: `Un membre a accepté votre invitation pour le coffre "${vaultData.name}"`,
-          type: 'vault_invitation_accepted',
+          title: 'Invitation acceptée ✓',
+          message: `${userName} a accepté votre invitation pour le coffre "${vaultData.name}"`,
+          type: 'vault_invite_accepted',
           action_url: `/mobile-flow/collaborative-vault/${invitation.vault_id}`
         });
+
+      // Get all active members to notify them
+      const { data: members } = await supabase
+        .from('collaborative_vault_members')
+        .select('user_id')
+        .eq('vault_id', invitation.vault_id)
+        .eq('status', 'active')
+        .neq('user_id', user.id); // Don't notify the new member themselves
+
+      // Notify all existing members that a new member joined
+      if (members && members.length > 0) {
+        const memberNotifications = members.map(member => ({
+          user_id: member.user_id,
+          title: 'Nouveau membre',
+          message: `${userName} a rejoint le coffre "${vaultData.name}"`,
+          type: 'vault_member_joined',
+          action_url: `/mobile-flow/collaborative-vault/${invitation.vault_id}`
+        }));
+
+        await supabase
+          .from('admin_notifications')
+          .insert(memberNotifications);
+      }
 
       // Log in audit_logs
       await supabase
@@ -193,8 +225,8 @@ Deno.serve(async (req) => {
         .insert({
           user_id: vaultData.creator_id,
           title: 'Invitation refusée',
-          message: `Un membre a refusé votre invitation pour le coffre "${vaultData.name}"`,
-          type: 'vault_invitation_rejected',
+          message: `Une invitation pour le coffre "${vaultData.name}" a été refusée`,
+          type: 'vault_invite_rejected',
           action_url: `/mobile-flow/collaborative-vault/${invitation.vault_id}`
         });
 
