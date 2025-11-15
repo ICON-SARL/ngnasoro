@@ -5,8 +5,16 @@ const Index = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Redirect to landing page
-    navigate('/landing', { replace: true });
+    // Vérifier si l'utilisateur a déjà vu l'onboarding
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
+    
+    if (!hasSeenOnboarding) {
+      // Première visite → Afficher l'onboarding
+      navigate('/onboarding', { replace: true });
+    } else {
+      // Déjà vu → Aller directement à l'auth
+      navigate('/auth', { replace: true });
+    }
   }, [navigate]);
 
   return null;
