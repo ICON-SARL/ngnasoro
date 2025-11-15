@@ -47,37 +47,17 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créer un compte dédié pour le coffre
-    const { data: vaultAccount, error: accountError } = await supabase
-      .from('accounts')
-      .insert({
-        user_id: user.id,
-        sfd_id: sfd_id,
-        balance: 0,
-        currency: 'FCFA',
-        status: 'active'
-      })
-      .select()
-      .single();
-
-    if (accountError) {
-      console.error('Erreur création compte:', accountError);
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors de la création du compte' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-
-    // Créer le coffre
+    // Créer le coffre directement sans compte séparé
     const { data: vault, error: vaultError } = await supabase
       .from('vaults')
       .insert({
         user_id: user.id,
         sfd_id: sfd_id,
-        vault_account_id: vaultAccount.id,
+        vault_account_id: null,
         name,
         description,
         target_amount,
+        current_amount: 0,
         type: type || 'simple',
         deadline: deadline || null,
         status: 'active'
@@ -87,9 +67,6 @@ Deno.serve(async (req) => {
 
     if (vaultError) {
       console.error('Erreur création coffre:', vaultError);
-      // Supprimer le compte créé en cas d'erreur
-      await supabase.from('accounts').delete().eq('id', vaultAccount.id);
-      
       return new Response(
         JSON.stringify({ error: 'Erreur lors de la création du coffre' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
