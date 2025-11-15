@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import NavigationHeader from '@/components/landing/NavigationHeader';
 import HeroSection from '@/components/landing/HeroSection';
 import StatsSection from '@/components/landing/StatsSection';
 import FeaturesSection from '@/components/landing/FeaturesSection';
@@ -53,13 +54,28 @@ const LandingPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-slate-50">
-      <HeroSection onDownloadClick={() => setShowDownloadSheet(true)} />
-      <StatsSection />
-      <FeaturesSection />
-      <HowItWorksSection />
-      <TestimonialsSection />
-      <SfdPartnersSection />
-      <DownloadSection onDownloadClick={() => setShowDownloadSheet(true)} />
+      <NavigationHeader onDownloadClick={() => setShowDownloadSheet(true)} />
+      <div id="hero">
+        <HeroSection onDownloadClick={() => setShowDownloadSheet(true)} />
+      </div>
+      <div id="stats">
+        <StatsSection />
+      </div>
+      <div id="features">
+        <FeaturesSection />
+      </div>
+      <div id="how-it-works">
+        <HowItWorksSection />
+      </div>
+      <div id="testimonials">
+        <TestimonialsSection />
+      </div>
+      <div id="sfd-partners">
+        <SfdPartnersSection />
+      </div>
+      <div id="download">
+        <DownloadSection onDownloadClick={() => setShowDownloadSheet(true)} />
+      </div>
       <FooterSection />
       
       <DownloadSheet 

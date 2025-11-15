@@ -3,14 +3,17 @@ import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Download, ChevronRight } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { useNavigate } from 'react-router-dom';
 
 interface HeroSectionProps {
   onDownloadClick: () => void;
 }
 
 const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
+  const navigate = useNavigate();
+
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0D6A51] via-[#176455] to-[#0D6A51]">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0D6A51] via-[#176455] to-[#0D6A51] pt-20">
       {/* Animated background particles */}
       <div className="absolute inset-0 overflow-hidden">
         {[...Array(20)].map((_, i) => (
@@ -97,6 +100,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
                 Télécharger l'app
               </Button>
               <Button
+                onClick={() => navigate('/sfd-partners')}
                 variant="outline"
                 size="lg"
                 className="h-14 px-8 rounded-2xl bg-transparent border-2 border-white text-white hover:bg-white/10 font-semibold text-lg"
