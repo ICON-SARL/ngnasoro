@@ -1349,6 +1349,44 @@ export type Database = {
           },
         ]
       }
+      sfd_approval_history: {
+        Row: {
+          action: string
+          comments: string | null
+          created_at: string | null
+          id: string
+          reviewed_at: string
+          reviewed_by: string
+          sfd_id: string
+        }
+        Insert: {
+          action: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          reviewed_at?: string
+          reviewed_by: string
+          sfd_id: string
+        }
+        Update: {
+          action?: string
+          comments?: string | null
+          created_at?: string | null
+          id?: string
+          reviewed_at?: string
+          reviewed_by?: string
+          sfd_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sfd_approval_history_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sfd_clients: {
         Row: {
           address: string | null
@@ -1640,6 +1678,7 @@ export type Database = {
       sfds: {
         Row: {
           address: string | null
+          approval_notes: string | null
           clients_count: number | null
           code: string
           contact_email: string | null
@@ -1651,8 +1690,11 @@ export type Database = {
           name: string
           phone: string | null
           region: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           services: Json | null
           status: Database["public"]["Enums"]["sfd_status"] | null
+          submitted_at: string | null
           subsidy_balance: number | null
           suspended_at: string | null
           suspension_reason: string | null
@@ -1660,6 +1702,7 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          approval_notes?: string | null
           clients_count?: number | null
           code: string
           contact_email?: string | null
@@ -1671,8 +1714,11 @@ export type Database = {
           name: string
           phone?: string | null
           region?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           services?: Json | null
           status?: Database["public"]["Enums"]["sfd_status"] | null
+          submitted_at?: string | null
           subsidy_balance?: number | null
           suspended_at?: string | null
           suspension_reason?: string | null
@@ -1680,6 +1726,7 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          approval_notes?: string | null
           clients_count?: number | null
           code?: string
           contact_email?: string | null
@@ -1691,8 +1738,11 @@ export type Database = {
           name?: string
           phone?: string | null
           region?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           services?: Json | null
           status?: Database["public"]["Enums"]["sfd_status"] | null
+          submitted_at?: string | null
           subsidy_balance?: number | null
           suspended_at?: string | null
           suspension_reason?: string | null
