@@ -112,15 +112,16 @@ const MobileDashboard: React.FC = () => {
 
   // Récupérer les transactions récentes
   const { data: transactions, isLoading: transactionsLoading } = useQuery({
-    queryKey: ['recent-transactions', user?.id],
+    queryKey: ['recent-transactions', user?.id, activeSfdId],
     queryFn: async () => {
-      if (!user?.id) return [];
-      console.log('🔍 Fetching transactions');
+      if (!user?.id || !activeSfdId) return [];
+      console.log('🔍 Fetching transactions for SFD:', activeSfdId);
       
       const { data, error } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
+        .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
         .limit(8);
       
@@ -131,7 +132,7 @@ const MobileDashboard: React.FC = () => {
       console.log('✅ Transactions loaded:', data);
       return data || [];
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!activeSfdId
   });
 
   const isLoading = profileLoading || accountsLoading || transactionsLoading;

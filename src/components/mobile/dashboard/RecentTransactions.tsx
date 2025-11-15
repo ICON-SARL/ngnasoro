@@ -79,8 +79,30 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-card rounded-2xl p-6 text-center">
-        <p className="text-sm text-muted-foreground">Aucune transaction récente</p>
+      <div className="bg-card rounded-2xl p-6 text-center space-y-3">
+        <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
+          <CreditCard className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <p className="font-medium text-sm text-foreground">Aucune transaction</p>
+          <p className="text-xs text-muted-foreground mt-1">
+            Vos prochaines transactions apparaîtront ici
+          </p>
+        </div>
+        <div className="flex gap-2 justify-center pt-2">
+          <button
+            onClick={() => navigate('/mobile-flow/funds-management')}
+            className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+          >
+            Faire un dépôt
+          </button>
+          <button
+            onClick={() => navigate('/mobile-flow/loans')}
+            className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-accent transition-colors"
+          >
+            Demander un prêt
+          </button>
+        </div>
       </div>
     );
   }
