@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Smartphone, Fingerprint, Key, Shield, Loader2 } from 'lucide-react';
+import { Smartphone, Fingerprint, Lock, Shield, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
@@ -13,6 +13,11 @@ const SecuritySection = () => {
   const { biometricEnabled, toggleBiometricAuth } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [showBiometricDialog, setShowBiometricDialog] = useState(false);
+  const [securitySettings, setSecuritySettings] = useState({
+    smsAuth: true,
+    biometricAuth: false,
+    twoFactorAuth: false
+  });
   
   const handleToggleSecurity = (feature: string) => {
     toast({

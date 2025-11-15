@@ -52,8 +52,12 @@
     --popover: 0 0% 100%;
     --popover-foreground: 222 47% 11%;
     
-    --primary: 263 70% 65%;
-    --primary-foreground: 210 40% 98%;
+    /* Brand Colors - Vert #176455 et Or #fcb041 */
+    --brand-green: 162 74% 24%;
+    --brand-gold: 32 97% 62%;
+    
+    --primary: 162 74% 24%;
+    --primary-foreground: 0 0% 100%;
     
     --secondary: 210 20% 96%;
     --secondary-foreground: 222 47% 11%;
@@ -61,8 +65,8 @@
     --muted: 210 40% 96%;
     --muted-foreground: 215 16% 47%;
     
-    --accent: 263 70% 65%;
-    --accent-foreground: 222 47% 11%;
+    --accent: 32 97% 62%;
+    --accent-foreground: 0 0% 100%;
     
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
@@ -81,11 +85,12 @@
     --radius-2xl: 2rem;
     --radius-full: 9999px;
     
-    /* Modern gradients */
-    --gradient-primary: linear-gradient(135deg, hsl(263 70% 65%) 0%, hsl(253 80% 70%) 100%);
-    --gradient-accent: linear-gradient(135deg, hsl(38 92% 50%) 0%, hsl(45 93% 47%) 100%);
-    --gradient-mesh: radial-gradient(at 0% 0%, hsl(263 70% 65% / 0.2) 0px, transparent 50%),
-                     radial-gradient(at 100% 100%, hsl(253 80% 70% / 0.2) 0px, transparent 50%);
+    /* Modern gradients avec couleurs de marque */
+    --gradient-primary: linear-gradient(135deg, hsl(162 74% 24%) 0%, hsl(162 74% 30%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(32 97% 62%) 0%, hsl(32 97% 68%) 100%);
+    --gradient-mixed: linear-gradient(135deg, hsl(162 74% 24%) 0%, hsl(32 97% 62%) 100%);
+    --gradient-mesh: radial-gradient(at 0% 0%, hsl(162 74% 24% / 0.2) 0px, transparent 50%),
+                     radial-gradient(at 100% 100%, hsl(32 97% 62% / 0.2) 0px, transparent 50%);
     
     /* Glassmorphism */
     --glass-bg: rgba(255, 255, 255, 0.15);
@@ -108,8 +113,11 @@
     --popover: 222 47% 8%;
     --popover-foreground: 210 40% 98%;
     
-    --primary: 263 70% 65%;
-    --primary-foreground: 222 47% 5%;
+    --brand-green: 162 74% 24%;
+    --brand-gold: 32 97% 62%;
+    
+    --primary: 162 74% 30%;
+    --primary-foreground: 210 40% 98%;
     
     --secondary: 217 33% 12%;
     --secondary-foreground: 210 40% 98%;
@@ -117,8 +125,8 @@
     --muted: 217 33% 12%;
     --muted-foreground: 215 20% 65%;
     
-    --accent: 263 70% 65%;
-    --accent-foreground: 210 40% 98%;
+    --accent: 32 97% 62%;
+    --accent-foreground: 222 47% 5%;
     
     --success: 142 71% 45%;
     --warning: 38 92% 50%;
@@ -137,8 +145,11 @@
     --glass-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
     
     /* Dark mode gradients */
-    --gradient-mesh: radial-gradient(at 0% 0%, hsl(263 70% 65% / 0.3) 0px, transparent 50%),
-                     radial-gradient(at 100% 100%, hsl(253 80% 70% / 0.3) 0px, transparent 50%);
+    --gradient-primary: linear-gradient(135deg, hsl(162 74% 24%) 0%, hsl(162 74% 30%) 100%);
+    --gradient-accent: linear-gradient(135deg, hsl(32 97% 62%) 0%, hsl(32 97% 68%) 100%);
+    --gradient-mixed: linear-gradient(135deg, hsl(162 74% 24%) 0%, hsl(32 97% 62%) 100%);
+    --gradient-mesh: radial-gradient(at 0% 0%, hsl(162 74% 24% / 0.3) 0px, transparent 50%),
+                     radial-gradient(at 100% 100%, hsl(32 97% 62% / 0.3) 0px, transparent 50%);
   }
 
   * {

@@ -1,13 +1,13 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Phone, Mail, Home, Save } from 'lucide-react';
+import { Phone, Mail, Home, Save, User as UserIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
+import { Loader } from '@/components/ui/loader';
 import PhoneNumberInput from './sfd-accounts/PhoneNumberInput';
 import { validateMaliPhoneNumber } from '@/lib/constants';
 
@@ -96,9 +96,12 @@ const PersonalInfoSection = ({ user }: PersonalInfoSectionProps) => {
   };
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 border-border/50">
       <CardHeader className="pb-2">
-        <CardTitle className="text-lg">Informations Personnelles</CardTitle>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <UserIcon className="h-5 w-5 text-primary" />
+          Informations Personnelles
+        </CardTitle>
       </CardHeader>
       <CardContent className="pt-0">
         <div className="space-y-4">
