@@ -27,6 +27,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const { toast } = useToast();
 
+  // Load activeSfdId from localStorage on mount
+  useEffect(() => {
+    const storedSfdId = localStorage.getItem('activeSfdId');
+    if (storedSfdId && storedSfdId.trim() !== '') {
+      console.log('💾 Loading stored SFD ID:', storedSfdId);
+      setActiveSfdId(storedSfdId);
+    }
+  }, []);
+
+  // Save activeSfdId to localStorage when it changes
+  useEffect(() => {
+    if (activeSfdId && activeSfdId.trim() !== '') {
+      console.log('💾 Saving SFD ID to localStorage:', activeSfdId);
+      localStorage.setItem('activeSfdId', activeSfdId);
+    }
+  }, [activeSfdId]);
+
   // Helper functions to check user roles
   const isAdmin = userRole === UserRole.Admin;
   const isSfdAdmin = userRole === UserRole.SfdAdmin;

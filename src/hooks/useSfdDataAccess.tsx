@@ -14,29 +14,13 @@ export interface SfdData {
 }
 
 export function useSfdDataAccess() {
-  const [activeSfdId, setActiveSfdId] = useState<string | null>(null);
+  const { user, activeSfdId, setActiveSfdId } = useAuth(); // Utiliser AuthContext comme source unique
   const [sfdData, setSfdData] = useState<SfdData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
-  const { user } = useAuth();
   const { toast } = useToast();
 
-  // Retrieve stored SFD ID on mount
-  useEffect(() => {
-    const storedSfdId = localStorage.getItem('activeSfdId');
-    if (storedSfdId && storedSfdId.trim() !== '') {
-      console.log('Found stored SFD ID:', storedSfdId);
-      setActiveSfdId(storedSfdId);
-    }
-  }, []);
-
-  // Save SFD ID to localStorage when it changes
-  useEffect(() => {
-    if (activeSfdId && activeSfdId.trim() !== '') {
-      console.log('Setting active SFD ID in localStorage:', activeSfdId);
-      localStorage.setItem('activeSfdId', activeSfdId);
-    }
-  }, [activeSfdId]);
+  // Pas de gestion localStorage ici - délégué à AuthContext
 
   // Simplifier la logique pour récupérer les SFDs actives
   useEffect(() => {
@@ -86,9 +70,9 @@ export function useSfdDataAccess() {
   }, [user, toast, activeSfdId]);
 
   return {
-    activeSfdId,
-    setActiveSfdId,
-    sfdData,
+    activeSfdId,        // Vient de AuthContext
+    setActiveSfdId,     // Vient de AuthContext
+    sfds: sfdData,      // Renommer pour cohérence
     isLoading,
     error
   };
