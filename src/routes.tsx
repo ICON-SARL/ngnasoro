@@ -57,6 +57,10 @@ import SfdManagementPage from './pages/SfdManagementPage';
 import SfdApprovalManagementPage from './pages/SfdApprovalManagementPage';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
+import { MerefAdminLayout } from './components/admin/meref/layout/MerefAdminLayout';
+import SubsidyApprovalsPage from './pages/meref/SubsidyApprovalsPage';
+import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
+import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
 
 const router = createBrowserRouter([
   {
@@ -129,9 +133,48 @@ const router = createBrowserRouter([
     path: '/super-admin-dashboard',
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MEREFDashboard />
+        <MerefAdminLayout />
       </RoleGuard>
     ),
+    children: [
+      { index: true, element: <SuperAdminDashboard /> },
+    ],
+  },
+  {
+    path: '/meref/approvals/sfds',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <SfdApprovalManagementPage /> }],
+  },
+  {
+    path: '/meref/approvals/subsidies',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <SubsidyApprovalsPage /> }],
+  },
+  {
+    path: '/meref/monitoring/loans',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <LoansMonitoringPage /> }],
+  },
+  {
+    path: '/meref/reports/generate',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <ReportsGenerationPage /> }],
   },
   {
     path: '/admin/system-settings',
