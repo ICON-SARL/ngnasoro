@@ -7,7 +7,6 @@ import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { initializeSupabase } from '@/utils/initSupabase';
 import { registerSchema, RegisterFormValues } from './schema';
-import { generateClientCode, storeClientCode } from '@/utils/clientCodeUtils';
 import { Profile } from '@/types/profile';
 
 export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
@@ -26,6 +25,7 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
       email: '',
       phoneNumber: '',
       password: '',
+      acceptTerms: false,
     },
   });
 
@@ -42,7 +42,8 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         hasPhone: !!data.phoneNumber 
       });
       
-      const userClientCode = generateClientCode();
+      // Générer le code client
+      const userClientCode = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
       setClientCode(userClientCode);
       
       // Create metadata object
@@ -68,12 +69,14 @@ export const useRegisterForm = (onError?: (errorMessage: string) => void) => {
         throw new Error("No user ID found after registration");
       }
       
-      // Update profile with client code
-      const updateData: Partial<Profile> = {
+      // Update profile with client code and terms acceptance
+      const updateData: any = {
         full_name: data.fullName,
         email: data.email,
         phone: data.phoneNumber,
-        client_code: userClientCode
+        client_code: userClientCode,
+        terms_accepted_at: new Date().toISOString(),
+        terms_version: '1.0'
       };
 
       const { error: updateError } = await supabase

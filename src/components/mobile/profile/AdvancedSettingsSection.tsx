@@ -1,8 +1,9 @@
-
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import { Sun, Moon, Database, Trash2, AlertTriangle } from 'lucide-react';
 import { useTheme } from '@/providers/ThemeProvider';
@@ -10,6 +11,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useOfflineMode } from '@/hooks/useOfflineMode';
 import LogoutButton from '@/components/LogoutButton';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,6 +33,8 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
   const { isOffline, toggleOfflineMode } = useOfflineMode();
   const { toast } = useToast();
   const navigate = useNavigate();
+  const [deletePassword, setDeletePassword] = useState('');
+  const [isDeleting, setIsDeleting] = useState(false);
   
   const handleThemeChange = (value: string) => {
     setTheme(value as 'light' | 'dark' | 'system');
@@ -54,13 +58,48 @@ const AdvancedSettingsSection = ({ onLogout }: AdvancedSettingsSectionProps) => 
     });
   };
   
-  const handleDeleteAccount = () => {
-    toast({
-      title: "Compte supprimé",
-      description: "Votre compte a été supprimé avec succès",
-      variant: "destructive",
-    });
-    navigate('/auth');
+  const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      toast({
+        title: "Mot de passe requis",
+        description: "Veuillez entrer votre mot de passe pour confirmer la suppression",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsDeleting(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('delete-user-account', {
+        body: { password: deletePassword }
+      });
+
+      if (error) throw error;
+
+      if (!data.success) {
+        throw new Error(data.error || 'Erreur lors de la suppression du compte');
+      }
+
+      toast({
+        title: "✅ Compte supprimé",
+        description: "Votre compte a été supprimé définitivement. Toutes vos données ont été effacées.",
+        variant: "destructive"
+      });
+
+      // Déconnexion forcée et redirection
+      await supabase.auth.signOut();
+      navigate('/auth', { replace: true });
+    } catch (error: any) {
+      console.error('Erreur suppression compte:', error);
+      toast({
+        title: "❌ Erreur",
+        description: error.message || "Impossible de supprimer le compte. Vérifiez votre mot de passe.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsDeleting(false);
+      setDeletePassword('');
+    }
   };
 
   return (

@@ -2,6 +2,7 @@
 import React from 'react';
 import { Mail, Phone, Lock, User } from 'lucide-react';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   FormField,
   FormItem,
@@ -115,6 +116,34 @@ const RegisterFormFields: React.FC<RegisterFormFieldsProps> = ({ form }) => {
               </FormControl>
             </div>
             <FormMessage />
+          </FormItem>
+        )}
+      />
+      
+      <FormField
+        control={form.control}
+        name="acceptTerms"
+        render={({ field }) => (
+          <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-lg border border-primary/20 bg-primary/5 p-4">
+            <FormControl>
+              <Checkbox
+                checked={field.value}
+                onCheckedChange={field.onChange}
+              />
+            </FormControl>
+            <div className="space-y-1 leading-none">
+              <FormLabel className="text-sm font-medium cursor-pointer">
+                J'accepte les{" "}
+                <a href="/legal/terms" className="underline text-[#0D6A51] hover:text-[#0F7C5F]" target="_blank" rel="noopener noreferrer">
+                  Conditions d'utilisation
+                </a>{" "}
+                et la{" "}
+                <a href="/legal/privacy" className="underline text-[#0D6A51] hover:text-[#0F7C5F]" target="_blank" rel="noopener noreferrer">
+                  Politique de confidentialité
+                </a>
+              </FormLabel>
+              <FormMessage />
+            </div>
           </FormItem>
         )}
       />
