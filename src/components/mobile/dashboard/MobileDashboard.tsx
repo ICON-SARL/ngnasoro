@@ -8,7 +8,6 @@ import DashboardHeader from './DashboardHeader';
 import AccountBalanceCard from './AccountBalanceCard';
 import QuickActions from './QuickActions';
 import RecentTransactions from './RecentTransactions';
-import VaultSection from './VaultSection';
 import { AlertCircle } from 'lucide-react';
 
 const MobileDashboard: React.FC = () => {
@@ -123,7 +122,7 @@ const MobileDashboard: React.FC = () => {
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false })
-        .limit(5);
+        .limit(8);
       
       if (error) {
         console.error('❌ Transactions fetch error:', error);
@@ -209,11 +208,8 @@ const MobileDashboard: React.FC = () => {
         {/* Actions rapides */}
         <QuickActions />
 
-        {/* Section Tontine */}
-        <VaultSection />
-
         {/* Liste des transactions récentes */}
-        <RecentTransactions 
+        <RecentTransactions
           transactions={transactions || []}
           isLoading={transactionsLoading}
         />
