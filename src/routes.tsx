@@ -21,6 +21,7 @@ import SupportPage from './pages/mobile/SupportPage';
 import FAQPage from './pages/mobile/FAQPage';
 import AccountsPage from './pages/mobile/AccountsPage';
 import VaultsPage from './pages/mobile/VaultsPage';
+import VaultsHubPage from './pages/mobile/VaultsHubPage';
 import CreateVaultPage from './pages/mobile/CreateVaultPage';
 import VaultDetailsPage from './pages/mobile/VaultDetailsPage';
 import CollaborativeVaultsPage from './pages/mobile/CollaborativeVaultsPage';
@@ -269,6 +270,10 @@ const router = createBrowserRouter([
       {
         path: 'accounts',
         element: <AccountsPage />,
+      },
+      {
+        path: 'vaults-hub',
+        element: <VaultsHubPage />,
       },
       {
         path: 'vaults',
