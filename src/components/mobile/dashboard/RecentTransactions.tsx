@@ -13,6 +13,7 @@ interface Transaction {
   description: string | null;
   created_at: string;
   status: string;
+  payment_method?: 'mobile_money' | 'cash' | 'bank_transfer' | 'check';
 }
 
 interface RecentTransactionsProps {
@@ -112,11 +113,24 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               </div>
               <div>
                 <p className="font-medium text-sm text-foreground">
-                  {getTransactionLabel(transaction.type)}
+                  {transaction.description || getTransactionLabel(transaction.type)}
                 </p>
-                <p className="text-xs text-muted-foreground">
-                  {format(new Date(transaction.created_at), 'dd MMM yyyy', { locale: fr })}
-                </p>
+                <div className="flex items-center gap-2">
+                  <p className="text-xs text-muted-foreground">
+                    {format(new Date(transaction.created_at), 'dd MMM yyyy', { locale: fr })}
+                  </p>
+                  {transaction.payment_method && (
+                    <>
+                      <span className="text-xs text-muted-foreground">•</span>
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {transaction.payment_method === 'mobile_money' ? 'Mobile Money' :
+                         transaction.payment_method === 'cash' ? 'Espèces' :
+                         transaction.payment_method === 'bank_transfer' ? 'Virement' :
+                         transaction.payment_method}
+                      </span>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
             <div className="text-right">

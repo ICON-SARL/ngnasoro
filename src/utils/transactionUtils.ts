@@ -82,10 +82,10 @@ export function convertDatabaseRecordsToTransactions(records: any[], sfdId?: str
     // Return a normalized transaction object
     return {
       id: record.id,
-      name: record.name || (record.type === 'deposit' ? 'Dépôt' : 
-                           record.type === 'withdrawal' ? 'Retrait' : 
-                           record.type === 'loan_repayment' ? 'Remboursement de prêt' : 
-                           record.type === 'loan_disbursement' ? 'Décaissement de prêt' : 'Transaction'),
+    name: record.name || record.description || (record.type === 'deposit' ? 'Dépôt' : 
+                     record.type === 'withdrawal' ? 'Retrait' : 
+                     record.type === 'loan_repayment' ? 'Remboursement de prêt' : 
+                     record.type === 'loan_disbursement' ? 'Décaissement de prêt' : 'Transaction'),
       type: ensureValidTransactionType(record.type),
       amount: record.amount,
       date: record.date || record.created_at,
