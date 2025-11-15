@@ -101,13 +101,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créditer le compte du coffre
+    // Créditer le coffre collaboratif directement
     const { error: creditError } = await supabase
-      .from('accounts')
-      .update({ balance: (vault as any).current_amount + amount })
-      .eq('id', vault.vault_account_id);
+      .from('collaborative_vaults')
+      .update({ current_amount: ((vault as any).current_amount || 0) + amount })
+      .eq('id', vault_id);
 
     if (creditError) {
+      console.error('Erreur crédit coffre:', creditError);
       // Rollback
       await supabase
         .from('accounts')
