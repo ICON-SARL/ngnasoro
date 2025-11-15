@@ -79,7 +79,7 @@ const TontineSection: React.FC = () => {
 
       {tontines && tontines.length > 0 ? (
         <div className="space-y-3">
-          <div className="bg-gradient-to-br from-sky-500 to-blue-600 rounded-3xl p-5 text-white shadow-lg">
+          <div className="bg-gradient-to-br from-[#fcb041] to-[#fdc158] rounded-3xl p-5 text-white shadow-lg">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
                 <Users className="w-6 h-6" />

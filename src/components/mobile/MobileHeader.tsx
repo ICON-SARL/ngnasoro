@@ -1,10 +1,8 @@
 
-import React, { useState } from 'react';
-import { Menu } from 'lucide-react';
+import React from 'react';
 import SfdSelector from './SfdSelector';
 
 const MobileHeader = () => {
-  const [isOpen, setIsOpen] = useState(false);
   return (
     <div className="bg-white">
       <div className="bg-[#0D6A51] px-4 py-3 rounded-b-2xl shadow-md">
@@ -23,13 +21,6 @@ const MobileHeader = () => {
               </h1>
             </div>
           </div>
-          
-          <button 
-            className="text-white p-2 hover:bg-white/10 rounded-full transition-colors" 
-            onClick={() => setIsOpen(!isOpen)}
-          >
-            <Menu className="h-5 w-5" />
-          </button>
         </div>
         
         {/* SFD Selector added at the bottom */}

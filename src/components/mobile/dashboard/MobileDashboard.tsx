@@ -8,7 +8,6 @@ import DashboardHeader from './DashboardHeader';
 import AccountBalanceCard from './AccountBalanceCard';
 import QuickActions from './QuickActions';
 import RecentTransactions from './RecentTransactions';
-import KycProgressCard from './KycProgressCard';
 import TontineSection from './TontineSection';
 import { AlertCircle } from 'lucide-react';
 
@@ -205,12 +204,6 @@ const MobileDashboard: React.FC = () => {
           balance={totalBalance}
           currency="FCFA"
           accounts={displayAccounts}
-        />
-
-        {/* État du KYC avec progression */}
-        <KycProgressCard 
-          kycLevel={profile?.kyc_level || 1}
-          clientCode={profile?.client_code}
         />
 
         {/* Actions rapides */}

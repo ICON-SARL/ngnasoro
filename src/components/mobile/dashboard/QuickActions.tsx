@@ -10,13 +10,13 @@ const QuickActions: React.FC = () => {
     {
       icon: Wallet,
       label: 'Prêt',
-      color: 'bg-gradient-to-br from-violet-400 to-purple-500',
+      color: 'bg-gradient-to-br from-[#176455] to-[#1a7a65]',
       action: () => navigate('/mobile-flow/loan-application')
     },
     {
       icon: Users,
       label: 'Tontine',
-      color: 'bg-gradient-to-br from-sky-400 to-blue-500',
+      color: 'bg-gradient-to-br from-[#fcb041] to-[#fdc158]',
       action: () => navigate('/mobile-flow/tontine')
     }
   ];
