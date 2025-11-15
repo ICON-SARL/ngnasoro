@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
 import { Download, Menu, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 interface NavigationHeaderProps {
   onDownloadClick: () => void;
@@ -60,13 +61,15 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
             {/* Logo */}
             <motion.button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center gap-2 cursor-pointer"
+              className="flex items-center gap-3 cursor-pointer"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#0D6A51] to-[#176455] flex items-center justify-center shadow-lg">
-                <span className="text-xl">💰</span>
-              </div>
+              <img 
+                src={logoNgnaSoro} 
+                alt="N'GNA SÔRÔ Logo" 
+                className="w-12 h-12 object-contain"
+              />
               <span
                 className={`text-xl font-bold transition-colors ${
                   scrolled ? 'text-gray-900' : 'text-white'
