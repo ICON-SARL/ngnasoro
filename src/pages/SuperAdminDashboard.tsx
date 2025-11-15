@@ -9,6 +9,7 @@ import {
   SimplifiedMerefDashboard,
   SfdStatusAlert
 } from '@/components/admin/dashboard';
+import { MerefEnhancedDashboard } from '@/components/admin/meref/dashboard/MerefEnhancedDashboard';
 import { AdminUsersList } from '@/components/admin/shared/AdminUsersList';
 import { AddAdminDialog } from '@/components/admin/shared/AddAdminDialog';
 import { useAdminDashboardData } from '@/hooks/useAdminDashboardData';
@@ -48,7 +49,21 @@ const SuperAdminDashboard = () => {
         
         <div className="mb-8">
           <h2 className="text-lg font-semibold mb-4">Accès Rapides</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <Card 
+              className="hover:shadow-md transition-all cursor-pointer border-orange-200 border-2"
+              onClick={() => handleCardClick('/sfd-approval')}
+            >
+              <CardContent className="p-6 flex items-center gap-4">
+                <div className="h-12 w-12 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center">
+                  <Shield size={24} />
+                </div>
+                <div>
+                  <h3 className="font-medium text-lg">Approbation SFDs</h3>
+                  <p className="text-sm text-muted-foreground">Valider nouvelles SFDs</p>
+                </div>
+              </CardContent>
+            </Card>
             <Card 
               className="hover:shadow-md transition-all cursor-pointer border-gray-200"
               onClick={() => handleCardClick('/credit-approval')}
@@ -112,12 +127,9 @@ const SuperAdminDashboard = () => {
         </div>
         
         {activeTab === 'dashboard' && (
-          <>
-            <SimplifiedMerefDashboard />
-            <div className="mt-6">
-              <DashboardWidgets />
-            </div>
-          </>
+          <div className="space-y-6">
+            <MerefEnhancedDashboard />
+          </div>
         )}
         
         {activeTab === 'admins' && (

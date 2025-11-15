@@ -53,6 +53,8 @@ import KycUpgradePage from './pages/KycUpgradePage';
 import MEREFDashboard from './pages/dashboards/MEREFDashboard';
 import SfdAdminDashboard from './pages/dashboards/SfdAdminDashboard';
 import CashierDashboard from './pages/dashboards/CashierDashboard';
+import SfdManagementPage from './pages/SfdManagementPage';
+import SfdApprovalManagementPage from './pages/SfdApprovalManagementPage';
 import { SfdHeader } from './components/sfd/SfdHeader';
 import RoleGuard from './components/RoleGuard';
 
@@ -136,6 +138,22 @@ const router = createBrowserRouter([
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
         <SystemSettingsPage />
+      </RoleGuard>
+    ),
+  },
+  {
+    path: '/sfd-management',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <SfdManagementPage />
+      </RoleGuard>
+    ),
+  },
+  {
+    path: '/sfd-approval',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <SfdApprovalManagementPage />
       </RoleGuard>
     ),
   },
