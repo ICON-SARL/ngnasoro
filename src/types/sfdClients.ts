@@ -20,6 +20,8 @@ export interface Loan {
   duration_months: number;
   interest_rate: number;
   monthly_payment: number;
+  total_amount: number;
+  remaining_amount: number;
   purpose: string;
   status: 'pending' | 'active' | 'rejected' | 'approved' | 'completed' | 'disbursed' | 'defaulted' | string; // Allow string to resolve type errors
   created_at: string;
