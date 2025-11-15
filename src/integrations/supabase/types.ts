@@ -543,6 +543,20 @@ export type Database = {
             referencedRelation: "collaborative_vaults"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_collaborative_vault_invitations_invited_by"
+            columns: ["invited_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_collaborative_vault_invitations_invited_user_id"
+            columns: ["invited_user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       collaborative_vault_members: {
@@ -585,6 +599,13 @@ export type Database = {
             columns: ["vault_id"]
             isOneToOne: false
             referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_collaborative_vault_members_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -644,6 +665,13 @@ export type Database = {
             referencedRelation: "collaborative_vaults"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_collaborative_vault_transactions_user_id"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
         ]
       }
       collaborative_vault_withdrawal_requests: {
@@ -692,6 +720,13 @@ export type Database = {
             columns: ["vault_id"]
             isOneToOne: false
             referencedRelation: "collaborative_vaults"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_collaborative_vault_withdrawal_requests_requested_by"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
