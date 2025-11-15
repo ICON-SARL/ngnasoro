@@ -903,32 +903,109 @@ export type Database = {
           },
         ]
       }
+      loan_payment_schedules: {
+        Row: {
+          created_at: string | null
+          days_overdue: number | null
+          due_date: string
+          id: string
+          installment_number: number
+          interest_amount: number
+          late_fee: number | null
+          loan_id: string
+          paid_amount: number | null
+          paid_at: string | null
+          principal_amount: number
+          remaining_principal: number
+          status: string | null
+          total_amount: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          days_overdue?: number | null
+          due_date: string
+          id?: string
+          installment_number: number
+          interest_amount: number
+          late_fee?: number | null
+          loan_id: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          principal_amount: number
+          remaining_principal: number
+          status?: string | null
+          total_amount: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          days_overdue?: number | null
+          due_date?: string
+          id?: string
+          installment_number?: number
+          interest_amount?: number
+          late_fee?: number | null
+          loan_id?: string
+          paid_amount?: number | null
+          paid_at?: string | null
+          principal_amount?: number
+          remaining_principal?: number
+          status?: string | null
+          total_amount?: number
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "loan_payment_schedules_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       loan_payments: {
         Row: {
           amount: number
           created_at: string | null
           id: string
+          installment_number: number | null
+          interest_amount: number | null
+          late_fee: number | null
           loan_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          principal_amount: number | null
           reference: string | null
+          schedule_id: string | null
           status: string | null
         }
         Insert: {
           amount: number
           created_at?: string | null
           id?: string
+          installment_number?: number | null
+          interest_amount?: number | null
+          late_fee?: number | null
           loan_id: string
           payment_method: Database["public"]["Enums"]["payment_method"]
+          principal_amount?: number | null
           reference?: string | null
+          schedule_id?: string | null
           status?: string | null
         }
         Update: {
           amount?: number
           created_at?: string | null
           id?: string
+          installment_number?: number | null
+          interest_amount?: number | null
+          late_fee?: number | null
           loan_id?: string
           payment_method?: Database["public"]["Enums"]["payment_method"]
+          principal_amount?: number | null
           reference?: string | null
+          schedule_id?: string | null
           status?: string | null
         }
         Relationships: [
@@ -937,6 +1014,13 @@ export type Database = {
             columns: ["loan_id"]
             isOneToOne: false
             referencedRelation: "sfd_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "loan_payments_schedule_id_fkey"
+            columns: ["schedule_id"]
+            isOneToOne: false
+            referencedRelation: "loan_payment_schedules"
             referencedColumns: ["id"]
           },
         ]
@@ -2159,6 +2243,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_months_to_date: {
+        Args: { base_date: string; months_to_add: number }
+        Returns: string
+      }
       generate_client_code: { Args: { sfd_code: string }; Returns: string }
       has_role: {
         Args: {
