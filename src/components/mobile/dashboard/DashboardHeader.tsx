@@ -1,7 +1,7 @@
 import React from 'react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 interface DashboardHeaderProps {
   userName: string;
@@ -25,12 +25,20 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName, avatarUrl }
     <div className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-primary-foreground p-6 pb-8 rounded-b-3xl shadow-lg">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-14 w-14 border-2 border-primary-foreground/30 shadow-md">
-            <AvatarImage src={avatarUrl || undefined} alt={userName} />
-            <AvatarFallback className="bg-primary-foreground/20 text-primary-foreground font-semibold text-lg">
-              {getInitials(userName)}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            {/* Glow effect */}
+            <div className="absolute -inset-0.5 bg-gradient-to-br from-primary via-[#FFAB2E] to-primary 
+                            rounded-full opacity-75 blur-sm" />
+            
+            {/* Logo */}
+            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-white shadow-md">
+              <img 
+                src={logoNgnaSoro} 
+                alt="N'GNA SÔRÔ Logo" 
+                className="w-full h-full object-cover p-1.5"
+              />
+            </div>
+          </div>
           <div>
             <p className="text-sm opacity-90 font-medium">Bonjour,</p>
             <h1 className="text-xl font-bold">{userName}</h1>
