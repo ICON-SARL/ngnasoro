@@ -101,25 +101,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créditer le coffre collaboratif directement
-    const { error: creditError } = await supabase
-      .from('collaborative_vaults')
-      .update({ current_amount: ((vault as any).current_amount || 0) + amount })
-      .eq('id', vault_id);
-
-    if (creditError) {
-      console.error('Erreur crédit coffre:', creditError);
-      // Rollback
-      await supabase
-        .from('accounts')
-        .update({ balance: sourceAccount.balance })
-        .eq('id', source_account_id);
-
-      return new Response(
-        JSON.stringify({ error: 'Erreur lors du crédit' }),
-        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
+    // Le trigger update_collab_vault_transactions mettra à jour current_amount automatiquement
 
     // Enregistrer la transaction
     const { error: transactionError } = await supabase
