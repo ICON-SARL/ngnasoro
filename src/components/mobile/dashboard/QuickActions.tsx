@@ -14,10 +14,16 @@ const QuickActions: React.FC = () => {
       action: () => navigate('/mobile-flow/loan-application')
     },
     {
-      icon: Users,
+      icon: Lock,
       label: 'Mes Coffres',
       color: 'bg-gradient-to-br from-purple-500 to-indigo-600',
       action: () => navigate('/mobile-flow/vaults')
+    },
+    {
+      icon: Users,
+      label: 'Coffres Collaboratifs',
+      color: 'bg-gradient-to-br from-orange-500 to-pink-600',
+      action: () => navigate('/mobile-flow/collaborative-vaults')
     }
   ];
 

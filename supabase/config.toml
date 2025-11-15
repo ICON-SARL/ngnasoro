@@ -1,5 +1,26 @@
 project_id = "hnzozzbnfougbcncdgrk"
 
+[functions.create-vault]
+verify_jwt = true
+
+[functions.deposit-vault]
+verify_jwt = true
+
+[functions.create-collaborative-vault]
+verify_jwt = true
+
+[functions.deposit-collaborative-vault]
+verify_jwt = true
+
+[functions.invite-to-vault]
+verify_jwt = true
+
+[functions.request-vault-withdrawal]
+verify_jwt = true
+
+[functions.vote-withdrawal]
+verify_jwt = true
+
 [functions.initialize-client-account]
 verify_jwt = true
 
