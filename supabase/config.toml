@@ -59,3 +59,6 @@ verify_jwt = false
 
 [functions.generate-test-data]
 verify_jwt = false
+
+[functions.setup-admin-system]
+verify_jwt = false
