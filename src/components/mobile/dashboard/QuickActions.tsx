@@ -15,9 +15,9 @@ const QuickActions: React.FC = () => {
     },
     {
       icon: Users,
-      label: 'Tontine',
-      color: 'bg-gradient-to-br from-[#fcb041] to-[#fdc158]',
-      action: () => navigate('/mobile-flow/tontine')
+      label: 'Mes Coffres',
+      color: 'bg-gradient-to-br from-purple-500 to-indigo-600',
+      action: () => navigate('/mobile-flow/vaults')
     }
   ];
 
