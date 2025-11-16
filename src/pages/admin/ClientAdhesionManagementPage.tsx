@@ -117,96 +117,32 @@ const ClientAdhesionManagementPage = () => {
   const handleApprove = async (request: AdhesionRequest) => {
     setProcessing(true);
     try {
-      // 1. Créer le client SFD
-      const { data: sfd } = await supabase
-        .from('sfds')
-        .select('code')
-        .eq('id', request.sfd_id)
-        .single();
+      // Appeler la fonction sécurisée pour approuver l'adhésion
+      const { data, error } = await supabase.rpc('approve_client_adhesion', {
+        p_request_id: request.id,
+        p_reviewed_by: user?.id
+      });
 
-      const { data: clientCodeData } = await supabase
-        .rpc('generate_client_code', { sfd_code: sfd?.code || 'SFD' });
+      if (error) throw error;
 
-      const { data: newClient, error: clientError } = await supabase
-        .from('sfd_clients')
-        .insert({
-          sfd_id: request.sfd_id,
-          user_id: request.user_id,
-          full_name: request.full_name,
-          email: request.email,
-          phone: request.phone,
-          address: request.address,
-          status: 'active',
-          client_code: clientCodeData,
-          kyc_level: 1,
-        })
-        .select()
-        .single();
-
-      if (clientError) throw clientError;
-
-      // 2. Créer les 3 comptes (opération, épargne, remboursement)
-      const accountTypes = ['operation', 'epargne', 'remboursement'];
-      for (const accountType of accountTypes) {
-        await supabase
-          .from('accounts')
-          .insert({
-            user_id: request.user_id,
-            sfd_id: request.sfd_id,
-            balance: 0,
-            status: 'active',
-            currency: 'FCFA',
-          });
+      const result = data as { success: boolean; error?: string; client_code?: string };
+      
+      if (!result?.success) {
+        throw new Error(result?.error || 'Erreur lors de l\'approbation');
       }
-
-      // 3. Upgrade rôle utilisateur de 'user' à 'client'
-      await supabase
-        .from('user_roles')
-        .insert({
-          user_id: request.user_id,
-          role: 'client',
-        });
-
-      // 4. Mettre à jour la demande d'adhésion
-      const { error: updateError } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'approved',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-        })
-        .eq('id', request.id);
-
-      if (updateError) throw updateError;
-
-      // 5. Logger l'action
-      await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: user?.id,
-          action: 'approve_client_adhesion',
-          category: 'client_management',
-          severity: 'info',
-          status: 'success',
-          details: {
-            request_id: request.id,
-            client_id: newClient.id,
-            full_name: request.full_name,
-          },
-        });
 
       toast({
         title: 'Succès',
-        description: 'Demande approuvée avec succès',
+        description: `Client créé avec le code ${result.client_code}`,
       });
 
       setSelectedRequest(null);
       fetchRequests();
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error approving request:', error);
       toast({
         title: 'Erreur',
-        description: 'Impossible d\'approuver la demande',
+        description: error.message || 'Impossible d\'approuver la demande',
         variant: 'destructive',
       });
     } finally {
@@ -219,32 +155,20 @@ const ClientAdhesionManagementPage = () => {
 
     setProcessing(true);
     try {
-      const { error } = await supabase
-        .from('client_adhesion_requests')
-        .update({
-          status: 'rejected',
-          reviewed_by: user?.id,
-          reviewed_at: new Date().toISOString(),
-          rejection_reason: rejectionReason,
-        })
-        .eq('id', selectedRequest.id);
+      // Appeler la fonction sécurisée pour rejeter l'adhésion
+      const { data, error } = await supabase.rpc('reject_client_adhesion', {
+        p_request_id: selectedRequest.id,
+        p_reviewed_by: user?.id,
+        p_rejection_reason: rejectionReason
+      });
 
       if (error) throw error;
 
-      await supabase
-        .from('audit_logs')
-        .insert({
-          user_id: user?.id,
-          action: 'reject_client_adhesion',
-          category: 'client_management',
-          severity: 'info',
-          status: 'success',
-          details: {
-            request_id: selectedRequest.id,
-            full_name: selectedRequest.full_name,
-            rejection_reason: rejectionReason,
-          },
-        });
+      const result = data as { success: boolean; error?: string };
+
+      if (!result?.success) {
+        throw new Error(result?.error || 'Erreur lors du rejet');
+      }
 
       toast({
         title: 'Succès',

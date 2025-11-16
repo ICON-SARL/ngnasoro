@@ -62,6 +62,7 @@ import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
 import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
 import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
 import SfdSetupPage from './pages/SfdSetupPage';
+import JoinSfdPage from './pages/mobile/JoinSfdPage';
 
 const router = createBrowserRouter([
   {
@@ -368,6 +369,10 @@ const router = createBrowserRouter([
       {
         path: 'sfd-adhesion/:sfdId',
         element: <SfdAdhesionPage />,
+      },
+      {
+        path: 'join-sfd',
+        element: <JoinSfdPage />,
       },
       {
         path: 'support',
