@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       accounts: {
         Row: {
+          account_type: string | null
           balance: number | null
           created_at: string | null
           currency: string | null
@@ -26,6 +27,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_type?: string | null
           balance?: number | null
           created_at?: string | null
           currency?: string | null
@@ -36,6 +38,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_type?: string | null
           balance?: number | null
           created_at?: string | null
           currency?: string | null
@@ -2398,6 +2401,10 @@ export type Database = {
         Args: { base_date: string; months_to_add: number }
         Returns: string
       }
+      approve_client_adhesion: {
+        Args: { p_request_id: string; p_reviewed_by: string }
+        Returns: Json
+      }
       generate_client_code: { Args: { sfd_code: string }; Returns: string }
       has_role: {
         Args: {
@@ -2419,6 +2426,14 @@ export type Database = {
           _vault_id: string
         }
         Returns: undefined
+      }
+      reject_client_adhesion: {
+        Args: {
+          p_rejection_reason: string
+          p_request_id: string
+          p_reviewed_by: string
+        }
+        Returns: Json
       }
       validate_password_strength: {
         Args: { password: string }
