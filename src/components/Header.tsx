@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import MobileNavigation from './MobileNavigation';
 import { useToast } from '@/hooks/use-toast';
 
 const Header = () => {
@@ -20,9 +19,6 @@ const Header = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { toast } = useToast();
-  
-  // Check if this is a mobile flow page
-  const isMobileFlowPage = location.pathname.includes('/mobile-flow');
   
   useEffect(() => {
     const handleScroll = () => {
@@ -54,10 +50,8 @@ const Header = () => {
       navigate('/auth');
       setMobileMenuOpen(false);
       
-      // Force a reload to clear any remaining state
       window.location.href = '/auth';
     } catch (error: any) {
-      console.error('Erreur lors de la déconnexion:', error);
       toast({
         title: "Erreur de déconnexion",
         description: error.message || "Une erreur s'est produite lors de la déconnexion",
@@ -66,15 +60,11 @@ const Header = () => {
     }
   };
 
-  const handleAction = (action: string, data?: any) => {
-    console.log("Header action:", action, data);
-  };
-
   return (
     <header 
       className={cn(
         "fixed top-0 left-0 right-0 z-50 py-4 transition-all duration-300 ease-soft", 
-        isScrolled ? "bg-white/80 backdrop-blur-md shadow-sm dark:bg-black/80" : "bg-transparent"
+        isScrolled ? "bg-card/80 backdrop-blur-md shadow-sm" : "bg-transparent"
       )}
     >
       <div className="container mx-auto px-4 md:px-6 flex items-center justify-between">
@@ -85,23 +75,20 @@ const Header = () => {
             className="h-8 w-auto"
           />
           <Link to="/" className="font-medium text-lg">
-            <span className="text-[#FFAB2E]">N'GNA</span> <span className="text-[#0D6A51]">SÔRÔ!</span>
+            <span className="text-accent">N'GNA</span> <span className="text-primary">SÔRÔ!</span>
           </Link>
         </div>
         
         {/* Desktop Navigation */}
         <nav className="hidden md:flex space-x-8">
-          <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
+          <Link to="/sfd-partners" className="text-sm font-medium hover:text-primary transition-colors">
             SFDs
           </Link>
-          <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            App Mobile
+          <Link to="/faq" className="text-sm font-medium hover:text-primary transition-colors">
+            FAQ
           </Link>
-          <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Microcrédits
-          </Link>
-          <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors">
-            Financement
+          <Link to="/contact" className="text-sm font-medium hover:text-primary transition-colors">
+            Contact
           </Link>
         </nav>
         
@@ -111,20 +98,15 @@ const Header = () => {
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="rounded-full h-8 w-8 p-0">
                   <span className="sr-only">Menu utilisateur</span>
-                  <div className="h-8 w-8 rounded-full bg-[#0D6A51] flex items-center justify-center text-white">
+                  <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center text-primary-foreground">
                     {user.email?.charAt(0).toUpperCase() || "U"}
                   </div>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <DropdownMenuItem onClick={() => navigate('/mobile-flow/profile')}>
                   Profil
                 </DropdownMenuItem>
-                {user.email?.endsWith('@meref-mali.ml') && (
-                  <DropdownMenuItem onClick={() => navigate('/super-admin')}>
-                    Admin
-                  </DropdownMenuItem>
-                )}
                 <DropdownMenuItem onClick={handleSignOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Déconnexion
@@ -132,7 +114,7 @@ const Header = () => {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <Link to="/auth" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-[#FFAB2E] text-white text-sm font-medium hover:bg-[#FFAB2E]/90 transition-colors">
+            <Link to="/auth" className="hidden md:inline-flex h-9 px-4 py-2 rounded-md bg-accent text-accent-foreground text-sm font-medium hover:bg-accent/90 transition-colors">
               Connexion
             </Link>
           )}
@@ -151,31 +133,21 @@ const Header = () => {
         </div>
       </div>
 
-      {/* Mobile Navigation in Header for Tablet */}
-      {isMobileFlowPage && (
-        <div className="hidden sm:block md:hidden">
-          <MobileNavigation isHeader={true} className="mt-2" onAction={handleAction} />
-        </div>
-      )}
-
       {/* Mobile Navigation Menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white dark:bg-gray-900 p-4 shadow-md">
+        <div className="md:hidden bg-card p-4 shadow-md">
           <nav className="flex flex-col space-y-4">
-            <Link to="/sfd-selector" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
+            <Link to="/sfd-partners" className="text-sm font-medium hover:text-primary transition-colors px-2 py-1">
               SFDs
             </Link>
-            <Link to="/mobile-flow" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              App Mobile
+            <Link to="/faq" className="text-sm font-medium hover:text-primary transition-colors px-2 py-1">
+              FAQ
             </Link>
-            <Link to="/loan-system" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Microcrédits
-            </Link>
-            <Link to="/solvency-engine" className="text-sm font-medium hover:text-[#0D6A51] transition-colors px-2 py-1">
-              Financement
+            <Link to="/contact" className="text-sm font-medium hover:text-primary transition-colors px-2 py-1">
+              Contact
             </Link>
             {!user && (
-              <Link to="/auth" className="text-sm font-medium bg-[#FFAB2E] text-white px-4 py-2 rounded-md hover:bg-[#FFAB2E]/90 transition-colors">
+              <Link to="/auth" className="text-sm font-medium bg-accent text-accent-foreground px-4 py-2 rounded-md hover:bg-accent/90 transition-colors">
                 Connexion
               </Link>
             )}

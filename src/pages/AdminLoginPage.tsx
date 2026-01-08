@@ -1,12 +1,11 @@
-
 import React from 'react';
-import ModernAdminAuthUI from '@/components/auth/ModernAdminAuthUI';
+import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
 import { AdminSystemSetup } from '@/components/admin/setup/AdminSystemSetup';
 
 const AdminLoginPage = () => {
   return (
     <div className="space-y-8">
-      <ModernAdminAuthUI />
+      <UnifiedModernAuthUI mode="admin" />
       <AdminSystemSetup />
     </div>
   );

@@ -1,32 +1,22 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate, useLocation, Outlet } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
-import MobileNavigation from '@/components/MobileNavigation';
+import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { supabase } from '@/integrations/supabase/client';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MobileFlowPage: React.FC = () => {
   const { toast } = useToast();
   const navigate = useNavigate();
   const location = useLocation();
-  
   const { user, loading, signOut, isClient, isCheckingRole } = useAuth();
 
-  // Check if user is authenticated and has client role
   useEffect(() => {
-    console.log('MobileFlowPage: Auth state check', {
-      loading,
-      isCheckingRole,
-      user: !!user,
-      isClient,
-      pathname: location.pathname
-    });
-
     const checkSfdAssociation = async () => {
       if (!loading && !isCheckingRole) {
         if (!user) {
-          console.log('MobileFlowPage: No user, redirecting to auth');
           toast({
             title: "Accès refusé",
             description: "Vous devez être connecté pour accéder à cette page.",
@@ -36,18 +26,13 @@ const MobileFlowPage: React.FC = () => {
           return;
         }
         
-        // Allow clients to access mobile flow
         if (isClient) {
-          console.log('MobileFlowPage: Client user detected, checking SFD association');
-          
-          // Vérifier si l'utilisateur a un SFD associé
           const { data: userSfds } = await supabase
             .from('user_sfds')
             .select('sfd_id, is_default')
             .eq('user_id', user.id);
           
           if (!userSfds || userSfds.length === 0) {
-            console.log('MobileFlowPage: No SFD associated, redirecting to SFD selection');
             toast({
               title: "Aucun SFD associé",
               description: "Veuillez choisir ou rejoindre un SFD pour continuer.",
@@ -57,10 +42,8 @@ const MobileFlowPage: React.FC = () => {
             return;
           }
           
-          // Vérifier si un SFD par défaut est défini
           const hasDefaultSfd = userSfds.some(s => s.is_default);
           if (!hasDefaultSfd && userSfds.length > 1) {
-            console.log('MobileFlowPage: Multiple SFDs but no default, redirecting to selection');
             toast({
               title: "Sélection SFD requise",
               description: "Veuillez choisir votre SFD actif.",
@@ -68,10 +51,7 @@ const MobileFlowPage: React.FC = () => {
             navigate('/sfd-selection', { replace: true });
             return;
           }
-          
-          console.log('MobileFlowPage: SFD association validated');
         } else {
-          console.log('MobileFlowPage: User does not have client role, redirecting to auth');
           toast({
             title: "Accès refusé",
             description: "Cette interface est réservée aux clients.",
@@ -86,10 +66,8 @@ const MobileFlowPage: React.FC = () => {
     checkSfdAssociation();
   }, [user, loading, isCheckingRole, navigate, toast, location.pathname, isClient]);
 
-  // Handle logout
   const handleLogout = async () => {
     try {
-      console.log('MobileFlowPage: Starting logout');
       await signOut();
       navigate('/auth', { replace: true });
       toast({
@@ -97,7 +75,6 @@ const MobileFlowPage: React.FC = () => {
         description: "À bientôt !",
       });
     } catch (error) {
-      console.error('MobileFlowPage: Logout error:', error);
       toast({
         title: "Erreur de déconnexion",
         description: "Impossible de vous déconnecter.",
@@ -107,14 +84,29 @@ const MobileFlowPage: React.FC = () => {
   };
 
   if (loading || isCheckingRole) {
-    console.log('MobileFlowPage: Still loading...');
-    return <div className="p-8 text-center">Chargement...</div>;
+    return (
+      <div className="min-h-screen bg-background p-4 space-y-4">
+        <Skeleton className="h-24 w-full rounded-2xl" />
+        <Skeleton className="h-40 w-full rounded-3xl" />
+        <Skeleton className="h-32 w-full rounded-2xl" />
+        <Skeleton className="h-48 w-full rounded-2xl" />
+      </div>
+    );
   }
 
-  console.log('MobileFlowPage: Rendering mobile interface');
   return (
-    <div className="min-h-screen bg-white pb-16">
-      <Outlet />
+    <div className="min-h-screen bg-background pb-20">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={location.pathname}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+        >
+          <Outlet />
+        </motion.div>
+      </AnimatePresence>
       <MobileNavigation />
     </div>
   );

@@ -1,18 +1,23 @@
-
 import { MobileMenuSection, MobileNavItem } from '@/types/navigation';
 
-// Navigation principale (footer)
+// Navigation principale (footer) - Routes synchronisées
 export const mobileNavItems: MobileNavItem[] = [
   {
     id: 'home',
     label: 'Accueil',
     icon: 'home',
-    route: '/mobile-flow/main'
+    route: '/mobile-flow/dashboard'
+  },
+  {
+    id: 'loans',
+    label: 'Prêts',
+    icon: 'credit-card',
+    route: '/mobile-flow/loans'
   },
   {
     id: 'funds',
-    label: 'Mes fonds',
-    icon: 'piggy-bank',
+    label: 'Fonds',
+    icon: 'wallet',
     route: '/mobile-flow/funds-management'
   },
   {
@@ -23,70 +28,61 @@ export const mobileNavItems: MobileNavItem[] = [
   }
 ];
 
-// Menu principal avec sections
+// Menu principal avec sections - Routes actives uniquement
 export const mobileMenuSections: MobileMenuSection[] = [
   {
     id: 'banking',
     title: 'Opérations bancaires',
-    color: '#0D6A51',
+    color: 'hsl(var(--primary))',
     items: [
       {
-        id: 'secure-payment',
-        label: 'Paiement sécurisé',
-        icon: 'shield-check',
-        route: '/mobile-flow/secure-payment',
-        color: '#0D6A51'
+        id: 'vaults',
+        label: 'Mes coffres',
+        icon: 'vault',
+        route: '/mobile-flow/vaults-hub',
+        color: 'hsl(var(--primary))'
       },
       {
-        id: 'scheduled-transfers',
-        label: 'Transferts programmés',
-        icon: 'calendar-clock',
-        route: '/mobile-flow/schedule-transfer',
-        color: '#0D6A51'
-      },
-      {
-        id: 'multi-sfd',
-        label: 'Gestion Multi-SFD',
+        id: 'accounts',
+        label: 'Mes comptes',
         icon: 'building',
-        route: '/mobile-flow/multi-sfd',
-        color: '#0D6A51',
-        coming: true
+        route: '/mobile-flow/accounts',
+        color: 'hsl(var(--primary))'
       },
       {
-        id: 'advanced-security',
-        label: 'Sécurité avancée',
-        icon: 'shield-check',
-        route: '/mobile-flow/secure-layer',
-        color: '#0D6A51',
-        coming: true
+        id: 'loan-plans',
+        label: 'Plans de prêt',
+        icon: 'file-text',
+        route: '/mobile-flow/loan-plans',
+        color: 'hsl(var(--primary))'
       }
     ]
   },
   {
     id: 'support',
     title: 'Support & Aide',
-    color: '#6E59A5',
+    color: 'hsl(var(--accent))',
     items: [
-      {
-        id: 'contact-advisor',
-        label: 'Contacter un conseiller',
-        icon: 'message-square',
-        route: '/mobile-flow/contact-advisor',
-        color: '#6E59A5'
-      },
       {
         id: 'faq',
         label: 'FAQ et assistance',
         icon: 'help-circle',
         route: '/mobile-flow/faq',
-        color: '#6E59A5'
+        color: 'hsl(var(--accent))'
       },
       {
-        id: 'search',
-        label: 'Rechercher',
-        icon: 'search',
-        route: '/mobile-flow/search',
-        color: '#6E59A5'
+        id: 'support',
+        label: 'Support',
+        icon: 'message-square',
+        route: '/mobile-flow/support',
+        color: 'hsl(var(--accent))'
+      },
+      {
+        id: 'notifications',
+        label: 'Notifications',
+        icon: 'bell',
+        route: '/mobile-flow/notifications',
+        color: 'hsl(var(--accent))'
       }
     ]
   }

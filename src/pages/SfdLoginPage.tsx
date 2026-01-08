@@ -1,9 +1,8 @@
-
 import React from 'react';
-import ModernSfdAdminAuthUI from '@/components/auth/ModernSfdAdminAuthUI';
+import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
 
 const SfdLoginPage = () => {
-  return <ModernSfdAdminAuthUI />;
+  return <UnifiedModernAuthUI mode="sfd_admin" />;
 };
 
 export default SfdLoginPage;
