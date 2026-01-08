@@ -1,12 +1,11 @@
-
 import React from 'react';
 import { Outlet } from 'react-router-dom';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 
 const MobileLayout: React.FC = () => {
   return (
-    <div className="min-h-screen bg-gray-50 pb-16">
-      <main className="container mx-auto">
+    <div className="min-h-screen bg-background pb-20">
+      <main>
         <Outlet />
       </main>
       <MobileNavigation />

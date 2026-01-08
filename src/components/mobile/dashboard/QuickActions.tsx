@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Vault } from 'lucide-react';
+import { Wallet, Vault, CreditCard, PiggyBank } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const QuickActions: React.FC = () => {
@@ -10,35 +10,67 @@ const QuickActions: React.FC = () => {
     {
       icon: Wallet,
       label: 'Prêt',
-      color: 'bg-gradient-to-br from-[#176455] to-[#1a7a65]',
-      action: () => navigate('/mobile-flow/loan-application')
+      description: 'Demander',
+      gradient: 'from-primary to-primary/80',
+      action: () => navigate('/mobile-flow/loan-plans')
     },
     {
       icon: Vault,
       label: 'Coffre',
-      color: 'bg-gradient-to-br from-purple-500 via-indigo-600 to-pink-600',
+      description: 'Épargner',
+      gradient: 'from-accent to-accent/80',
       action: () => navigate('/mobile-flow/vaults-hub')
     }
   ];
 
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.1 }
+    }
+  };
+
+  const itemVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0 }
+  };
+
   return (
-    <div className="grid grid-cols-2 gap-6 px-4 max-w-md mx-auto">
-      {actions.map((action, index) => (
+    <motion.div 
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+      className="grid grid-cols-2 gap-4 px-2"
+    >
+      {actions.map((action) => (
         <motion.button
           key={action.label}
-          initial={{ opacity: 0, scale: 0.8 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2, delay: index * 0.05 }}
+          variants={itemVariants}
+          whileHover={{ scale: 1.02, y: -2 }}
+          whileTap={{ scale: 0.98 }}
           onClick={action.action}
-          className="flex flex-col items-center gap-4 active:scale-95 transition-transform"
+          className="group relative overflow-hidden rounded-2xl p-4 text-left transition-all"
         >
-          <div className={`${action.color} w-20 h-20 rounded-3xl flex items-center justify-center text-white shadow-sm`}>
-            <action.icon className="w-9 h-9" />
+          {/* Background gradient */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-10 group-hover:opacity-15 transition-opacity`} />
+          
+          {/* Border */}
+          <div className="absolute inset-0 rounded-2xl border border-border/50 group-hover:border-primary/20 transition-colors" />
+          
+          {/* Content */}
+          <div className="relative flex items-center gap-3">
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-primary-foreground shadow-lg`}>
+              <action.icon className="w-5 h-5" />
+            </div>
+            <div>
+              <p className="font-semibold text-foreground">{action.label}</p>
+              <p className="text-xs text-muted-foreground">{action.description}</p>
+            </div>
           </div>
-          <span className="text-sm font-semibold text-foreground">{action.label}</span>
         </motion.button>
       ))}
-    </div>
+    </motion.div>
   );
 };
 
