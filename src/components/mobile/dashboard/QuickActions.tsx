@@ -41,26 +41,26 @@ const QuickActions: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-2 gap-4 px-2"
+      className="grid grid-cols-2 gap-3 px-2"
     >
       {actions.map((action) => (
         <motion.button
           key={action.label}
           variants={itemVariants}
-          whileHover={{ scale: 1.02, y: -2 }}
+          whileHover={{ y: -3 }}
           whileTap={{ scale: 0.98 }}
           onClick={action.action}
-          className="group relative overflow-hidden rounded-2xl p-4 text-left transition-all"
+          className="group relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-400 ease-premium bg-card shadow-soft-sm hover:shadow-soft-md"
         >
-          {/* Background gradient */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-10 group-hover:opacity-15 transition-opacity`} />
+          {/* Background gradient - softer */}
+          <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-400`} />
           
           {/* Border */}
-          <div className="absolute inset-0 rounded-2xl border border-border/50 group-hover:border-primary/20 transition-colors" />
+          <div className="absolute inset-0 rounded-2xl border border-border/40 group-hover:border-primary/20 transition-colors duration-400" />
           
           {/* Content */}
           <div className="relative flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-primary-foreground shadow-lg`}>
+            <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-primary-foreground shadow-soft-sm`}>
               <action.icon className="w-5 h-5" />
             </div>
             <div>

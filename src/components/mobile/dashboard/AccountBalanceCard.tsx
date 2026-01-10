@@ -34,14 +34,14 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="bg-gradient-to-br from-[#fcb041] via-[#fdc158] to-[#fcb041]/90 rounded-3xl p-5 text-white shadow-lg -mt-4 relative overflow-hidden"
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+      className="bg-gradient-to-br from-accent via-accent/90 to-accent/80 rounded-3xl p-5 text-white shadow-soft-lg -mt-4 relative overflow-hidden"
     >
-      {/* Decorative circles */}
-      <div className="absolute -top-10 -right-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
-      <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-white/15 rounded-full blur-3xl" />
+      {/* Decorative circles - softer */}
+      <div className="absolute -top-12 -right-12 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
+      <div className="absolute -bottom-12 -left-12 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
       
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
@@ -73,14 +73,14 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
           <p className="text-xs opacity-80">{currency}</p>
         </motion.div>
 
-        {/* Action buttons */}
+        {/* Action buttons - softer style */}
         <div className="flex gap-2 mb-3">
           <Button
             onClick={() => {
               setFundsActionType('deposit');
               setShowFundsSheet(true);
             }}
-            className="flex-1 bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white border-0 h-10 rounded-xl font-medium text-sm"
+            className="flex-1 bg-white/15 hover:bg-white/25 backdrop-blur-sm text-white border-0 h-10 rounded-xl font-medium text-sm transition-all duration-300"
           >
             <ArrowDownToLine className="w-4 h-4 mr-1.5" />
             Recharger
@@ -91,7 +91,7 @@ const AccountBalanceCard: React.FC<AccountBalanceCardProps> = ({
               setShowFundsSheet(true);
             }}
             variant="outline"
-            className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/30 h-10 rounded-xl font-medium text-sm"
+            className="flex-1 bg-transparent hover:bg-white/10 text-white border-white/25 h-10 rounded-xl font-medium text-sm transition-all duration-300"
           >
             <ArrowUpFromLine className="w-4 h-4 mr-1.5" />
             Retirer

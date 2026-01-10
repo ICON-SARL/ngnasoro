@@ -72,6 +72,15 @@ export default {
         md: 'calc(var(--radius) - 2px)',
         sm: 'calc(var(--radius) - 4px)'
       },
+      boxShadow: {
+        'soft-xs': '0 2px 8px -2px rgba(0, 0, 0, 0.04)',
+        'soft-sm': '0 4px 16px -4px rgba(0, 0, 0, 0.06)',
+        'soft-md': '0 8px 32px -8px rgba(0, 0, 0, 0.08)',
+        'soft-lg': '0 16px 48px -12px rgba(0, 0, 0, 0.10)',
+        'soft-xl': '0 24px 64px -16px rgba(0, 0, 0, 0.12)',
+        'soft-glow': '0 0 40px -10px hsl(var(--primary) / 0.25)',
+        'soft-glow-accent': '0 0 40px -10px hsl(var(--accent) / 0.30)',
+      },
       keyframes: {
         'accordion-down': {
           from: { height: '0' },
@@ -112,7 +121,15 @@ export default {
         },
         'float': {
           '0%, 100%': { transform: 'translateY(0px)' },
-          '50%': { transform: 'translateY(-10px)' },
+          '50%': { transform: 'translateY(-8px)' },
+        },
+        'float-slow': {
+          '0%, 100%': { transform: 'translateY(0px)' },
+          '50%': { transform: 'translateY(-12px)' },
+        },
+        'pulse-soft': {
+          '0%, 100%': { opacity: '1' },
+          '50%': { opacity: '0.7' },
         },
       },
       animation: {
@@ -125,10 +142,19 @@ export default {
         'gradient-flow': 'gradient-flow 5s ease infinite',
         'gradient-x': 'gradient-x 3s ease infinite',
         'shimmer': 'shimmer 2s linear infinite',
-        'float': 'float 3s ease-in-out infinite',
+        'float': 'float 4s ease-in-out infinite',
+        'float-slow': 'float-slow 6s ease-in-out infinite',
+        'pulse-soft': 'pulse-soft 3s ease-in-out infinite',
       },
       transitionTimingFunction: {
         'ease-soft': 'cubic-bezier(0.25, 0.1, 0.25, 1)',
+        'ease-premium': 'cubic-bezier(0.16, 1, 0.3, 1)',
+        'ease-smooth': 'cubic-bezier(0.4, 0, 0.2, 1)',
+      },
+      transitionDuration: {
+        '400': '400ms',
+        '500': '500ms',
+        '600': '600ms',
       }
     }
   },

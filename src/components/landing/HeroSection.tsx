@@ -16,24 +16,25 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
 
   return (
     <section className={`relative min-h-screen flex items-center justify-center overflow-hidden ${backgrounds.gradient} pt-20`}>
-      {/* Animated background particles - reduced for subtlety */}
+      {/* Animated background particles - minimal */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-2 h-2 bg-[#FFAB2E] rounded-full opacity-30"
+            className="absolute w-2 h-2 bg-accent rounded-full opacity-20"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${20 + i * 20}%`,
+              top: `${15 + i * 15}%`,
             }}
             animate={{
-              y: [0, -30, 0],
-              opacity: [0.3, 0.5, 0.3],
+              y: [0, -20, 0],
+              opacity: [0.2, 0.35, 0.2],
             }}
             transition={{
-              duration: 5 + Math.random() * 2,
+              duration: 6 + i,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: i * 0.5,
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -141,23 +142,66 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
           >
             <motion.div
               animate={{
-                y: [0, -20, 0],
+                y: [0, -12, 0],
               }}
               transition={{
-                duration: 4,
+                duration: 5,
                 repeat: Infinity,
                 ease: 'easeInOut',
               }}
               className="relative"
             >
-              {/* Glow effect */}
-              <div className="absolute inset-0 bg-[#FFAB2E]/20 blur-3xl rounded-full scale-150" />
+              {/* Soft glow effect */}
+              <div className="absolute inset-0 bg-accent/15 blur-3xl rounded-full scale-125" />
               
-              {/* Phone mockup placeholder */}
-              <div className={`relative w-[280px] h-[580px] ${backgrounds.glass} rounded-[3rem] border-4 border-white/30 shadow-2xl overflow-hidden`}>
-                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-black/50 rounded-b-3xl" />
-                <div className="p-4 h-full flex flex-col">
-                  <div className="flex-1 bg-gradient-to-b from-white/20 to-white/5 rounded-3xl" />
+              {/* Phone mockup with app preview */}
+              <div className={`relative w-[280px] h-[580px] bg-white/10 backdrop-blur-lg rounded-[3rem] border border-white/20 shadow-soft-xl overflow-hidden`}>
+                {/* Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-1/3 h-7 bg-black/40 rounded-b-2xl z-10" />
+                
+                {/* Screen content mockup */}
+                <div className="p-3 pt-10 h-full flex flex-col gap-3">
+                  {/* Header mockup */}
+                  <div className="bg-white/15 rounded-2xl p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 bg-white/30 rounded-xl" />
+                      <div className="flex-1">
+                        <div className="h-3 bg-white/40 rounded w-24 mb-1.5" />
+                        <div className="h-2 bg-white/20 rounded w-16" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Balance card mockup */}
+                  <div className="bg-gradient-to-br from-accent/80 to-accent/60 rounded-2xl p-4">
+                    <div className="h-2 bg-white/30 rounded w-16 mb-3" />
+                    <div className="h-6 bg-white/50 rounded w-32 mb-2" />
+                    <div className="flex gap-2 mt-3">
+                      <div className="flex-1 h-8 bg-white/30 rounded-xl" />
+                      <div className="flex-1 h-8 bg-white/20 rounded-xl" />
+                    </div>
+                  </div>
+                  
+                  {/* Quick actions mockup */}
+                  <div className="flex gap-2">
+                    <div className="flex-1 bg-white/10 rounded-xl p-3 h-16" />
+                    <div className="flex-1 bg-white/10 rounded-xl p-3 h-16" />
+                  </div>
+                  
+                  {/* Transactions mockup */}
+                  <div className="flex-1 bg-white/10 rounded-2xl p-3 space-y-2">
+                    <div className="h-2 bg-white/30 rounded w-20 mb-3" />
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="flex items-center gap-2 py-2">
+                        <div className="w-8 h-8 bg-white/20 rounded-lg" />
+                        <div className="flex-1">
+                          <div className="h-2.5 bg-white/30 rounded w-24 mb-1" />
+                          <div className="h-2 bg-white/15 rounded w-16" />
+                        </div>
+                        <div className="h-3 bg-white/25 rounded w-12" />
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
             </motion.div>

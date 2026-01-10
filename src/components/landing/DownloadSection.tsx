@@ -11,25 +11,26 @@ interface DownloadSectionProps {
 
 const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) => {
   return (
-    <section id="download" className={`${spacing.sectionPy} relative overflow-hidden bg-gradient-to-b from-[#0D6A51] via-[#0F7C5F] to-white`}>
-      {/* Animated background elements - reduced for subtlety */}
+    <section id="download" className={`${spacing.sectionPy} relative overflow-hidden bg-gradient-to-b from-primary via-primary/90 to-background`}>
+      {/* Animated background elements - minimal */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(8)].map((_, i) => (
+        {[...Array(4)].map((_, i) => (
           <motion.div
             key={i}
-            className="absolute w-3 h-3 bg-[#FFAB2E] rounded-full opacity-30"
+            className="absolute w-2 h-2 bg-accent rounded-full opacity-20"
             style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
+              left: `${15 + i * 25}%`,
+              top: `${20 + i * 15}%`,
             }}
             animate={{
-              scale: [1, 1.5, 1],
-              opacity: [0.3, 0.5, 0.3],
+              scale: [1, 1.3, 1],
+              opacity: [0.2, 0.35, 0.2],
             }}
             transition={{
-              duration: 5 + Math.random() * 2,
+              duration: 5 + i,
               repeat: Infinity,
-              delay: Math.random() * 2,
+              delay: i * 0.5,
+              ease: "easeInOut",
             }}
           />
         ))}
@@ -76,17 +77,17 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
 
           {/* CTA Button */}
           <motion.div
-            whileHover={{ scale: 1.05 }}
+            whileHover={{ scale: 1.02 }}
             whileTap={{ scale: 0.98 }}
             className="inline-block mb-8"
           >
             <Button
               onClick={onDownloadClick}
               size="lg"
-              className={`h-16 px-12 ${borderRadius.button} bg-white text-[#0D6A51] hover:bg-white/95 font-bold text-xl shadow-2xl border-4 border-white/50 backdrop-blur-sm relative overflow-hidden group transition-all duration-300`}
+              className={`h-16 px-12 ${borderRadius.button} bg-white text-primary hover:bg-white/95 font-bold text-xl shadow-soft-xl border border-white/30 relative overflow-hidden group transition-all duration-400 ease-premium`}
             >
-              {/* Effet shine au hover */}
-              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000" />
+              {/* Subtle shine effect */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-1000 ease-premium" />
               
               <Download className="w-6 h-6 mr-3 relative z-10" />
               <span className="relative z-10">Télécharger N'GNA SÔRÔ</span>
@@ -103,21 +104,22 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
             ].map((badge, index) => (
               <motion.div
                 key={index}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 15 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-                whileHover={{ scale: 1.05, y: -5 }}
-                className="flex items-center gap-3 px-6 py-4 rounded-2xl bg-white shadow-lg border-2 border-white/50 backdrop-blur-sm hover:shadow-xl transition-all duration-300 group"
+                transition={{ delay: index * 0.08, ease: [0.16, 1, 0.3, 1] }}
+                whileHover={{ y: -3 }}
+                className="flex items-center gap-3 px-5 py-3 rounded-2xl bg-white shadow-soft-md border border-white/40 hover:shadow-soft-lg transition-all duration-400 ease-premium group"
               >
-                <span className="text-3xl group-hover:scale-110 transition-transform duration-300">
+                <span className="text-2xl group-hover:scale-105 transition-transform duration-300">
                   {badge.icon}
                 </span>
-                <span className="font-bold text-gray-900 text-base whitespace-nowrap">
+                <span className="font-bold text-foreground text-sm whitespace-nowrap">
                   {badge.text}
                 </span>
               </motion.div>
             ))}
+          </div>
           </div>
         </motion.div>
       </div>

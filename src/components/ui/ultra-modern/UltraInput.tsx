@@ -59,16 +59,16 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         <input
           type={inputType}
           className={cn(
-            'w-full px-4 py-4 rounded-xl border-2 bg-white dark:bg-gray-900 text-gray-900 dark:text-white text-base smooth-transition',
+            'w-full px-4 py-4 rounded-2xl border bg-white dark:bg-gray-900 text-foreground text-base transition-all duration-300 ease-premium',
             'min-h-[56px]',
-            'focus:outline-none focus:ring-2 focus:ring-primary/20',
-            'placeholder:text-muted-foreground/40',
-            icon && 'pl-11',
+            'focus:outline-none focus:ring-2 focus:ring-primary/15',
+            'placeholder:text-muted-foreground/50',
+            icon && 'pl-12',
             isPassword && 'pr-12',
-            error && 'border-destructive focus:border-destructive focus:ring-destructive/20',
-            success && 'border-success focus:border-success',
-            !error && !success && 'border-gray-300 dark:border-gray-700 focus:border-primary',
-            'font-semibold',
+            error && 'border-destructive/50 focus:border-destructive focus:ring-destructive/15',
+            success && 'border-emerald-400/50 focus:border-emerald-500',
+            !error && !success && 'border-border/60 focus:border-primary/50',
+            'font-medium',
             className
           )}
           onFocus={() => setIsFocused(true)}
@@ -82,15 +82,15 @@ export const UltraInput: React.FC<UltraInputProps> = ({
         {label && (
           <motion.label
             className={cn(
-              'absolute pointer-events-none smooth-transition px-3 font-semibold',
-              'bg-white dark:bg-gray-900',
-              icon ? 'left-11' : 'left-4',
+              'absolute pointer-events-none px-2 font-medium transition-all duration-300 ease-premium',
+              'bg-white dark:bg-gray-900 rounded',
+              icon ? 'left-11' : 'left-3',
               isFocused || hasValue
-                ? '-top-3 text-xs'
-                : 'top-1/2 -translate-y-1/2 text-base',
+                ? '-top-2.5 text-xs'
+                : 'top-1/2 -translate-y-1/2 text-sm',
               isFocused && !error && 'text-primary',
               error && 'text-destructive',
-              !isFocused && !error && 'text-gray-600 dark:text-gray-400'
+              !isFocused && !error && 'text-muted-foreground'
             )}
             initial={false}
           >
@@ -110,19 +110,18 @@ export const UltraInput: React.FC<UltraInputProps> = ({
           </button>
         )}
 
-        {/* Focus ring animation */}
+        {/* Focus ring animation - softer */}
         <motion.div
           className={cn(
-            'absolute inset-0 rounded-xl pointer-events-none',
-            error ? 'ring-destructive' : success ? 'ring-success' : 'ring-primary'
+            'absolute inset-0 rounded-2xl pointer-events-none',
+            error ? 'ring-destructive' : success ? 'ring-emerald-500' : 'ring-primary'
           )}
-          initial={{ opacity: 0, scale: 1 }}
+          initial={{ opacity: 0 }}
           animate={{ 
-            opacity: isFocused ? 0.2 : 0,
-            scale: isFocused ? 1.02 : 1,
+            opacity: isFocused ? 0.08 : 0,
           }}
           style={{
-            boxShadow: isFocused ? `0 0 0 4px currentColor` : 'none',
+            boxShadow: isFocused ? `0 0 0 3px currentColor` : 'none',
           }}
         />
       </div>

@@ -137,32 +137,32 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
 
   return (
     <div className={`min-h-screen bg-gradient-to-br ${config.gradient} flex items-center justify-center p-3 md:p-4 relative overflow-hidden`}>
-      <ParticleBackground particleCount={50} />
+      <ParticleBackground particleCount={20} />
       
-      {/* Blobs animés */}
-      <div className="absolute inset-0 opacity-30">
+      {/* Blobs animés - plus subtils */}
+      <div className="absolute inset-0 opacity-15">
         <motion.div 
-          className="absolute top-20 left-20 w-96 h-96 bg-white/20 rounded-full mix-blend-overlay filter blur-3xl"
+          className="absolute top-20 left-20 w-96 h-96 bg-white/30 rounded-full mix-blend-overlay filter blur-3xl"
           animate={{ 
-            x: [0, 100, 0],
-            y: [0, 50, 0],
-            scale: [1, 1.2, 1]
+            x: [0, 80, 0],
+            y: [0, 40, 0],
+            scale: [1, 1.1, 1]
           }}
           transition={{ 
-            duration: 20,
+            duration: 25,
             repeat: Infinity,
             ease: "easeInOut"
           }}
         />
         <motion.div 
-          className="absolute bottom-20 right-20 w-96 h-96 bg-[#FFAB2E]/30 rounded-full mix-blend-overlay filter blur-3xl"
+          className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full mix-blend-overlay filter blur-3xl"
           animate={{ 
-            x: [0, -100, 0],
-            y: [0, -50, 0],
-            scale: [1, 1.3, 1]
+            x: [0, -80, 0],
+            y: [0, -40, 0],
+            scale: [1, 1.15, 1]
           }}
           transition={{ 
-            duration: 15,
+            duration: 20,
             repeat: Infinity,
             ease: "easeInOut",
             delay: 2
@@ -175,28 +175,33 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
       </AnimatePresence>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-lg relative z-10"
       >
-        <div className="backdrop-blur-2xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-5 md:p-8 space-y-5 border border-white/30">
-          
-          {/* Logo et titre optimisé mobile */}
-          <div className="text-center space-y-3 mb-4">
-            <motion.div 
-              className="flex justify-center"
-              initial={{ scale: 0, rotate: -180 }}
-              animate={{ scale: 1, rotate: 0 }}
-              transition={{ type: "spring", duration: 0.8 }}
-            >
-              <AnimatedLogo 
-                size={150} 
-                withGlow 
-                withPulse 
-                className="mx-auto"
-              />
-            </motion.div>
+        {/* Floating card effect */}
+        <motion.div
+          animate={{ y: [0, -4, 0] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+        >
+          <div className="backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 rounded-3xl shadow-soft-xl p-6 md:p-8 space-y-5 border border-white/40">
+            
+            {/* Logo et titre */}
+            <div className="text-center space-y-3 mb-4">
+              <motion.div 
+                className="flex justify-center"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ type: "spring", duration: 0.8, delay: 0.1 }}
+              >
+                <AnimatedLogo 
+                  size={120} 
+                  withGlow={false}
+                  withPulse 
+                  className="mx-auto"
+                />
+              </motion.div>
             
             <motion.h1 
               className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent leading-tight"
@@ -323,7 +328,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 variant="gradient"
                 size="lg"
                 disabled={!isLogin && !formData.acceptTerms}
-                className="h-14 text-lg font-bold shadow-lg"
+                className="h-14 text-lg font-bold"
               >
                 {isLogin ? 'Se connecter' : 'Créer mon compte'}
               </UltraButton>
@@ -331,8 +336,8 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
           </form>
 
           {/* Toggle Login/Register */}
-          <div className="text-center pt-4 border-t border-gray-200 dark:border-gray-700">
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+          <div className="text-center pt-4 border-t border-border/30">
+            <p className="text-sm text-muted-foreground mb-3">
               {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
             </p>
             <button
@@ -347,12 +352,13 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   acceptTerms: false
                 });
               }}
-              className="text-[#0D6A51] dark:text-green-400 font-bold text-base hover:underline hover:scale-105 transition-all"
+              className="text-primary font-bold text-base hover:underline transition-all duration-300"
             >
               {isLogin ? "Créer un compte →" : "← Se connecter"}
             </button>
           </div>
         </div>
+        </motion.div>
       </motion.div>
     </div>
   );
