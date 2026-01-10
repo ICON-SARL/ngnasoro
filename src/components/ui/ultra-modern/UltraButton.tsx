@@ -4,7 +4,7 @@ import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UltraButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'gradient' | 'success' | 'danger';
+  variant?: 'primary' | 'secondary' | 'ghost' | 'gradient' | 'success' | 'danger' | 'soft';
   size?: 'sm' | 'md' | 'lg';
   loading?: boolean;
   fullWidth?: boolean;
@@ -48,15 +48,16 @@ export const UltraButton: React.FC<UltraButtonProps> = ({
     }
   };
 
-  const baseClasses = 'relative overflow-hidden font-semibold rounded-xl smooth-transition focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
+  const baseClasses = 'relative overflow-hidden font-semibold rounded-2xl transition-all duration-400 ease-premium focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
   
   const variantClasses = {
-    primary: 'bg-primary text-primary-foreground hover:opacity-90 focus:ring-primary shadow-lg hover:shadow-xl',
-    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80 focus:ring-secondary',
-    ghost: 'bg-transparent border-2 border-primary text-primary hover:bg-primary/10 focus:ring-primary',
-    gradient: 'bg-gradient-to-r from-[#0D6A51] via-[#0F7C5F] to-[#FFAB2E] text-white font-bold shadow-xl hover:shadow-2xl border-2 border-white/30',
-    success: 'bg-success text-white hover:opacity-90 focus:ring-success shadow-lg',
-    danger: 'bg-destructive text-destructive-foreground hover:opacity-90 focus:ring-destructive shadow-lg',
+    primary: 'bg-primary text-primary-foreground hover:opacity-95 focus:ring-primary shadow-soft-md hover:shadow-soft-lg',
+    secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/90 focus:ring-secondary shadow-soft-sm',
+    ghost: 'bg-transparent border border-primary/30 text-primary hover:bg-primary/5 focus:ring-primary',
+    gradient: 'bg-gradient-to-r from-primary via-primary/90 to-accent text-white font-bold shadow-soft-lg hover:shadow-soft-xl border border-white/20',
+    success: 'bg-emerald-600 text-white hover:bg-emerald-700 focus:ring-emerald-500 shadow-soft-md',
+    danger: 'bg-destructive text-destructive-foreground hover:opacity-95 focus:ring-destructive shadow-soft-md',
+    soft: 'bg-primary/10 text-primary hover:bg-primary/15 focus:ring-primary/30 shadow-soft-sm hover:shadow-soft-md border border-primary/10',
   };
   
   const sizeClasses = {
@@ -67,8 +68,8 @@ export const UltraButton: React.FC<UltraButtonProps> = ({
 
   return (
     <motion.button
-      whileTap={{ scale: disabled || loading ? 1 : 0.95 }}
-      whileHover={{ scale: disabled || loading ? 1 : 1.02 }}
+      whileTap={{ scale: disabled || loading ? 1 : 0.98 }}
+      whileHover={{ scale: disabled || loading ? 1 : 1.01 }}
       className={cn(
         baseClasses,
         variantClasses[variant],
@@ -111,12 +112,12 @@ export const UltraButton: React.FC<UltraButtonProps> = ({
         />
       ))}
 
-      {/* Shine effect on hover */}
+      {/* Subtle shine effect on hover */}
       <motion.div
-        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none"
+        className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent pointer-events-none"
         initial={{ x: '-100%' }}
         whileHover={{ x: '100%' }}
-        transition={{ duration: 0.6 }}
+        transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
       />
     </motion.button>
   );

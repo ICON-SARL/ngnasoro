@@ -24,29 +24,28 @@ const StatsSection: React.FC = () => {
           {stats.map((stat, index) => (
             <motion.div
               key={stat.label}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.5 }}
-              whileHover={{ y: -8, scale: 1.02 }}
+              transition={{ delay: index * 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+              whileHover={{ y: -4 }}
               className="relative group cursor-default"
             >
-              {/* Subtle colored background on hover - NO BLUR */}
-              <div className="absolute -inset-0.5 bg-gradient-to-br from-[#0D6A51]/10 to-[#FFAB2E]/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-3xl" />
+              {/* Subtle colored background on hover */}
+              <div className="absolute -inset-0.5 bg-gradient-to-br from-primary/5 to-accent/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 rounded-3xl" />
               
-              {/* Card - Solid white, no blur */}
+              {/* Card - Solid white, soft shadow */}
               <div className="relative bg-white rounded-3xl p-6 sm:p-8 
-                            border-2 border-gray-100 group-hover:border-primary/20
-                            shadow-[0_2px_20px_rgba(0,0,0,0.06)]
-                            group-hover:shadow-[0_8px_40px_rgba(13,106,81,0.12)]
-                            transition-all duration-300">
+                            border border-border/40 group-hover:border-primary/15
+                            shadow-soft-sm group-hover:shadow-soft-md
+                            transition-all duration-400 ease-premium">
                 
-                {/* Icon with animation */}
+                {/* Icon with subtle animation */}
                 <motion.div 
                   className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.gradient} 
-                             flex items-center justify-center mb-4 shadow-lg
-                             group-hover:shadow-xl transition-shadow duration-300`}
-                  whileHover={{ rotate: [0, -5, 5, 0], scale: 1.05 }}
+                             flex items-center justify-center mb-4 shadow-soft-md
+                             group-hover:shadow-soft-lg transition-shadow duration-400`}
+                  whileHover={{ scale: 1.05 }}
                   transition={{ duration: 0.3 }}
                 >
                   <stat.icon className="w-7 h-7 text-white" strokeWidth={2.5} />
