@@ -120,7 +120,6 @@ const DownloadSection: React.FC<DownloadSectionProps> = ({ onDownloadClick }) =>
               </motion.div>
             ))}
           </div>
-          </div>
         </motion.div>
       </div>
     </section>
