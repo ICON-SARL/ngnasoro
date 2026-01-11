@@ -1,0 +1,89 @@
+{
+  "name": "N'GNA SÔRÔ! - Microfinance Digitale",
+  "short_name": "N'GNA SÔRÔ",
+  "description": "Services financiers inclusifs pour tous au Mali - Épargne, Prêts, Transferts",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0D6A51",
+  "theme_color": "#0D6A51",
+  "orientation": "portrait-primary",
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "/icons/icon-72x72.png",
+      "sizes": "72x72",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-96x96.png",
+      "sizes": "96x96",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-144x144.png",
+      "sizes": "144x144",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-152x152.png",
+      "sizes": "152x152",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png",
+      "purpose": "maskable any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable any"
+    }
+  ],
+  "categories": ["finance", "business", "productivity"],
+  "lang": "fr-ML",
+  "dir": "ltr",
+  "screenshots": [
+    {
+      "src": "/screenshots/dashboard.png",
+      "sizes": "1080x1920",
+      "type": "image/png",
+      "label": "Tableau de bord"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Demander un prêt",
+      "short_name": "Prêt",
+      "description": "Faire une demande de prêt",
+      "url": "/mobile-flow/loans",
+      "icons": [{ "src": "/icons/loan-icon.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Mon épargne",
+      "short_name": "Épargne",
+      "description": "Voir mon épargne",
+      "url": "/mobile-flow/vaults-hub",
+      "icons": [{ "src": "/icons/savings-icon.png", "sizes": "96x96" }]
+    }
+  ]
+}
