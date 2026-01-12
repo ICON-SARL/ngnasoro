@@ -280,6 +280,8 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
       year: 'numeric'
     });
   };
+
+  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
