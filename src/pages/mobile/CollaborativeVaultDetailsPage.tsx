@@ -3,13 +3,14 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, TrendingUp, Calendar, Crown, UserPlus } from 'lucide-react';
+import { ArrowLeft, Users, TrendingUp, Calendar, Crown, UserPlus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { UltraInput } from '@/components/ui/ultra-modern/UltraInput';
+import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { toast } from 'sonner';
+import { cn } from '@/lib/utils';
 
 const CollaborativeVaultDetailsPage: React.FC = () => {
   const navigate = useNavigate();
@@ -413,114 +414,169 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Deposit Modal */}
-      <Dialog open={showDepositModal} onOpenChange={setShowDepositModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Déposer dans le coffre</DialogTitle>
-            <DialogDescription>
-              Montant disponible : {userAccount ? formatAmount(userAccount.balance) : '0'} FCFA
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="deposit-amount">Montant (FCFA)</Label>
-              <Input
-                id="deposit-amount"
+      {/* Deposit Bottom Sheet */}
+      <Sheet open={showDepositModal} onOpenChange={setShowDepositModal}>
+        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border pb-8">
+          <SheetHeader className="pb-2">
+            <div className="flex items-center gap-4 pt-4">
+              <div className="w-14 h-14 bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                <ArrowDownCircle className="w-7 h-7 text-emerald-600" />
+              </div>
+              <div className="flex-1 text-left">
+                <SheetTitle className="text-xl font-bold text-foreground">
+                  Déposer dans le coffre
+                </SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">
+                  Solde disponible : {userAccount ? formatAmount(userAccount.balance) : '0'} FCFA
+                </SheetDescription>
+              </div>
+            </div>
+          </SheetHeader>
+          
+          <div className="space-y-5 pt-6">
+            {/* Quick amount buttons */}
+            <div className="flex gap-2 flex-wrap">
+              {[1000, 5000, 10000, 25000].map((quickAmount) => (
+                <motion.button
+                  key={quickAmount}
+                  whileTap={{ scale: 0.95 }}
+                  onClick={() => setAmount(quickAmount.toString())}
+                  className={cn(
+                    "px-4 py-2.5 rounded-xl text-sm font-medium transition-all",
+                    amount === quickAmount.toString()
+                      ? "bg-primary text-primary-foreground shadow-soft-md"
+                      : "bg-muted text-foreground hover:bg-muted/80"
+                  )}
+                >
+                  {formatAmount(quickAmount)}
+                </motion.button>
+              ))}
+            </div>
+            
+            {/* Input with FCFA indicator */}
+            <div className="relative">
+              <UltraInput
                 type="number"
+                label="Montant"
                 placeholder="Entrez le montant"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
-                min="0"
               />
+              <span className="absolute right-4 top-1/2 translate-y-1 text-sm font-semibold text-primary bg-primary/10 px-2.5 py-1 rounded-lg">
+                FCFA
+              </span>
             </div>
-            <Button 
-              onClick={handleDeposit} 
-              className="w-full"
-              disabled={depositMutation.isPending || !amount}
+            
+            {/* Action button */}
+            <UltraButton
+              variant="success"
+              size="lg"
+              fullWidth
+              loading={depositMutation.isPending}
+              disabled={!amount || parseFloat(amount) <= 0}
+              onClick={handleDeposit}
+              icon={<ArrowDownCircle className="w-5 h-5" />}
             >
-              {depositMutation.isPending ? 'Traitement...' : 'Confirmer le dépôt'}
-            </Button>
+              Confirmer le dépôt
+            </UltraButton>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      {/* Withdraw Modal */}
-      <Dialog open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Demander un retrait</DialogTitle>
-            <DialogDescription>
-              Solde du coffre : {formatAmount(vault.current_amount)} FCFA
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="withdraw-amount">Montant (FCFA)</Label>
-              <Input
-                id="withdraw-amount"
-                type="number"
-                placeholder="Entrez le montant"
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                min="0"
-                max={vault.current_amount}
-              />
+      {/* Withdraw Bottom Sheet */}
+      <Sheet open={showWithdrawModal} onOpenChange={setShowWithdrawModal}>
+        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border pb-8">
+          <SheetHeader className="pb-2">
+            <div className="flex items-center gap-4 pt-4">
+              <div className="w-14 h-14 bg-amber-500/10 rounded-2xl flex items-center justify-center">
+                <ArrowUpCircle className="w-7 h-7 text-amber-600" />
+              </div>
+              <div className="flex-1 text-left">
+                <SheetTitle className="text-xl font-bold text-foreground">
+                  Demander un retrait
+                </SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">
+                  Solde du coffre : {formatAmount(vault.current_amount)} FCFA
+                </SheetDescription>
+              </div>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="withdraw-reason">Raison du retrait</Label>
-              <Input
-                id="withdraw-reason"
-                type="text"
-                placeholder="Expliquez la raison du retrait"
-                value={reason}
-                onChange={(e) => setReason(e.target.value)}
-              />
-            </div>
-            <Button 
-              onClick={handleWithdraw} 
-              className="w-full"
-              disabled={withdrawMutation.isPending || !amount || !reason}
+          </SheetHeader>
+          
+          <div className="space-y-5 pt-6">
+            <UltraInput
+              type="number"
+              label="Montant (FCFA)"
+              placeholder="Entrez le montant"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            
+            <UltraInput
+              type="text"
+              label="Raison du retrait"
+              placeholder="Expliquez la raison de votre demande"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            
+            <UltraButton
+              variant="primary"
+              size="lg"
+              fullWidth
+              loading={withdrawMutation.isPending}
+              disabled={!amount || !reason.trim()}
+              onClick={handleWithdraw}
+              icon={<ArrowUpCircle className="w-5 h-5" />}
             >
-              {withdrawMutation.isPending ? 'Traitement...' : 'Créer la demande'}
-            </Button>
+              Créer la demande
+            </UltraButton>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
 
-      {/* Invite Modal */}
-      <Dialog open={showInviteModal} onOpenChange={setShowInviteModal}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Inviter un membre</DialogTitle>
-            <DialogDescription>
-              Invitez quelqu'un à rejoindre ce coffre collaboratif
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <Label htmlFor="invite-contact">Email ou Téléphone</Label>
-              <Input
-                id="invite-contact"
-                type="text"
-                placeholder="exemple@email.com ou 0612345678"
-                value={inviteContact}
-                onChange={(e) => setInviteContact(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                Le membre recevra une invitation qu'il pourra accepter ou refuser
-              </p>
+      {/* Invite Bottom Sheet */}
+      <Sheet open={showInviteModal} onOpenChange={setShowInviteModal}>
+        <SheetContent side="bottom" className="rounded-t-3xl border-t border-border pb-8">
+          <SheetHeader className="pb-2">
+            <div className="flex items-center gap-4 pt-4">
+              <div className="w-14 h-14 bg-primary/10 rounded-2xl flex items-center justify-center">
+                <UserPlus className="w-7 h-7 text-primary" />
+              </div>
+              <div className="flex-1 text-left">
+                <SheetTitle className="text-xl font-bold text-foreground">
+                  Inviter un membre
+                </SheetTitle>
+                <SheetDescription className="text-sm text-muted-foreground">
+                  L'invitation sera envoyée par email ou SMS
+                </SheetDescription>
+              </div>
             </div>
-            <Button 
-              onClick={() => inviteMutation.mutate(inviteContact)} 
-              className="w-full"
-              disabled={inviteMutation.isPending || !inviteContact.trim()}
+          </SheetHeader>
+          
+          <div className="space-y-5 pt-6">
+            <UltraInput
+              type="text"
+              label="Email ou Téléphone"
+              placeholder="exemple@email.com ou 0612345678"
+              value={inviteContact}
+              onChange={(e) => setInviteContact(e.target.value)}
+              helperText="Le membre recevra une invitation à accepter"
+            />
+            
+            <UltraButton
+              variant="gradient"
+              size="lg"
+              fullWidth
+              loading={inviteMutation.isPending}
+              disabled={!inviteContact.trim()}
+              onClick={() => inviteMutation.mutate(inviteContact)}
+              icon={<UserPlus className="w-5 h-5" />}
             >
-              {inviteMutation.isPending ? 'Envoi...' : 'Envoyer l\'invitation'}
-            </Button>
+              Envoyer l'invitation
+            </UltraButton>
           </div>
-        </DialogContent>
-      </Dialog>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 };
