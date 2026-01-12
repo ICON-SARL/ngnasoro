@@ -5,10 +5,14 @@ import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { ArrowLeft, Vault, Sparkles, Lock, Target, Calendar } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { format } from 'date-fns';
+import { fr } from 'date-fns/locale';
 import { UltraInput } from '@/components/ui/ultra-modern/UltraInput';
 import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { useToast } from '@/hooks/use-toast';
 import { cn } from '@/lib/utils';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 
 const vaultTypes = [
   { value: 'simple' as const, label: 'Simple', desc: 'Retrait libre', icon: Sparkles },
@@ -28,6 +32,7 @@ const CreateVaultPage: React.FC = () => {
     type: 'simple' as 'simple' | 'locked' | 'project',
     deadline: ''
   });
+  const [deadlineOpen, setDeadlineOpen] = useState(false);
 
   const createVaultMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
@@ -249,15 +254,70 @@ const CreateVaultPage: React.FC = () => {
                 animate={{ opacity: 1, height: 'auto' }}
                 exit={{ opacity: 0, height: 0 }}
                 transition={{ duration: 0.3 }}
+                className="space-y-2"
               >
-                <UltraInput
-                  type="date"
-                  label="Date limite de verrouillage"
-                  value={formData.deadline}
-                  onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                  icon={<Calendar className="w-5 h-5" />}
-                  helperText="Le retrait sera impossible avant cette date"
-                />
+                <Popover open={deadlineOpen} onOpenChange={setDeadlineOpen}>
+                  <PopoverTrigger asChild>
+                    <motion.button
+                      type="button"
+                      whileTap={{ scale: 0.98 }}
+                      className={cn(
+                        "w-full px-4 py-4 rounded-2xl border bg-white text-left transition-all duration-300",
+                        "focus:outline-none focus:ring-2 focus:ring-primary/15",
+                        formData.deadline 
+                          ? "border-primary/50 text-foreground" 
+                          : "border-border/60 text-muted-foreground"
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={cn(
+                          "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
+                          formData.deadline ? "bg-primary/15" : "bg-muted"
+                        )}>
+                          <Calendar className={cn(
+                            "w-5 h-5 transition-colors",
+                            formData.deadline ? "text-primary" : "text-muted-foreground"
+                          )} />
+                        </div>
+                        <div className="flex-1">
+                          <div className="text-xs font-medium text-muted-foreground mb-0.5">
+                            Date limite de verrouillage
+                          </div>
+                          <div className="text-base font-semibold">
+                            {formData.deadline 
+                              ? format(new Date(formData.deadline), "EEEE d MMMM yyyy", { locale: fr })
+                              : "Sélectionner une date"
+                            }
+                          </div>
+                        </div>
+                      </div>
+                    </motion.button>
+                  </PopoverTrigger>
+                  <PopoverContent 
+                    className="w-auto p-0 pointer-events-auto rounded-2xl border-border/50 shadow-soft-lg" 
+                    align="center"
+                  >
+                    <CalendarComponent
+                      mode="single"
+                      selected={formData.deadline ? new Date(formData.deadline) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setFormData({ 
+                            ...formData, 
+                            deadline: format(date, 'yyyy-MM-dd') 
+                          });
+                          setDeadlineOpen(false);
+                        }
+                      }}
+                      disabled={(date) => date < new Date()}
+                      locale={fr}
+                      className="rounded-2xl pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+                <p className="text-sm text-muted-foreground px-2">
+                  Le retrait sera impossible avant cette date
+                </p>
               </motion.div>
             )}
           </AnimatePresence>
