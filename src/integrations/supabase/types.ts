@@ -1298,6 +1298,10 @@ export type Database = {
           id: string
           kyc_level: number | null
           phone: string | null
+          pin_attempts: number | null
+          pin_hash: string | null
+          pin_locked_until: string | null
+          pin_set_at: string | null
           terms_accepted_at: string | null
           terms_version: string | null
           updated_at: string | null
@@ -1310,6 +1314,10 @@ export type Database = {
           id: string
           kyc_level?: number | null
           phone?: string | null
+          pin_attempts?: number | null
+          pin_hash?: string | null
+          pin_locked_until?: string | null
+          pin_set_at?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
           updated_at?: string | null
@@ -1322,6 +1330,10 @@ export type Database = {
           id?: string
           kyc_level?: number | null
           phone?: string | null
+          pin_attempts?: number | null
+          pin_hash?: string | null
+          pin_locked_until?: string | null
+          pin_set_at?: string | null
           terms_accepted_at?: string | null
           terms_version?: string | null
           updated_at?: string | null
@@ -2540,9 +2552,17 @@ export type Database = {
         }
         Returns: Json
       }
+      set_user_pin: {
+        Args: { p_pin: string; p_user_id: string }
+        Returns: Json
+      }
       validate_password_strength: {
         Args: { password: string }
         Returns: boolean
+      }
+      verify_user_pin: {
+        Args: { p_phone: string; p_pin: string }
+        Returns: Json
       }
     }
     Enums: {
