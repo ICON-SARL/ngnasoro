@@ -21,45 +21,36 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ userName, avatarUrl }
       initial={{ y: -20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.3 }}
-      className="bg-gradient-to-br from-primary via-primary/95 to-primary/90 text-primary-foreground p-6 pb-8 rounded-b-[2rem] shadow-xl"
+      className="bg-gradient-to-br from-primary to-primary/90 text-primary-foreground px-5 py-5 pb-10 rounded-b-[2rem]"
     >
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <motion.div 
-            className="relative"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            {/* Soft glow effect */}
-            <div className="absolute -inset-1 bg-gradient-to-br from-accent/50 to-primary/50 rounded-full blur-md opacity-60" />
-            
-            {/* Logo container */}
-            <div className="relative w-14 h-14 rounded-full overflow-hidden bg-card shadow-lg ring-2 ring-white/20">
-              <img 
-                src={logoNgnaSoro} 
-                alt="N'GNA SÔRÔ Logo" 
-                className="w-full h-full object-cover p-1.5"
-              />
-            </div>
-          </motion.div>
+          {/* Logo simplifié sans glow */}
+          <div className="w-11 h-11 rounded-full overflow-hidden bg-white shadow-soft-sm">
+            <img 
+              src={logoNgnaSoro} 
+              alt="N'GNA SÔRÔ" 
+              className="w-full h-full object-cover p-1"
+            />
+          </div>
           <div>
-            <p className="text-sm opacity-90 font-medium">Bonjour,</p>
-            <h1 className="text-xl font-bold">{userName}</h1>
+            <p className="text-xs opacity-80 font-medium">Bonjour,</p>
+            <h1 className="text-lg font-semibold">{userName}</h1>
           </div>
         </div>
         
-        <motion.div whileTap={{ scale: 0.9 }}>
+        <motion.div whileTap={{ scale: 0.95 }}>
           <Button 
             variant="ghost" 
             size="icon"
             onClick={() => navigate('/mobile-flow/notifications')}
-            className="text-primary-foreground hover:bg-primary-foreground/10 relative"
+            className="text-primary-foreground hover:bg-primary-foreground/10 relative h-10 w-10"
           >
             <Bell className="h-5 w-5" />
             {unreadCount > 0 && (
               <Badge 
                 variant="destructive" 
-                className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center text-xs animate-pulse"
+                className="absolute -top-0.5 -right-0.5 h-4 w-4 p-0 flex items-center justify-center text-[10px]"
               >
                 {unreadCount > 9 ? '9+' : unreadCount}
               </Badge>

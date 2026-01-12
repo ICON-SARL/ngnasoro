@@ -72,7 +72,7 @@ const MobileDashboard: React.FC = () => {
         .eq('user_id', user.id)
         .eq('sfd_id', activeSfdId)
         .order('created_at', { ascending: false })
-        .limit(8);
+        .limit(5);
       if (error) throw error;
       return data || [];
     },
@@ -85,10 +85,10 @@ const MobileDashboard: React.FC = () => {
     return (
       <div className="min-h-screen bg-background pb-20">
         <div className="p-4 space-y-4">
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <Skeleton className="h-40 w-full rounded-3xl" />
-          <Skeleton className="h-24 w-full rounded-2xl" />
-          <Skeleton className="h-48 w-full rounded-2xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-36 w-full rounded-3xl" />
+          <Skeleton className="h-20 w-full rounded-2xl" />
+          <Skeleton className="h-40 w-full rounded-2xl" />
         </div>
       </div>
     );
@@ -132,7 +132,7 @@ const MobileDashboard: React.FC = () => {
         avatarUrl={profile?.avatar_url}
       />
 
-      <div className="px-4 space-y-6 pb-6">
+      <div className="px-4 space-y-4 pb-6">
         <AccountBalanceCard 
           balance={totalBalance}
           currency="FCFA"
