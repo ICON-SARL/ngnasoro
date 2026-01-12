@@ -2329,6 +2329,96 @@ export type Database = {
           },
         ]
       }
+      vault_contributions: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          id: string
+          source_account_id: string | null
+          user_id: string
+          vault_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          source_account_id?: string | null
+          user_id: string
+          vault_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          source_account_id?: string | null
+          user_id?: string
+          vault_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_contributions_source_account_id_fkey"
+            columns: ["source_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_contributions_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vault_withdrawals: {
+        Row: {
+          amount: number
+          created_at: string | null
+          description: string | null
+          destination_account_id: string | null
+          id: string
+          user_id: string
+          vault_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          description?: string | null
+          destination_account_id?: string | null
+          id?: string
+          user_id: string
+          vault_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          description?: string | null
+          destination_account_id?: string | null
+          id?: string
+          user_id?: string
+          vault_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vault_withdrawals_destination_account_id_fkey"
+            columns: ["destination_account_id"]
+            isOneToOne: false
+            referencedRelation: "accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "vault_withdrawals_vault_id_fkey"
+            columns: ["vault_id"]
+            isOneToOne: false
+            referencedRelation: "vaults"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       vaults: {
         Row: {
           created_at: string | null

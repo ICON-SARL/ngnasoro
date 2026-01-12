@@ -118,11 +118,11 @@ Deno.serve(async (req) => {
 
     if (creditError) {
       console.error('Erreur crédit destination:', creditError);
-      // Rollback
+      // Rollback - re-créditer le coffre
       await supabase
-        .from('accounts')
-        .update({ balance: vault.vault_account.balance })
-        .eq('id', vault.vault_account_id);
+        .from('vaults')
+        .update({ current_amount: vault.current_amount })
+        .eq('id', vault_id);
       
       return new Response(
         JSON.stringify({ error: 'Erreur lors du crédit' }),

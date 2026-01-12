@@ -217,45 +217,47 @@ const VaultDetailsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 pb-12">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
-            <Vault className="w-7 h-7" />
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-12 text-white">
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          
+          <div className="flex items-center gap-3 mb-4">
+            <div className="w-14 h-14 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center">
+              <Vault className="w-7 h-7" />
+            </div>
+            <div>
+              <h1 className="text-2xl font-bold">{vaultData.name}</h1>
+              {vaultData.description && (
+                <p className="text-sm opacity-90 mt-1">{vaultData.description}</p>
+              )}
+            </div>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold">{vaultData.name}</h1>
-            {vaultData.description && (
-              <p className="text-sm opacity-90 mt-1">{vaultData.description}</p>
+
+          <div className="flex items-center gap-2 text-sm mb-4">
+            {vaultData.type === 'locked' && (
+              <span className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
+                <Lock className="w-3 h-3" />
+                Verrouillé
+              </span>
+            )}
+            {vaultData.deadline && (
+              <span className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
+                {new Date(vaultData.deadline).toLocaleDateString('fr-FR')}
+              </span>
+            )}
+            {vaultData.status === 'goal_reached' && (
+              <span className="bg-green-500/30 px-3 py-1 rounded-full flex items-center gap-1">
+                <Target className="w-3 h-3" />
+                Objectif atteint
+              </span>
             )}
           </div>
-        </div>
-
-        <div className="flex items-center gap-2 text-sm mb-4">
-          {vaultData.type === 'locked' && (
-            <span className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
-              <Lock className="w-3 h-3" />
-              Verrouillé
-            </span>
-          )}
-          {vaultData.deadline && (
-            <span className="bg-white/20 px-3 py-1 rounded-full flex items-center gap-1">
-              <Calendar className="w-3 h-3" />
-              {new Date(vaultData.deadline).toLocaleDateString('fr-FR')}
-            </span>
-          )}
-          {vaultData.status === 'goal_reached' && (
-            <span className="bg-green-500/30 px-3 py-1 rounded-full flex items-center gap-1">
-              <Target className="w-3 h-3" />
-              Objectif atteint
-            </span>
-          )}
         </div>
       </div>
 

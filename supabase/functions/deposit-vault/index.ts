@@ -116,6 +116,23 @@ Deno.serve(async (req) => {
       );
     }
 
+    // Enregistrer la contribution dans l'historique
+    const { data: contribution, error: contribError } = await supabase
+      .from('vault_contributions')
+      .insert({
+        vault_id,
+        user_id: user.id,
+        source_account_id,
+        amount,
+        description: description || `Dépôt de ${amount} FCFA`
+      })
+      .select()
+      .single();
+
+    if (contribError) {
+      console.error('Erreur enregistrement contribution:', contribError);
+    }
+
     // Enregistrer la transaction
     await supabase.from('transactions').insert({
       user_id: user.id,
@@ -148,6 +165,21 @@ Deno.serve(async (req) => {
       .select('*')
       .eq('id', vault_id)
       .single();
+
+    // Vérifier si l'objectif est atteint
+    if (updatedVault && updatedVault.current_amount >= vault.target_amount && vault.status !== 'goal_reached') {
+      await supabase
+        .from('vaults')
+        .update({ status: 'goal_reached' })
+        .eq('id', vault_id);
+
+      await supabase.from('admin_notifications').insert({
+        user_id: user.id,
+        title: 'Objectif atteint ! 🎉',
+        message: `Votre coffre "${vault.name}" a atteint son objectif de ${vault.target_amount} FCFA`,
+        type: 'vault_goal_reached'
+      });
+    }
 
     console.log('Dépôt effectué:', vault_id, amount);
 
