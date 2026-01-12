@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, UserPlus } from 'lucide-react';
+import { UserPlus, Building2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const EmptyAccountState: React.FC = () => {
@@ -8,8 +8,8 @@ const EmptyAccountState: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[60vh] px-6 text-center">
-      <div className="w-20 h-20 rounded-full bg-muted flex items-center justify-center mb-6">
-        <AlertCircle className="w-10 h-10 text-muted-foreground" />
+      <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center mb-6">
+        <Building2 className="w-10 h-10 text-primary" />
       </div>
       
       <h2 className="text-2xl font-semibold text-foreground mb-2">
