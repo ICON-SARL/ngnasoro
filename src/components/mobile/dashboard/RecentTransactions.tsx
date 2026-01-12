@@ -1,13 +1,10 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { motion } from 'framer-motion';
 import { ArrowDownToLine, ArrowUpFromLine, CreditCard, MoreHorizontal, Receipt } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
-import { FundsActionSheet } from '@/components/mobile/funds/FundsActionSheet';
-import { Dialog } from '@/components/ui/dialog';
-import MobileMoneyModal from '@/components/mobile/loan/MobileMoneyModal';
 
 interface Transaction {
   id: string;
@@ -29,22 +26,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   isLoading 
 }) => {
   const navigate = useNavigate();
-  const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false);
-  const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
-
-  const handleDepositClick = () => {
-    setIsDepositSheetOpen(true);
-  };
-
-  const handleMobileMoneySelected = () => {
-    setIsDepositSheetOpen(false);
-    setShowMobileMoneyModal(true);
-  };
-
-  const handleCashierScanSelected = () => {
-    setIsDepositSheetOpen(false);
-    navigate('/mobile-flow/cashier-qr-scan');
-  };
 
   const getTransactionIcon = (type: string) => {
     switch (type) {
@@ -98,45 +79,15 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   if (transactions.length === 0) {
     return (
       <div className="bg-card rounded-2xl p-6">
-        <div className="text-center py-4">
-          <div className="mx-auto w-14 h-14 bg-muted/50 rounded-full flex items-center justify-center mb-3">
-            <Receipt className="w-6 h-6 text-muted-foreground/60" />
+        <div className="text-center py-6">
+          <div className="mx-auto w-12 h-12 bg-muted/40 rounded-full flex items-center justify-center mb-3">
+            <Receipt className="w-5 h-5 text-muted-foreground/50" />
           </div>
           <p className="font-medium text-sm text-foreground">Aucune transaction</p>
           <p className="text-xs text-muted-foreground mt-1">
             Vos prochaines transactions apparaîtront ici
           </p>
         </div>
-        
-        <div className="flex gap-2 justify-center mt-4">
-          <button
-            onClick={handleDepositClick}
-            className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
-          >
-            Faire un dépôt
-          </button>
-          <button
-            onClick={() => navigate('/mobile-flow/loan-plans')}
-            className="text-xs px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
-          >
-            Demander un prêt
-          </button>
-        </div>
-
-        <FundsActionSheet 
-          isOpen={isDepositSheetOpen}
-          onClose={() => setIsDepositSheetOpen(false)}
-          actionType="deposit"
-          onMobileMoneySelected={handleMobileMoneySelected}
-          onCashierScanSelected={handleCashierScanSelected}
-        />
-
-        <Dialog open={showMobileMoneyModal} onOpenChange={setShowMobileMoneyModal}>
-          <MobileMoneyModal 
-            onClose={() => setShowMobileMoneyModal(false)}
-            isWithdrawal={false}
-          />
-        </Dialog>
       </div>
     );
   }
