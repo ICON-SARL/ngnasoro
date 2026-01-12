@@ -39,10 +39,10 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Récupérer la demande de retrait
+    // Récupérer la demande de retrait avec les infos du coffre
     const { data: request, error: requestError } = await supabase
       .from('collaborative_vault_withdrawal_requests')
-      .select('*')
+      .select('*, collaborative_vaults(current_amount, name, sfd_id)')
       .eq('id', withdrawal_request_id)
       .single();
 
@@ -138,19 +138,81 @@ Deno.serve(async (req) => {
       console.error('Erreur mise à jour demande:', updateError);
     }
 
-    // Si approuvé, notifier
+    // Si approuvé, exécuter le retrait
     if (newStatus === 'approved') {
+      const vault = request.collaborative_vaults;
+      const newBalance = vault.current_amount - request.amount;
+
+      // Débiter le coffre
+      await supabase
+        .from('collaborative_vaults')
+        .update({ 
+          current_amount: newBalance,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', request.vault_id);
+
+      // Enregistrer la transaction de retrait
+      await supabase
+        .from('collaborative_vault_transactions')
+        .insert({
+          vault_id: request.vault_id,
+          user_id: request.requested_by,
+          transaction_type: 'withdrawal',
+          amount: request.amount,
+          balance_after: newBalance,
+          description: `Retrait approuvé par vote (${newVotesYes}/${request.total_votes_required})`
+        });
+
+      // Créditer le compte du demandeur
+      const { data: userAccount } = await supabase
+        .from('accounts')
+        .select('id, balance')
+        .eq('user_id', request.requested_by)
+        .eq('sfd_id', vault.sfd_id)
+        .eq('account_type', 'operation')
+        .single();
+
+      if (userAccount) {
+        await supabase
+          .from('accounts')
+          .update({ balance: userAccount.balance + request.amount })
+          .eq('id', userAccount.id);
+      }
+
+      // Si le solde est à 0, fermer le coffre
+      if (newBalance <= 0) {
+        await supabase
+          .from('collaborative_vaults')
+          .update({ 
+            status: 'closed',
+            closed_at: new Date().toISOString(),
+            close_reason: 'Retrait total effectué'
+          })
+          .eq('id', request.vault_id);
+
+        // Notifier tous les membres
+        await supabase.rpc('notify_vault_members', {
+          _vault_id: request.vault_id,
+          _title: 'Coffre fermé',
+          _message: `Le coffre "${vault.name}" a été fermé suite au retrait total des fonds`,
+          _type: 'vault_closed',
+          _exclude_user_id: null
+        });
+      }
+
+      // Notifier le demandeur
       await supabase.from('admin_notifications').insert({
         user_id: request.requested_by,
         title: 'Retrait approuvé',
-        message: `Votre demande de retrait de ${request.amount} FCFA a été approuvée`,
+        message: `Votre demande de retrait de ${request.amount} FCFA a été approuvée et créditée sur votre compte`,
         type: 'withdrawal_approved'
       });
     } else if (newStatus === 'rejected') {
       await supabase.from('admin_notifications').insert({
         user_id: request.requested_by,
         title: 'Retrait rejeté',
-        message: `Votre demande de retrait de ${request.amount} FCFA a été rejetée`,
+        message: `Votre demande de retrait de ${request.amount} FCFA a été rejetée par les membres`,
         type: 'withdrawal_rejected'
       });
     }
@@ -165,14 +227,17 @@ Deno.serve(async (req) => {
       details: {
         withdrawal_request_id,
         vote,
-        new_status: newStatus
+        new_status: newStatus,
+        votes_yes: newVotesYes,
+        votes_no: newVotesNo
       }
     });
 
     return new Response(
       JSON.stringify({ 
         success: true,
-        message: 'Vote enregistré',
+        message: newStatus === 'approved' ? 'Retrait approuvé et exécuté' : 
+                 newStatus === 'rejected' ? 'Retrait rejeté' : 'Vote enregistré',
         status: newStatus,
         votes_yes: newVotesYes,
         votes_no: newVotesNo

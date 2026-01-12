@@ -31,7 +31,8 @@ Deno.serve(async (req) => {
 
     const { 
       name, description, target_amount, sfd_id, visibility, 
-      withdrawal_rule, allow_withdrawal_before_goal, deadline 
+      withdrawal_rule, allow_withdrawal_before_goal, deadline,
+      interest_rate
     } = await req.json();
 
     // Validation
@@ -56,6 +57,7 @@ Deno.serve(async (req) => {
         withdrawal_rule: withdrawal_rule || 'creator_only',
         allow_withdrawal_before_goal: allow_withdrawal_before_goal || false,
         deadline: deadline || null,
+        interest_rate: interest_rate || 0,
         status: 'active'
       })
       .select()

@@ -29,7 +29,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { vault_id, amount, reason } = await req.json();
+    const { vault_id, amount, reason, destination_account_id } = await req.json();
 
     // Validation
     if (!vault_id || !amount || amount <= 0 || !reason) {
@@ -50,6 +50,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Coffre non trouvé' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Vérifier que le coffre est actif
+    if (vault.status === 'closed') {
+      return new Response(
+        JSON.stringify({ error: 'Ce coffre est fermé' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
@@ -122,8 +130,7 @@ Deno.serve(async (req) => {
 
     // Si auto-approved, traiter le retrait immédiatement
     if (status === 'approved') {
-      // TODO: Implémenter le traitement du retrait
-      // Pour l'instant, on enregistre juste la demande approuvée
+      await processWithdrawal(supabase, vault_id, user.id, amount, request.id, destination_account_id);
     } else {
       // Notifier les membres pour voter
       await supabase.rpc('notify_vault_members', {
@@ -154,7 +161,7 @@ Deno.serve(async (req) => {
       JSON.stringify({ 
         success: true,
         request,
-        message: status === 'approved' ? 'Retrait approuvé' : 'Demande créée, en attente de votes'
+        message: status === 'approved' ? 'Retrait effectué' : 'Demande créée, en attente de votes'
       }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
@@ -167,3 +174,90 @@ Deno.serve(async (req) => {
     );
   }
 });
+
+// Fonction pour traiter le retrait approuvé
+async function processWithdrawal(
+  supabase: any, 
+  vault_id: string, 
+  user_id: string, 
+  amount: number, 
+  request_id: string,
+  destination_account_id?: string
+) {
+  // Récupérer le coffre
+  const { data: vault } = await supabase
+    .from('collaborative_vaults')
+    .select('current_amount, name')
+    .eq('id', vault_id)
+    .single();
+
+  if (!vault) return;
+
+  const newBalance = vault.current_amount - amount;
+
+  // Débiter le coffre
+  await supabase
+    .from('collaborative_vaults')
+    .update({ 
+      current_amount: newBalance,
+      updated_at: new Date().toISOString()
+    })
+    .eq('id', vault_id);
+
+  // Enregistrer la transaction de retrait
+  await supabase
+    .from('collaborative_vault_transactions')
+    .insert({
+      vault_id,
+      user_id,
+      transaction_type: 'withdrawal',
+      amount,
+      balance_after: newBalance,
+      description: 'Retrait approuvé'
+    });
+
+  // Si un compte destination est fourni, créditer ce compte
+  if (destination_account_id) {
+    const { data: account } = await supabase
+      .from('accounts')
+      .select('balance')
+      .eq('id', destination_account_id)
+      .single();
+
+    if (account) {
+      await supabase
+        .from('accounts')
+        .update({ balance: account.balance + amount })
+        .eq('id', destination_account_id);
+    }
+  }
+
+  // Si le solde est à 0, fermer le coffre
+  if (newBalance <= 0) {
+    await supabase
+      .from('collaborative_vaults')
+      .update({ 
+        status: 'closed',
+        closed_at: new Date().toISOString(),
+        close_reason: 'Retrait total effectué'
+      })
+      .eq('id', vault_id);
+
+    // Notifier tous les membres
+    await supabase.rpc('notify_vault_members', {
+      _vault_id: vault_id,
+      _title: 'Coffre fermé',
+      _message: `Le coffre "${vault.name}" a été fermé suite au retrait total des fonds`,
+      _type: 'vault_closed',
+      _exclude_user_id: null
+    });
+  }
+
+  // Mettre à jour la demande comme traitée
+  await supabase
+    .from('collaborative_vault_withdrawal_requests')
+    .update({ 
+      processed_at: new Date().toISOString()
+    })
+    .eq('id', request_id);
+}

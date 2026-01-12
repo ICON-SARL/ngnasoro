@@ -566,9 +566,11 @@ export type Database = {
         Row: {
           created_at: string | null
           id: string
+          interest_earned: number | null
           invited_by: string | null
           is_admin: boolean | null
           joined_at: string | null
+          last_interest_calculation: string | null
           status: Database["public"]["Enums"]["member_status"] | null
           total_contributed: number | null
           user_id: string
@@ -577,9 +579,11 @@ export type Database = {
         Insert: {
           created_at?: string | null
           id?: string
+          interest_earned?: number | null
           invited_by?: string | null
           is_admin?: boolean | null
           joined_at?: string | null
+          last_interest_calculation?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
           total_contributed?: number | null
           user_id: string
@@ -588,9 +592,11 @@ export type Database = {
         Update: {
           created_at?: string | null
           id?: string
+          interest_earned?: number | null
           invited_by?: string | null
           is_admin?: boolean | null
           joined_at?: string | null
+          last_interest_calculation?: string | null
           status?: Database["public"]["Enums"]["member_status"] | null
           total_contributed?: number | null
           user_id?: string
@@ -789,12 +795,15 @@ export type Database = {
       collaborative_vaults: {
         Row: {
           allow_withdrawal_before_goal: boolean | null
+          close_reason: string | null
+          closed_at: string | null
           created_at: string | null
           creator_id: string
           current_amount: number | null
           deadline: string | null
           description: string | null
           id: string
+          interest_rate: number | null
           member_count: number | null
           name: string
           sfd_id: string
@@ -807,12 +816,15 @@ export type Database = {
         }
         Insert: {
           allow_withdrawal_before_goal?: boolean | null
+          close_reason?: string | null
+          closed_at?: string | null
           created_at?: string | null
           creator_id: string
           current_amount?: number | null
           deadline?: string | null
           description?: string | null
           id?: string
+          interest_rate?: number | null
           member_count?: number | null
           name: string
           sfd_id: string
@@ -827,12 +839,15 @@ export type Database = {
         }
         Update: {
           allow_withdrawal_before_goal?: boolean | null
+          close_reason?: string | null
+          closed_at?: string | null
           created_at?: string | null
           creator_id?: string
           current_amount?: number | null
           deadline?: string | null
           description?: string | null
           id?: string
+          interest_rate?: number | null
           member_count?: number | null
           name?: string
           sfd_id?: string
@@ -2549,7 +2564,12 @@ export type Database = {
       payment_method: "cash" | "bank_transfer" | "mobile_money" | "check"
       sfd_status: "active" | "suspended" | "pending" | "inactive"
       transaction_status: "completed" | "pending" | "failed" | "cancelled"
-      vault_transaction_type: "deposit" | "withdrawal" | "penalty" | "bonus"
+      vault_transaction_type:
+        | "deposit"
+        | "withdrawal"
+        | "penalty"
+        | "bonus"
+        | "interest"
       vault_visibility: "private" | "invite_only" | "public"
       withdrawal_rule: "creator_only" | "majority_vote" | "unanimous"
     }
@@ -2699,7 +2719,13 @@ export const Constants = {
       payment_method: ["cash", "bank_transfer", "mobile_money", "check"],
       sfd_status: ["active", "suspended", "pending", "inactive"],
       transaction_status: ["completed", "pending", "failed", "cancelled"],
-      vault_transaction_type: ["deposit", "withdrawal", "penalty", "bonus"],
+      vault_transaction_type: [
+        "deposit",
+        "withdrawal",
+        "penalty",
+        "bonus",
+        "interest",
+      ],
       vault_visibility: ["private", "invite_only", "public"],
       withdrawal_rule: ["creator_only", "majority_vote", "unanimous"],
     },

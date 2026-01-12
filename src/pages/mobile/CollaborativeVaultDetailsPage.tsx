@@ -3,7 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, TrendingUp, Calendar, Crown, UserPlus, ArrowDownCircle, ArrowUpCircle } from 'lucide-react';
+import { 
+  ArrowLeft, Users, TrendingUp, Calendar, Crown, UserPlus, 
+  ArrowDownCircle, ArrowUpCircle, AlertCircle, ThumbsUp, ThumbsDown,
+  Lock, Percent
+} from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
@@ -37,6 +41,7 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
             user_id,
             status,
             total_contributed,
+            interest_earned,
             is_admin,
             joined_at,
             profiles:user_id(full_name, avatar_url, phone)
@@ -57,6 +62,49 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
       return data;
     },
     enabled: !!vaultId
+  });
+
+  // Fetch pending withdrawal requests
+  const { data: withdrawalRequests } = useQuery({
+    queryKey: ['vault-withdrawal-requests', vaultId],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('collaborative_vault_withdrawal_requests')
+        .select(`
+          *,
+          profiles:requested_by(full_name)
+        `)
+        .eq('vault_id', vaultId)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!vaultId
+  });
+
+  // Fetch user's votes on requests
+  const { data: userVotes } = useQuery({
+    queryKey: ['user-votes', vaultId, user?.id],
+    queryFn: async () => {
+      const { data: member } = await supabase
+        .from('collaborative_vault_members')
+        .select('id')
+        .eq('vault_id', vaultId)
+        .eq('user_id', user?.id)
+        .single();
+
+      if (!member) return [];
+
+      const { data, error } = await supabase
+        .from('collaborative_vault_withdrawal_votes')
+        .select('withdrawal_request_id, vote')
+        .eq('member_id', member.id);
+
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!vaultId && !!user?.id
   });
 
   const { data: userAccount } = useQuery({
@@ -108,7 +156,8 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
         body: { 
           vault_id: vaultId, 
           amount: withdrawAmount,
-          reason: withdrawReason
+          reason: withdrawReason,
+          destination_account_id: userAccount?.id
         }
       });
       
@@ -117,6 +166,7 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['collaborative-vault', vaultId] });
+      queryClient.invalidateQueries({ queryKey: ['vault-withdrawal-requests', vaultId] });
       toast.success('Demande de retrait créée avec succès');
       setShowWithdrawModal(false);
       setAmount('');
@@ -124,6 +174,36 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     },
     onError: (error: any) => {
       toast.error(error.message || 'Erreur lors de la demande de retrait');
+    }
+  });
+
+  const voteMutation = useMutation({
+    mutationFn: async ({ requestId, vote }: { requestId: string; vote: boolean }) => {
+      const { data, error } = await supabase.functions.invoke('vote-withdrawal', {
+        body: { 
+          withdrawal_request_id: requestId, 
+          vote
+        }
+      });
+      
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['collaborative-vault', vaultId] });
+      queryClient.invalidateQueries({ queryKey: ['vault-withdrawal-requests', vaultId] });
+      queryClient.invalidateQueries({ queryKey: ['user-votes', vaultId, user?.id] });
+      
+      if (data.status === 'approved') {
+        toast.success('Retrait approuvé et exécuté');
+      } else if (data.status === 'rejected') {
+        toast.info('Retrait rejeté');
+      } else {
+        toast.success('Vote enregistré');
+      }
+    },
+    onError: (error: any) => {
+      toast.error(error.message || 'Erreur lors du vote');
     }
   });
 
@@ -170,6 +250,10 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     depositMutation.mutate(depositAmount);
   };
 
+  const formatAmount = (amount: number) => {
+    return new Intl.NumberFormat('fr-FR').format(amount);
+  };
+
   const handleWithdraw = () => {
     const withdrawAmount = parseFloat(amount);
     if (isNaN(withdrawAmount) || withdrawAmount <= 0) {
@@ -183,10 +267,12 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
     withdrawMutation.mutate({ withdrawAmount, withdrawReason: reason });
   };
 
-  const formatAmount = (amount: number) => {
-    return new Intl.NumberFormat('fr-FR').format(amount);
+  const hasVoted = (requestId: string) => {
+    return userVotes?.some(v => v.withdrawal_request_id === requestId);
   };
 
+  const pendingRequests = withdrawalRequests?.filter(r => r.status === 'pending') || [];
+  const isVaultClosed = vault?.status === 'closed';
   const formatDate = (date: string) => {
     return new Date(date).toLocaleDateString('fr-FR', {
       day: 'numeric',
@@ -194,8 +280,6 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
       year: 'numeric'
     });
   };
-
-  if (isLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
@@ -261,6 +345,83 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
       </div>
 
       <div className="px-4 -mt-4 space-y-4">
+        {/* Closed Vault Banner */}
+        {isVaultClosed && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-red-50 dark:bg-red-950/30 border border-red-200 dark:border-red-800 rounded-2xl p-4"
+          >
+            <div className="flex items-center gap-3">
+              <Lock className="w-5 h-5 text-red-600" />
+              <div>
+                <p className="font-medium text-red-700 dark:text-red-400">Ce coffre est fermé</p>
+                <p className="text-sm text-red-600 dark:text-red-500">
+                  {vault.close_reason || 'Retrait total effectué'}
+                </p>
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* Pending Withdrawal Requests */}
+        {pendingRequests.length > 0 && !isVaultClosed && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4"
+          >
+            <h3 className="font-semibold text-amber-800 dark:text-amber-300 flex items-center gap-2 mb-3">
+              <AlertCircle className="w-5 h-5" />
+              Demandes de retrait ({pendingRequests.length})
+            </h3>
+            <div className="space-y-3">
+              {pendingRequests.map((request: any) => (
+                <div key={request.id} className="bg-white dark:bg-background rounded-xl p-3 border border-amber-200 dark:border-amber-700">
+                  <div className="flex justify-between items-start mb-2">
+                    <div>
+                      <p className="font-semibold text-foreground">{formatAmount(request.amount)} FCFA</p>
+                      <p className="text-sm text-muted-foreground">{request.reason}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Par: {request.profiles?.full_name || 'Membre'} • {formatDate(request.created_at)}
+                      </p>
+                    </div>
+                    <span className="px-2 py-1 bg-amber-100 dark:bg-amber-900 text-amber-800 dark:text-amber-200 rounded-full text-xs">
+                      {request.votes_yes}/{request.total_votes_required} votes
+                    </span>
+                  </div>
+                  
+                  {!hasVoted(request.id) && request.requested_by !== user?.id && (
+                    <div className="flex gap-2 mt-3">
+                      <Button 
+                        size="sm"
+                        className="flex-1 bg-green-500 hover:bg-green-600"
+                        onClick={() => voteMutation.mutate({ requestId: request.id, vote: true })}
+                        disabled={voteMutation.isPending}
+                      >
+                        <ThumbsUp className="w-4 h-4 mr-1" />
+                        Approuver
+                      </Button>
+                      <Button 
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => voteMutation.mutate({ requestId: request.id, vote: false })}
+                        disabled={voteMutation.isPending}
+                      >
+                        <ThumbsDown className="w-4 h-4 mr-1" />
+                        Refuser
+                      </Button>
+                    </div>
+                  )}
+                  {hasVoted(request.id) && (
+                    <p className="text-xs text-muted-foreground mt-2 text-center">✓ Vous avez déjà voté</p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </motion.div>
+        )}
         {/* Progress Card */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -348,6 +509,12 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
                         <p className="text-xs text-muted-foreground">
                           Contribué: {formatAmount(member.total_contributed || 0)} FCFA
                         </p>
+                        {(member.interest_earned || 0) > 0 && (
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <Percent className="w-3 h-3" />
+                            Intérêts: +{formatAmount(member.interest_earned)} FCFA
+                          </p>
+                        )}
                       </div>
                     </div>
                     {member.is_admin && member.user_id !== vault.creator_id && (

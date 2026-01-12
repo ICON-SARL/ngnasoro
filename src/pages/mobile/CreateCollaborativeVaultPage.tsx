@@ -20,6 +20,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
     name: '',
     description: '',
     target_amount: '',
+    interest_rate: '',
     visibility: 'private',
     withdrawal_rule: 'creator_only',
     allow_withdrawal_before_goal: false,
@@ -32,6 +33,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
         body: {
           ...data,
           target_amount: parseFloat(data.target_amount),
+          interest_rate: data.interest_rate ? parseFloat(data.interest_rate) : 0,
           sfd_id: activeSfdId,
           deadline: data.deadline || null
         }
@@ -147,6 +149,24 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 placeholder="500000"
                 className="mt-1 rounded-xl"
               />
+            </div>
+
+            <div>
+              <Label htmlFor="interest_rate">Taux d'intérêt annuel (%) - optionnel</Label>
+              <Input
+                id="interest_rate"
+                type="number"
+                step="0.1"
+                min="0"
+                max="100"
+                value={formData.interest_rate}
+                onChange={(e) => setFormData({ ...formData, interest_rate: e.target.value })}
+                placeholder="Ex: 5.0"
+                className="mt-1 rounded-xl"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Les intérêts sont calculés au prorata du temps pour chaque contribution
+              </p>
             </div>
 
             <div>
