@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/auth/AuthContext';
 import { UserRole } from '@/hooks/auth/types';
 import LandingPage from './LandingPage';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Capacitor } from '@capacitor/core';
 
 const Index = () => {
   const navigate = useNavigate();
@@ -16,9 +17,18 @@ const Index = () => {
       return;
     }
 
-    // Si pas d'utilisateur connecté, afficher la landing page
+    // Si pas d'utilisateur connecté
     if (!user) {
-      console.log('📍 No user, showing landing page');
+      // Sur mobile natif (Android/iOS), rediriger vers la page de connexion
+      const isNative = Capacitor.isNativePlatform();
+      if (isNative) {
+        console.log('📱 Mobile native détecté, redirection vers /auth');
+        navigate('/auth', { replace: true });
+        return;
+      }
+      
+      // Sur web, afficher la landing page
+      console.log('🌐 Web détecté, affichage de la landing page');
       setShouldShowLanding(true);
       return;
     }
