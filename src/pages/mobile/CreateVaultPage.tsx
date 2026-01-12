@@ -90,21 +90,22 @@ const CreateVaultPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 pb-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-2xl font-bold mb-2">Créer un Coffre</h1>
-        <p className="text-sm opacity-90">
-          Définissez votre objectif d'épargne
-        </p>
+      {/* Header */}
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-white" />
+          </button>
+          <h1 className="text-2xl font-bold text-white mb-2">Nouveau Coffre Individuel</h1>
+          <p className="text-sm text-white/80">Définissez votre objectif d'épargne</p>
+        </div>
       </div>
 
       <div className="px-4 -mt-4">
-        <form onSubmit={handleSubmit} className="bg-card rounded-3xl p-6 border border-border shadow-sm space-y-5">
+        <form onSubmit={handleSubmit} className="bg-card rounded-2xl p-6 border border-border/50 shadow-soft-sm space-y-5">
           <div className="space-y-2">
             <Label htmlFor="name">Nom du coffre *</Label>
             <Input
@@ -112,7 +113,7 @@ const CreateVaultPage: React.FC = () => {
               placeholder="Ex: Vacances, Voiture, Mariage..."
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              className="rounded-2xl"
+              className="rounded-xl"
             />
           </div>
 
@@ -123,7 +124,7 @@ const CreateVaultPage: React.FC = () => {
               placeholder="Décrivez votre objectif..."
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              className="rounded-2xl min-h-[80px]"
+              className="rounded-xl min-h-[80px]"
             />
           </div>
 
@@ -135,7 +136,7 @@ const CreateVaultPage: React.FC = () => {
               placeholder="0"
               value={formData.target_amount}
               onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
-              className="rounded-2xl"
+              className="rounded-xl"
             />
           </div>
 
@@ -151,7 +152,7 @@ const CreateVaultPage: React.FC = () => {
                   key={type.value}
                   type="button"
                   onClick={() => setFormData({ ...formData, type: type.value as any })}
-                  className={`p-3 rounded-2xl border-2 transition-colors ${
+                  className={`p-3 rounded-xl border-2 transition-colors ${
                     formData.type === type.value
                       ? 'border-primary bg-primary/10'
                       : 'border-border bg-background'
@@ -172,7 +173,7 @@ const CreateVaultPage: React.FC = () => {
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                className="rounded-2xl"
+                className="rounded-xl"
                 min={new Date().toISOString().split('T')[0]}
               />
               <p className="text-xs text-muted-foreground">
@@ -184,7 +185,7 @@ const CreateVaultPage: React.FC = () => {
           <Button
             type="submit"
             disabled={createVaultMutation.isPending}
-            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl h-12"
+            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground rounded-xl h-12"
           >
             {createVaultMutation.isPending ? (
               <>

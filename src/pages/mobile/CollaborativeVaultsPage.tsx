@@ -44,7 +44,6 @@ const CollaborativeVaultsPage: React.FC = () => {
       if (!user?.id) return [];
       
       if (filter === 'invited') {
-        // Récupérer les invitations pendantes pour l'utilisateur
         const { data: invitations, error: invError } = await supabase
           .from('collaborative_vault_invitations')
           .select(`
@@ -94,12 +93,14 @@ const CollaborativeVaultsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-600 text-white p-6 pb-8">
-        <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-2xl font-bold mb-2">Coffres Collaboratifs</h1>
-        <p className="text-sm opacity-90">Épargnez ensemble pour des objectifs communs</p>
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-10">
+          <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
+            <ArrowLeft className="w-6 h-6 text-white" />
+          </button>
+          <h1 className="text-2xl font-bold text-white mb-2">Coffres Collectifs</h1>
+          <p className="text-sm text-white/80">Atteignez vos objectifs ensemble</p>
+        </div>
       </div>
 
       {/* Filters */}
@@ -115,7 +116,7 @@ const CollaborativeVaultsPage: React.FC = () => {
               onClick={() => setFilter(status.key as any)}
               className={`px-4 py-2 rounded-2xl text-sm font-medium whitespace-nowrap transition-all ${
                 filter === status.key
-                  ? 'bg-primary text-primary-foreground shadow-md'
+                  ? 'bg-primary text-primary-foreground'
                   : 'bg-card text-muted-foreground border border-border hover:bg-accent'
               }`}
             >
@@ -128,7 +129,7 @@ const CollaborativeVaultsPage: React.FC = () => {
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-muted rounded-3xl animate-pulse" />
+              <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : vaults && vaults.length > 0 ? (
@@ -144,12 +145,13 @@ const CollaborativeVaultsPage: React.FC = () => {
                   key={vault.id}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="bg-card rounded-3xl p-5 border border-border"
+                  onClick={() => !isInvitation && navigate(`/mobile-flow/collaborative-vault/${vault.id}`)}
+                  className="bg-card rounded-2xl p-5 border border-border/50 shadow-soft-sm cursor-pointer"
                 >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-pink-600 rounded-2xl flex items-center justify-center">
-                        <Users className="w-6 h-6 text-white" />
+                      <div className="w-12 h-12 bg-primary/10 rounded-xl flex items-center justify-center">
+                        <Users className="w-6 h-6 text-primary" />
                       </div>
                       <div>
                         <h3 className="font-semibold text-foreground">{vault.name}</h3>
@@ -160,9 +162,9 @@ const CollaborativeVaultsPage: React.FC = () => {
                       </div>
                     </div>
                     {isCreator && (
-                      <span className="px-2 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-lg text-xs flex items-center gap-1">
+                      <span className="px-2 py-1 bg-primary/10 text-primary rounded-lg text-xs flex items-center gap-1">
                         <Crown className="w-3 h-3" />
-                        Créateur
+                        Admin
                       </span>
                     )}
                   </div>
@@ -178,7 +180,7 @@ const CollaborativeVaultsPage: React.FC = () => {
                     </div>
                     <div className="h-2 bg-muted rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-gradient-to-r from-orange-500 to-pink-600 transition-all"
+                        className="h-full bg-primary transition-all"
                         style={{ width: `${Math.min(progress, 100)}%` }}
                       />
                     </div>
@@ -204,15 +206,21 @@ const CollaborativeVaultsPage: React.FC = () => {
                   {isInvitation && (
                     <div className="flex gap-2 mt-3 pt-3 border-t border-border">
                       <Button 
-                        onClick={() => respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'accept' })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'accept' });
+                        }}
                         disabled={respondMutation.isPending}
-                        className="flex-1 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-600 hover:to-emerald-700"
+                        className="flex-1 bg-primary hover:bg-primary/90"
                       >
                         <Check className="w-4 h-4 mr-2" />
                         Accepter
                       </Button>
                       <Button 
-                        onClick={() => respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'reject' })}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          respondMutation.mutate({ invitation_id: vault.invitation_id, action: 'reject' });
+                        }}
                         disabled={respondMutation.isPending}
                         variant="outline"
                         className="flex-1"
@@ -222,21 +230,15 @@ const CollaborativeVaultsPage: React.FC = () => {
                       </Button>
                     </div>
                   )}
-
-                  {/* Navigate to details for non-invitations */}
-                  {!isInvitation && (
-                    <div 
-                      onClick={() => navigate(`/mobile-flow/collaborative-vault/${vault.id}`)}
-                      className="absolute inset-0 cursor-pointer"
-                    />
-                  )}
                 </motion.div>
               );
             })}
           </div>
         ) : (
           <div className="text-center py-12">
-            <Users className="w-16 h-16 text-muted-foreground mx-auto mb-4 opacity-50" />
+            <div className="w-16 h-16 rounded-2xl bg-muted flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-muted-foreground" />
+            </div>
             <p className="text-muted-foreground mb-4">
               {filter === 'my_vaults' ? 'Aucun coffre créé' : 
                filter === 'invited' ? 'Aucune invitation' : 
@@ -244,24 +246,22 @@ const CollaborativeVaultsPage: React.FC = () => {
             </p>
             <Button 
               onClick={() => navigate('/mobile-flow/create-collaborative-vault')}
-              className="bg-gradient-to-r from-orange-500 to-pink-600"
+              className="bg-primary hover:bg-primary/90 rounded-2xl"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Créer un coffre
+              Nouveau coffre collectif
             </Button>
           </div>
         )}
       </div>
 
       {/* FAB */}
-      <motion.button
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
+      <Button
         onClick={() => navigate('/mobile-flow/create-collaborative-vault')}
-        className="fixed bottom-24 right-6 w-14 h-14 bg-gradient-to-br from-orange-500 to-pink-600 rounded-full flex items-center justify-center text-white shadow-lg hover:shadow-xl transition-shadow"
+        className="fixed bottom-24 right-6 w-14 h-14 rounded-full bg-primary hover:bg-primary/90 shadow-soft-lg"
       >
         <Plus className="w-6 h-6" />
-      </motion.button>
+      </Button>
     </div>
   );
 };

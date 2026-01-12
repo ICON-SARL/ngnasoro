@@ -113,7 +113,7 @@ const VaultsHubPage = () => {
 
         {/* Cards Container */}
         <div className="space-y-4 max-w-md mx-auto">
-          {/* Personal Vaults Card */}
+          {/* Individual Vaults Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -128,8 +128,8 @@ const VaultsHubPage = () => {
                 <Lock className="w-6 h-6 text-primary" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-foreground">Coffres Personnels</h3>
-                <p className="text-sm text-muted-foreground">Épargne individuelle</p>
+                <h3 className="font-semibold text-lg text-foreground">Coffres Individuels</h3>
+                <p className="text-sm text-muted-foreground">Mon épargne</p>
               </div>
             </div>
             
@@ -152,7 +152,7 @@ const VaultsHubPage = () => {
             </div>
           </motion.div>
 
-          {/* Collaborative Vaults Card */}
+          {/* Collective Vaults Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -163,19 +163,19 @@ const VaultsHubPage = () => {
           >
             {/* Icon + Title */}
             <div className="flex items-center gap-4 mb-4">
-              <div className="w-12 h-12 bg-orange-500/10 rounded-xl flex items-center justify-center">
-                <Users className="w-6 h-6 text-orange-500" />
+              <div className="w-12 h-12 bg-amber-500/10 rounded-xl flex items-center justify-center">
+                <Users className="w-6 h-6 text-amber-600" />
               </div>
               <div className="flex-1">
-                <h3 className="font-semibold text-lg text-foreground">Coffres Collaboratifs</h3>
-                <p className="text-sm text-muted-foreground">Épargne en groupe</p>
+                <h3 className="font-semibold text-lg text-foreground">Coffres Collectifs</h3>
+                <p className="text-sm text-muted-foreground">Épargne partagée</p>
               </div>
             </div>
             
             {/* Stats */}
             <div className="flex gap-6 py-3 border-t border-border/30">
               <div className="flex items-baseline gap-1">
-                <span className="text-xl font-bold text-orange-500">{collabStats?.count || 0}</span>
+                <span className="text-xl font-bold text-amber-600">{collabStats?.count || 0}</span>
                 <span className="text-xs text-muted-foreground">groupes</span>
               </div>
               <div className="flex items-baseline gap-1">
@@ -185,8 +185,8 @@ const VaultsHubPage = () => {
             </div>
             
             {/* CTA */}
-            <div className="flex items-center justify-end text-sm text-orange-500 mt-3 font-medium">
-              <span>Voir mes groupes</span>
+            <div className="flex items-center justify-end text-sm text-amber-600 mt-3 font-medium">
+              <span>Voir mes collectifs</span>
               <ArrowRight className="w-4 h-4 ml-1" />
             </div>
           </motion.div>
