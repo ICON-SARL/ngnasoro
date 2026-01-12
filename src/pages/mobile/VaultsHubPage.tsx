@@ -9,19 +9,20 @@ import { useHapticFeedback } from '@/hooks/useHapticFeedback';
 
 const VaultsHubPage = () => {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, activeSfdId } = useAuth();
   const { trigger } = useHapticFeedback();
 
-  // Fetch personal vaults stats
+  // Fetch personal vaults stats - filtered by active SFD
   const { data: personalStats } = useQuery({
-    queryKey: ['personal-vaults-stats', user?.id],
+    queryKey: ['personal-vaults-stats', user?.id, activeSfdId],
     queryFn: async () => {
-      if (!user?.id) return { count: 0, total: 0 };
+      if (!user?.id || !activeSfdId) return { count: 0, total: 0 };
       
       const { data, error } = await supabase
         .from('vaults' as any)
         .select('current_amount')
         .eq('user_id', user.id)
+        .eq('sfd_id', activeSfdId)
         .eq('status', 'active');
       
       if (error) throw error;
@@ -31,7 +32,7 @@ const VaultsHubPage = () => {
         total: data?.reduce((sum: number, v: any) => sum + (v.current_amount || 0), 0) || 0
       };
     },
-    enabled: !!user?.id
+    enabled: !!user?.id && !!activeSfdId
   });
 
   // Fetch collaborative vaults stats
