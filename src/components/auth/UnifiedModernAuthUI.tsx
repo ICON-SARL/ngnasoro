@@ -1,31 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
-import { Mail, Lock, User, Phone } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { User, ArrowLeft, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { UltraInput } from '@/components/ui/ultra-modern/UltraInput';
 import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
-import { ParticleBackground } from '@/components/ui/ParticleBackground';
 import { SuccessConfetti } from '@/components/ui/SuccessConfetti';
+import { PhoneInput } from '@/components/ui/PhoneInput';
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { MALI_COUNTRY_CODE } from '@/lib/constants';
 
 interface UnifiedModernAuthUIProps {
   mode?: 'client' | 'admin' | 'sfd_admin';
 }
 
+type AuthStep = 'phone' | 'otp';
+
 const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'client' }) => {
   const [isLogin, setIsLogin] = useState(true);
+  const [step, setStep] = useState<AuthStep>('phone');
   const [loading, setLoading] = useState(false);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [formData, setFormData] = useState({
     fullName: '',
-    email: '',
     phone: '',
-    password: '',
+    otp: '',
     acceptTerms: false
   });
   
@@ -33,7 +38,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
   const { toast } = useToast();
   const { user, userRole } = useAuth();
 
-  // Redirection automatique si déjà connecté
+  // Cooldown timer for resend
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
+
+  // Redirect if already logged in
   useEffect(() => {
     if (user && userRole) {
       const redirectMap: Record<string, string> = {
@@ -46,68 +59,67 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     }
   }, [user, userRole, navigate]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
+  const getFullPhoneNumber = () => {
+    const digits = formData.phone.replace(/\s/g, '');
+    return `${MALI_COUNTRY_CODE}${digits}`;
+  };
 
-    try {
-      if (isLogin) {
-        // LOGIN
-        const { error } = await supabase.auth.signInWithPassword({
-          email: formData.email,
-          password: formData.password
-        });
-        if (error) throw error;
+  const handleSendOtp = async () => {
+    if (!formData.phone || formData.phone.replace(/\s/g, '').length < 8) {
+      toast({
+        title: 'Numéro invalide',
+        description: 'Veuillez entrer un numéro de téléphone valide',
+        variant: 'destructive'
+      });
+      return;
+    }
 
-        setShowConfetti(true);
-        toast({ 
-          title: '✅ Connexion réussie', 
-          description: 'Redirection en cours...' 
-        });
-      } else {
-        // REGISTER
-        if (!formData.acceptTerms) {
-          throw new Error('Vous devez accepter les conditions d\'utilisation');
-        }
-
-        const clientCode = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
-
-        const { data, error } = await supabase.auth.signUp({
-          email: formData.email,
-          password: formData.password,
-          options: {
-            data: {
-              full_name: formData.fullName,
-              phone: formData.phone
-            },
-            emailRedirectTo: `${window.location.origin}/`
-          }
-        });
-
-        if (error) throw error;
-
-        // Enregistrer le code client et l'acceptation des CGU dans le profil
-        if (data.user) {
-          await supabase
-            .from('profiles')
-            .update({
-              client_code: clientCode,
-              terms_accepted_at: new Date().toISOString(),
-              terms_version: '1.0'
-            })
-            .eq('id', data.user.id);
-        }
-
-        setShowConfetti(true);
+    // For registration, validate required fields
+    if (!isLogin) {
+      if (!formData.fullName.trim()) {
         toast({
-          title: '✅ Inscription réussie',
-          description: 'Bienvenue sur N\'GNA SÔRÔ!'
+          title: 'Nom requis',
+          description: 'Veuillez entrer votre nom complet',
+          variant: 'destructive'
         });
+        return;
       }
+      if (!formData.acceptTerms) {
+        toast({
+          title: 'Conditions requises',
+          description: 'Veuillez accepter les conditions d\'utilisation',
+          variant: 'destructive'
+        });
+        return;
+      }
+    }
+
+    setLoading(true);
+    
+    try {
+      const fullPhone = getFullPhoneNumber();
+      
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: fullPhone,
+        options: !isLogin ? {
+          data: {
+            full_name: formData.fullName
+          }
+        } : undefined
+      });
+
+      if (error) throw error;
+
+      setStep('otp');
+      setResendCooldown(60);
+      toast({
+        title: '📱 Code envoyé',
+        description: `Un code de vérification a été envoyé au ${fullPhone}`
+      });
     } catch (error: any) {
       toast({
-        title: '❌ Erreur',
-        description: error.message,
+        title: 'Erreur',
+        description: error.message || 'Impossible d\'envoyer le code',
         variant: 'destructive'
       });
     } finally {
@@ -115,20 +127,108 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     }
   };
 
+  const handleVerifyOtp = async () => {
+    if (formData.otp.length !== 6) {
+      toast({
+        title: 'Code incomplet',
+        description: 'Veuillez entrer le code à 6 chiffres',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const fullPhone = getFullPhoneNumber();
+      
+      const { data, error } = await supabase.auth.verifyOtp({
+        phone: fullPhone,
+        token: formData.otp,
+        type: 'sms'
+      });
+
+      if (error) throw error;
+
+      // For new users, update profile with additional data
+      if (!isLogin && data.user) {
+        const clientCode = `CLI-${Date.now()}-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+        
+        await supabase
+          .from('profiles')
+          .update({
+            full_name: formData.fullName,
+            phone: fullPhone,
+            client_code: clientCode,
+            terms_accepted_at: new Date().toISOString(),
+            terms_version: '1.0'
+          })
+          .eq('id', data.user.id);
+      }
+
+      setShowConfetti(true);
+      toast({
+        title: '✅ Connexion réussie',
+        description: 'Bienvenue sur N\'GNA SÔRÔ!'
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Code invalide',
+        description: error.message || 'Le code est incorrect ou expiré',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResendOtp = async () => {
+    if (resendCooldown > 0) return;
+    await handleSendOtp();
+  };
+
+  const handleBackToPhone = () => {
+    setStep('phone');
+    setFormData(prev => ({ ...prev, otp: '' }));
+  };
+
+  const handleToggleMode = () => {
+    setIsLogin(!isLogin);
+    setStep('phone');
+    setFormData({
+      fullName: '',
+      phone: '',
+      otp: '',
+      acceptTerms: false
+    });
+  };
+
   const modeConfig = {
     client: {
-      title: isLogin ? 'Bienvenue' : 'Créer un compte',
-      subtitle: 'Microfinance digitale',
+      title: step === 'otp' 
+        ? 'Vérification' 
+        : isLogin ? 'Bienvenue' : 'Créer un compte',
+      subtitle: step === 'otp' 
+        ? `Code envoyé au ${getFullPhoneNumber()}`
+        : 'Microfinance digitale',
       gradient: 'from-[#0D6A51] via-[#0F7C5F] to-[#FFAB2E]'
     },
     admin: {
-      title: isLogin ? 'Espace MEREF' : 'Nouveau compte MEREF',
-      subtitle: 'Administration centrale',
+      title: step === 'otp' 
+        ? 'Vérification' 
+        : isLogin ? 'Espace MEREF' : 'Nouveau compte',
+      subtitle: step === 'otp' 
+        ? `Code envoyé au ${getFullPhoneNumber()}`
+        : 'Administration centrale',
       gradient: 'from-blue-600 via-blue-700 to-purple-600'
     },
     sfd_admin: {
-      title: isLogin ? 'Espace SFD' : 'Nouveau compte SFD',
-      subtitle: 'Gestion de votre agence',
+      title: step === 'otp' 
+        ? 'Vérification' 
+        : isLogin ? 'Espace SFD' : 'Nouveau compte',
+      subtitle: step === 'otp' 
+        ? `Code envoyé au ${getFullPhoneNumber()}`
+        : 'Gestion de votre agence',
       gradient: 'from-emerald-600 via-teal-600 to-cyan-600'
     }
   };
@@ -136,39 +236,20 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
   const config = modeConfig[mode];
 
   return (
-    <div className={`min-h-screen bg-gradient-to-br ${config.gradient} flex items-center justify-center p-3 md:p-4 relative overflow-hidden`}>
-      <ParticleBackground particleCount={20} />
-      
-      {/* Blobs animés - plus subtils */}
-      <div className="absolute inset-0 opacity-15">
-        <motion.div 
-          className="absolute top-20 left-20 w-96 h-96 bg-white/30 rounded-full mix-blend-overlay filter blur-3xl"
-          animate={{ 
-            x: [0, 80, 0],
-            y: [0, 40, 0],
-            scale: [1, 1.1, 1]
-          }}
-          transition={{ 
-            duration: 25,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        />
-        <motion.div 
-          className="absolute bottom-20 right-20 w-96 h-96 bg-accent/20 rounded-full mix-blend-overlay filter blur-3xl"
-          animate={{ 
-            x: [0, -80, 0],
-            y: [0, -40, 0],
-            scale: [1, 1.15, 1]
-          }}
-          transition={{ 
-            duration: 20,
-            repeat: Infinity,
-            ease: "easeInOut",
-            delay: 2
-          }}
-        />
-      </div>
+    <div className={`min-h-screen bg-gradient-to-br ${config.gradient} flex items-center justify-center p-4 relative overflow-hidden`}>
+      {/* Single subtle animated blob */}
+      <motion.div 
+        className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-white/10 rounded-full mix-blend-overlay filter blur-3xl"
+        animate={{ 
+          scale: [1, 1.1, 1],
+          opacity: [0.1, 0.15, 0.1]
+        }}
+        transition={{ 
+          duration: 8,
+          repeat: Infinity,
+          ease: "easeInOut"
+        }}
+      />
 
       <AnimatePresence>
         {showConfetti && <SuccessConfetti onComplete={() => setShowConfetti(false)} />}
@@ -177,188 +258,228 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="w-full max-w-lg relative z-10"
+        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+        className="w-full max-w-md relative z-10"
       >
-        {/* Floating card effect */}
-        <motion.div
-          animate={{ y: [0, -4, 0] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-        >
-          <div className="backdrop-blur-xl bg-white/90 dark:bg-gray-900/90 rounded-3xl shadow-soft-xl p-6 md:p-8 space-y-5 border border-white/40">
-            
-            {/* Logo et titre */}
-            <div className="text-center space-y-3 mb-4">
-              <motion.div 
-                className="flex justify-center"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                transition={{ type: "spring", duration: 0.8, delay: 0.1 }}
-              >
-                <AnimatedLogo 
-                  size={120} 
-                  withGlow={false}
-                  withPulse 
-                  className="mx-auto"
-                />
-              </motion.div>
-            
+        <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-8 space-y-6 border border-white/30">
+          
+          {/* Logo and title */}
+          <div className="text-center space-y-3">
+            <motion.div 
+              className="flex justify-center"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              transition={{ type: "spring", duration: 0.6 }}
+            >
+              <AnimatedLogo 
+                size={100} 
+                withGlow={false}
+                withPulse 
+                className="mx-auto"
+              />
+            </motion.div>
+          
             <motion.h1 
-              className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent leading-tight"
-              initial={{ opacity: 0, y: -20 }}
+              key={config.title}
+              className="text-2xl font-bold bg-gradient-to-r from-[#0D6A51] to-[#FFAB2E] bg-clip-text text-transparent"
+              initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              transition={{ duration: 0.3 }}
             >
               {config.title}
             </motion.h1>
-            <p className="text-sm md:text-base text-gray-600 dark:text-gray-300">
+            <motion.p 
+              key={config.subtitle}
+              className="text-sm text-muted-foreground"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.1 }}
+            >
               {config.subtitle}
-            </p>
+            </motion.p>
           </div>
 
-          {/* Formulaire */}
-          <form onSubmit={handleSubmit} className="space-y-5">
-            <AnimatePresence mode="wait">
-              {!isLogin && (
-                <>
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    exit={{ opacity: 0, height: 0 }}
-                  >
-            <UltraInput
-              type="text"
-              label="Nom complet"
-              icon={<User size={20} />}
-              value={formData.fullName}
-              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-              required={!isLogin}
-              placeholder="Jean Dupont"
-            />
-                  </motion.div>
+          {/* Form content */}
+          <AnimatePresence mode="wait">
+            {step === 'phone' ? (
+              <motion.div
+                key="phone-step"
+                initial={{ opacity: 0, x: -20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-5"
+              >
+                {/* Name field for registration */}
+                {!isLogin && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
                   >
                     <UltraInput
-                      type="tel"
-                      label="Téléphone"
-                      icon={<Phone size={20} />}
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                      placeholder="+223 70 00 00 00"
+                      type="text"
+                      label="Nom complet"
+                      icon={<User size={20} />}
+                      value={formData.fullName}
+                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                      required
+                      placeholder="Amadou Diallo"
                     />
                   </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+                )}
 
-          <UltraInput
-            type="email"
-            label="Email"
-            icon={<Mail size={20} />}
-            value={formData.email}
-            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-            required
-            placeholder="votre@email.com"
-          />
+                {/* Phone input */}
+                <PhoneInput
+                  label="Numéro de téléphone"
+                  value={formData.phone}
+                  onChange={(value) => setFormData({ ...formData, phone: value })}
+                />
 
-          <UltraInput
-            type="password"
-            label="Mot de passe"
-            icon={<Lock size={20} />}
-            value={formData.password}
-            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-            required
-            placeholder="••••••••"
-          />
-
-            {/* Checkbox CGU (UNIQUEMENT pour inscription) */}
-            {!isLogin && (
-              <motion.div
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-5 bg-green-50/80 dark:bg-green-900/10 rounded-2xl border-2 border-green-200 dark:border-green-800"
-              >
-                <div className="flex items-start space-x-4">
-                  <Checkbox
-                    id="terms"
-                    checked={formData.acceptTerms}
-                    onCheckedChange={(checked) => 
-                      setFormData({ ...formData, acceptTerms: checked as boolean })
-                    }
-                    className="mt-1 scale-125 data-[state=checked]:bg-[#0D6A51] data-[state=checked]:border-[#0D6A51]"
-                  />
-                  <Label 
-                    htmlFor="terms" 
-                    className="text-sm md:text-base leading-relaxed cursor-pointer text-gray-800 dark:text-gray-200 flex-1"
+                {/* Terms checkbox for registration */}
+                {!isLogin && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="p-4 bg-primary/5 rounded-2xl border border-primary/20"
                   >
-                    <span className="block mb-2 font-medium">J'accepte :</span>
-                    <span className="block space-y-1">
-                      <a 
-                        href="/legal/terms" 
-                        className="text-[#0D6A51] dark:text-green-400 font-semibold underline hover:text-[#0F7C5F] transition-colors block" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
+                    <div className="flex items-start space-x-3">
+                      <Checkbox
+                        id="terms"
+                        checked={formData.acceptTerms}
+                        onCheckedChange={(checked) => 
+                          setFormData({ ...formData, acceptTerms: checked as boolean })
+                        }
+                        className="mt-0.5 data-[state=checked]:bg-primary data-[state=checked]:border-primary"
+                      />
+                      <Label 
+                        htmlFor="terms" 
+                        className="text-sm leading-relaxed cursor-pointer text-muted-foreground"
                       >
-                        📋 Les Conditions d'utilisation
-                      </a>
-                      <a 
-                        href="/legal/privacy" 
-                        className="text-[#0D6A51] dark:text-green-400 font-semibold underline hover:text-[#0F7C5F] transition-colors block" 
-                        target="_blank" 
-                        rel="noopener noreferrer"
-                        onClick={(e) => e.stopPropagation()}
-                      >
-                        🔒 La Politique de confidentialité
-                      </a>
-                    </span>
-                  </Label>
+                        J'accepte les{' '}
+                        <a 
+                          href="/legal/terms" 
+                          className="text-primary font-medium underline" 
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          conditions d'utilisation
+                        </a>
+                        {' '}et la{' '}
+                        <a 
+                          href="/legal/privacy" 
+                          className="text-primary font-medium underline" 
+                          target="_blank"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          politique de confidentialité
+                        </a>
+                      </Label>
+                    </div>
+                  </motion.div>
+                )}
+
+                {/* Submit button */}
+                <UltraButton
+                  type="button"
+                  onClick={handleSendOtp}
+                  loading={loading}
+                  fullWidth
+                  variant="gradient"
+                  size="lg"
+                  disabled={!isLogin && !formData.acceptTerms}
+                  className="h-14 text-base font-semibold"
+                >
+                  Recevoir le code
+                </UltraButton>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="otp-step"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                transition={{ duration: 0.3 }}
+                className="space-y-6"
+              >
+                {/* OTP Input */}
+                <div className="flex flex-col items-center space-y-4">
+                  <p className="text-sm text-muted-foreground text-center">
+                    Entrez le code à 6 chiffres reçu par SMS
+                  </p>
+                  
+                  <InputOTP
+                    maxLength={6}
+                    value={formData.otp}
+                    onChange={(value) => setFormData({ ...formData, otp: value })}
+                    className="gap-2"
+                  >
+                    <InputOTPGroup className="gap-2">
+                      {[0, 1, 2, 3, 4, 5].map((index) => (
+                        <InputOTPSlot 
+                          key={index}
+                          index={index} 
+                          className="w-12 h-14 text-xl font-bold rounded-xl border-2 border-border/50 focus:border-primary"
+                        />
+                      ))}
+                    </InputOTPGroup>
+                  </InputOTP>
+                </div>
+
+                {/* Verify button */}
+                <UltraButton
+                  type="button"
+                  onClick={handleVerifyOtp}
+                  loading={loading}
+                  fullWidth
+                  variant="gradient"
+                  size="lg"
+                  className="h-14 text-base font-semibold"
+                >
+                  Vérifier et continuer
+                </UltraButton>
+
+                {/* Back and resend links */}
+                <div className="flex items-center justify-between pt-2">
+                  <button
+                    type="button"
+                    onClick={handleBackToPhone}
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
+                  >
+                    <ArrowLeft size={16} />
+                    Modifier le numéro
+                  </button>
+                  
+                  <button
+                    type="button"
+                    onClick={handleResendOtp}
+                    disabled={resendCooldown > 0 || loading}
+                    className="flex items-center gap-1.5 text-sm text-primary hover:text-primary/80 disabled:text-muted-foreground disabled:cursor-not-allowed transition-colors"
+                  >
+                    <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
+                    {resendCooldown > 0 ? `Renvoyer (${resendCooldown}s)` : 'Renvoyer le code'}
+                  </button>
                 </div>
               </motion.div>
             )}
+          </AnimatePresence>
 
-            <div className="pt-2">
-              <UltraButton
-                type="submit"
-                loading={loading}
-                fullWidth
-                variant="gradient"
-                size="lg"
-                disabled={!isLogin && !formData.acceptTerms}
-                className="h-14 text-lg font-bold"
+          {/* Toggle Login/Register - only show on phone step */}
+          {step === 'phone' && (
+            <div className="text-center pt-4 border-t border-border/20">
+              <p className="text-sm text-muted-foreground mb-2">
+                {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
+              </p>
+              <button
+                type="button"
+                onClick={handleToggleMode}
+                className="text-primary font-semibold hover:underline transition-all"
               >
-                {isLogin ? 'Se connecter' : 'Créer mon compte'}
-              </UltraButton>
+                {isLogin ? "Créer un compte →" : "← Se connecter"}
+              </button>
             </div>
-          </form>
-
-          {/* Toggle Login/Register */}
-          <div className="text-center pt-4 border-t border-border/30">
-            <p className="text-sm text-muted-foreground mb-3">
-              {isLogin ? "Pas encore de compte ?" : "Déjà inscrit ?"}
-            </p>
-            <button
-              type="button"
-              onClick={() => {
-                setIsLogin(!isLogin);
-                setFormData({
-                  fullName: '',
-                  email: '',
-                  phone: '',
-                  password: '',
-                  acceptTerms: false
-                });
-              }}
-              className="text-primary font-bold text-base hover:underline transition-all duration-300"
-            >
-              {isLogin ? "Créer un compte →" : "← Se connecter"}
-            </button>
-          </div>
+          )}
         </div>
-        </motion.div>
       </motion.div>
     </div>
   );
