@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowDownToLine, ArrowUpFromLine, CreditCard, MoreHorizontal } from 'lucide-react';
+import { ArrowDownToLine, ArrowUpFromLine, CreditCard, MoreHorizontal, Receipt } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
 import { format } from 'date-fns';
@@ -49,13 +49,13 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'deposit':
-        return <ArrowDownToLine className="w-4 h-4 text-green-600" />;
+        return <ArrowDownToLine className="w-4 h-4 text-primary" />;
       case 'withdrawal':
-        return <ArrowUpFromLine className="w-4 h-4 text-orange-600" />;
+        return <ArrowUpFromLine className="w-4 h-4 text-accent" />;
       case 'loan_disbursement':
         return <CreditCard className="w-4 h-4 text-purple-600" />;
       default:
-        return <MoreHorizontal className="w-4 h-4" />;
+        return <MoreHorizontal className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
@@ -79,10 +79,9 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   const formatAmount = (amount: number, type: string) => {
     const absAmount = Math.abs(amount);
     const formatted = new Intl.NumberFormat('fr-FR').format(absAmount);
-    // Si le montant est déjà négatif, c'est un retrait/débit
     const isPositive = amount > 0;
     const prefix = isPositive ? '+' : '-';
-    return `${prefix} ${formatted} FCFA`;
+    return `${prefix} ${formatted}`;
   };
 
   if (isLoading) {
@@ -90,7 +89,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
       <div className="bg-card rounded-2xl p-4 space-y-3">
         <Skeleton className="h-5 w-40" />
         {[1, 2, 3].map(i => (
-          <Skeleton key={i} className="h-16 w-full" />
+          <Skeleton key={i} className="h-14 w-full rounded-xl" />
         ))}
       </div>
     );
@@ -98,32 +97,32 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
   if (transactions.length === 0) {
     return (
-      <div className="bg-card rounded-2xl p-6 text-center space-y-3">
-        <div className="mx-auto w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center">
-          <CreditCard className="w-6 h-6 text-primary" />
-        </div>
-        <div>
+      <div className="bg-card rounded-2xl p-6">
+        <div className="text-center py-4">
+          <div className="mx-auto w-14 h-14 bg-muted/50 rounded-full flex items-center justify-center mb-3">
+            <Receipt className="w-6 h-6 text-muted-foreground/60" />
+          </div>
           <p className="font-medium text-sm text-foreground">Aucune transaction</p>
           <p className="text-xs text-muted-foreground mt-1">
             Vos prochaines transactions apparaîtront ici
           </p>
         </div>
-        <div className="flex gap-2 justify-center pt-2">
+        
+        <div className="flex gap-2 justify-center mt-4">
           <button
             onClick={handleDepositClick}
-            className="text-xs px-3 py-1.5 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+            className="text-xs px-4 py-2 bg-primary text-primary-foreground rounded-xl font-medium hover:bg-primary/90 transition-colors"
           >
             Faire un dépôt
           </button>
           <button
             onClick={() => navigate('/mobile-flow/loan-plans')}
-            className="text-xs px-3 py-1.5 border border-border rounded-lg hover:bg-accent transition-colors"
+            className="text-xs px-4 py-2 border border-border rounded-xl font-medium hover:bg-muted transition-colors"
           >
             Demander un prêt
           </button>
         </div>
 
-        {/* Sheet pour choisir le mode de dépôt */}
         <FundsActionSheet 
           isOpen={isDepositSheetOpen}
           onClose={() => setIsDepositSheetOpen(false)}
@@ -132,7 +131,6 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
           onCashierScanSelected={handleCashierScanSelected}
         />
 
-        {/* Modal Mobile Money */}
         <Dialog open={showMobileMoneyModal} onOpenChange={setShowMobileMoneyModal}>
           <MobileMoneyModal 
             onClose={() => setShowMobileMoneyModal(false)}
@@ -145,62 +143,53 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
 
   return (
     <div className="bg-card rounded-2xl p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-semibold text-foreground">Transactions récentes</h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-semibold text-sm text-foreground">Transactions récentes</h3>
         <button 
           onClick={() => navigate('/mobile-flow/transactions')}
-          className="text-xs text-primary hover:underline"
+          className="text-xs text-primary font-medium"
         >
           Voir tout
         </button>
       </div>
 
-      <div className="space-y-2">
-        {transactions.map((transaction, index) => (
+      <div className="space-y-1">
+        {transactions.slice(0, 5).map((transaction, index) => (
           <motion.div
             key={transaction.id}
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.2, delay: index * 0.05 }}
-            className="flex items-center justify-between p-3 rounded-xl hover:bg-accent transition-colors cursor-pointer"
+            transition={{ duration: 0.2, delay: index * 0.03 }}
+            className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors"
             onClick={() => navigate(`/mobile-flow/transactions`)}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted rounded-lg">
+              <div className="p-2 bg-muted/50 rounded-xl">
                 {getTransactionIcon(transaction.type)}
               </div>
               <div>
                 <p className="font-medium text-sm text-foreground">
                   {transaction.description || getTransactionLabel(transaction.type)}
                 </p>
-                <div className="flex items-center gap-2">
-                  <p className="text-xs text-muted-foreground">
-                    {format(new Date(transaction.created_at), 'dd MMM yyyy', { locale: fr })}
-                  </p>
+                <p className="text-xs text-muted-foreground">
+                  {format(new Date(transaction.created_at), 'dd MMM', { locale: fr })}
                   {transaction.payment_method && (
-                    <>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground capitalize">
-                        {transaction.payment_method === 'mobile_money' ? 'Mobile Money' :
+                    <span className="ml-1">
+                      • {transaction.payment_method === 'mobile_money' ? 'Mobile' :
                          transaction.payment_method === 'cash' ? 'Espèces' :
-                         transaction.payment_method === 'bank_transfer' ? 'Virement' :
                          transaction.payment_method}
-                      </span>
-                    </>
+                    </span>
                   )}
-                </div>
+                </p>
               </div>
             </div>
             <div className="text-right">
               <p className={`font-semibold text-sm ${
                 transaction.type === 'deposit' || transaction.type === 'loan_disbursement'
-                  ? 'text-green-600'
-                  : 'text-orange-600'
+                  ? 'text-primary'
+                  : 'text-accent'
               }`}>
-                {formatAmount(transaction.amount, transaction.type)}
-              </p>
-              <p className="text-xs text-muted-foreground capitalize">
-                {transaction.status}
+                {formatAmount(transaction.amount, transaction.type)} <span className="text-xs font-normal">FCFA</span>
               </p>
             </div>
           </motion.div>

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Wallet, Vault, CreditCard, PiggyBank } from 'lucide-react';
+import { CreditCard, Vault, Send, History } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const QuickActions: React.FC = () => {
@@ -8,18 +8,32 @@ const QuickActions: React.FC = () => {
 
   const actions = [
     {
-      icon: Wallet,
+      icon: CreditCard,
       label: 'Prêt',
-      description: 'Demander',
-      gradient: 'from-primary to-primary/80',
+      bgColor: 'bg-primary/10',
+      iconColor: 'text-primary',
       action: () => navigate('/mobile-flow/loan-plans')
     },
     {
       icon: Vault,
       label: 'Coffre',
-      description: 'Épargner',
-      gradient: 'from-accent to-accent/80',
+      bgColor: 'bg-accent/10',
+      iconColor: 'text-accent',
       action: () => navigate('/mobile-flow/vaults-hub')
+    },
+    {
+      icon: Send,
+      label: 'Transfert',
+      bgColor: 'bg-blue-50',
+      iconColor: 'text-blue-600',
+      action: () => navigate('/mobile-flow/transfer')
+    },
+    {
+      icon: History,
+      label: 'Historique',
+      bgColor: 'bg-purple-50',
+      iconColor: 'text-purple-600',
+      action: () => navigate('/mobile-flow/transactions')
     }
   ];
 
@@ -27,12 +41,12 @@ const QuickActions: React.FC = () => {
     hidden: { opacity: 0 },
     visible: {
       opacity: 1,
-      transition: { staggerChildren: 0.1 }
+      transition: { staggerChildren: 0.05 }
     }
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 20 },
+    hidden: { opacity: 0, y: 10 },
     visible: { opacity: 1, y: 0 }
   };
 
@@ -41,33 +55,20 @@ const QuickActions: React.FC = () => {
       variants={containerVariants}
       initial="hidden"
       animate="visible"
-      className="grid grid-cols-2 gap-3 px-2"
+      className="grid grid-cols-4 gap-2"
     >
       {actions.map((action) => (
         <motion.button
           key={action.label}
           variants={itemVariants}
-          whileHover={{ y: -3 }}
-          whileTap={{ scale: 0.98 }}
+          whileTap={{ scale: 0.95 }}
           onClick={action.action}
-          className="group relative overflow-hidden rounded-2xl p-4 text-left transition-all duration-400 ease-premium bg-card shadow-soft-sm hover:shadow-soft-md"
+          className="flex flex-col items-center gap-2 py-3 px-2 rounded-2xl bg-card hover:bg-muted/50 transition-colors duration-200"
         >
-          {/* Background gradient - softer */}
-          <div className={`absolute inset-0 bg-gradient-to-br ${action.gradient} opacity-5 group-hover:opacity-10 transition-opacity duration-400`} />
-          
-          {/* Border */}
-          <div className="absolute inset-0 rounded-2xl border border-border/40 group-hover:border-primary/20 transition-colors duration-400" />
-          
-          {/* Content */}
-          <div className="relative flex items-center gap-3">
-            <div className={`p-3 rounded-xl bg-gradient-to-br ${action.gradient} text-primary-foreground shadow-soft-sm`}>
-              <action.icon className="w-5 h-5" />
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">{action.label}</p>
-              <p className="text-xs text-muted-foreground">{action.description}</p>
-            </div>
+          <div className={`p-3 rounded-xl ${action.bgColor}`}>
+            <action.icon className={`w-5 h-5 ${action.iconColor}`} />
           </div>
+          <span className="text-xs font-medium text-foreground">{action.label}</span>
         </motion.button>
       ))}
     </motion.div>
