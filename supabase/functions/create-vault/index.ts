@@ -30,7 +30,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    const { name, description, target_amount, type, deadline, sfd_id } = await req.json();
+    const { name, description, target_amount, type, deadline, sfd_id: requestedSfdId } = await req.json();
 
     // Validation
     if (!name || !target_amount || target_amount <= 0) {
@@ -47,12 +47,78 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Créer le coffre directement sans compte séparé
+    // Récupérer le SFD valide de l'utilisateur depuis user_sfds
+    let validSfdId = requestedSfdId;
+    
+    if (requestedSfdId) {
+      // Vérifier que l'utilisateur appartient bien à ce SFD
+      const { data: userSfd } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', user.id)
+        .eq('sfd_id', requestedSfdId)
+        .single();
+      
+      if (!userSfd) {
+        // Le sfd_id demandé n'est pas valide, chercher le SFD par défaut
+        const { data: defaultSfd } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', user.id)
+          .eq('is_default', true)
+          .single();
+        
+        if (defaultSfd) {
+          validSfdId = defaultSfd.sfd_id;
+        } else {
+          // Prendre le premier SFD disponible
+          const { data: anySfd } = await supabase
+            .from('user_sfds')
+            .select('sfd_id')
+            .eq('user_id', user.id)
+            .limit(1)
+            .single();
+          
+          validSfdId = anySfd?.sfd_id || null;
+        }
+      }
+    } else {
+      // Pas de sfd_id fourni, chercher le SFD par défaut
+      const { data: defaultSfd } = await supabase
+        .from('user_sfds')
+        .select('sfd_id')
+        .eq('user_id', user.id)
+        .eq('is_default', true)
+        .single();
+      
+      if (defaultSfd) {
+        validSfdId = defaultSfd.sfd_id;
+      } else {
+        const { data: anySfd } = await supabase
+          .from('user_sfds')
+          .select('sfd_id')
+          .eq('user_id', user.id)
+          .limit(1)
+          .single();
+        
+        validSfdId = anySfd?.sfd_id || null;
+      }
+    }
+
+    // Si toujours pas de SFD valide, retourner une erreur
+    if (!validSfdId) {
+      return new Response(
+        JSON.stringify({ error: 'Vous devez être membre d\'un SFD pour créer un coffre' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Créer le coffre avec le sfd_id valide
     const { data: vault, error: vaultError } = await supabase
       .from('vaults')
       .insert({
         user_id: user.id,
-        sfd_id: sfd_id,
+        sfd_id: validSfdId,
         vault_account_id: null,
         name,
         description,
@@ -68,7 +134,7 @@ Deno.serve(async (req) => {
     if (vaultError) {
       console.error('Erreur création coffre:', vaultError);
       return new Response(
-        JSON.stringify({ error: 'Erreur lors de la création du coffre' }),
+        JSON.stringify({ error: 'Erreur lors de la création du coffre', details: vaultError.message }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -84,7 +150,8 @@ Deno.serve(async (req) => {
         vault_id: vault.id,
         name,
         target_amount,
-        type
+        type,
+        sfd_id: validSfdId
       }
     });
 
