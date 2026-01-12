@@ -225,34 +225,36 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-600 text-white p-6 pb-8">
-        <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <div className="flex items-start justify-between">
-          <div className="flex-1">
-            <h1 className="text-2xl font-bold mb-2">{vault.name}</h1>
-            {vault.description && (
-              <p className="text-sm opacity-90">{vault.description}</p>
-            )}
-          </div>
-          <div className="flex gap-2">
-            {isCreator && (
-              <span className="px-3 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
-                <Crown className="w-3 h-3" />
-                Créateur
-              </span>
-            )}
-            {(isCreator || members.find(m => m.user_id === user?.id && m.is_admin)) && (
-              <Button 
-                onClick={() => setShowInviteModal(true)} 
-                variant="ghost"
-                size="icon"
-                className="bg-white/20 hover:bg-white/30 text-white"
-              >
-                <UserPlus className="w-4 h-4" />
-              </Button>
-            )}
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-8 text-white">
+          <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
+            <ArrowLeft className="w-6 h-6" />
+          </button>
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <h1 className="text-2xl font-bold mb-2">{vault.name}</h1>
+              {vault.description && (
+                <p className="text-sm opacity-90">{vault.description}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {isCreator && (
+                <span className="px-3 py-1 bg-white/20 rounded-full text-xs flex items-center gap-1">
+                  <Crown className="w-3 h-3" />
+                  Admin
+                </span>
+              )}
+              {(isCreator || members.find(m => m.user_id === user?.id && m.is_admin)) && (
+                <Button 
+                  onClick={() => setShowInviteModal(true)} 
+                  variant="ghost"
+                  size="icon"
+                  className="bg-white/20 hover:bg-white/30 text-white"
+                >
+                  <UserPlus className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -289,7 +291,7 @@ const CollaborativeVaultDetailsPage: React.FC = () => {
             </div>
             <div className="h-3 bg-muted rounded-full overflow-hidden">
               <div
-                className="h-full bg-gradient-to-r from-orange-500 to-pink-600 transition-all"
+                className="h-full bg-primary transition-all"
                 style={{ width: `${Math.min(progress, 100)}%` }}
               />
             </div>
