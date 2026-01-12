@@ -2,11 +2,12 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Smartphone, Fingerprint, Lock, Shield, Loader2 } from 'lucide-react';
+import { Smartphone, Fingerprint, Lock, LogOut, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import AuthenticationSystem from '@/components/AuthenticationSystem';
+import LogoutButton from '@/components/LogoutButton';
 
 const SecuritySection = () => {
   const { toast } = useToast();
@@ -22,7 +23,7 @@ const SecuritySection = () => {
   const handleToggleSecurity = (feature: string) => {
     toast({
       title: `${feature} mise à jour`,
-      description: `La configuration de ${feature} a été modifiée`,
+      description: `La configuration a été modifiée`,
     });
   };
 
@@ -31,12 +32,10 @@ const SecuritySection = () => {
       setIsLoading(true);
       
       if (checked) {
-        // If enabling biometrics, we need authentication
         setShowBiometricDialog(true);
         return;
       }
       
-      // Disabling biometrics directly
       await toggleBiometricAuth();
       
       toast({
@@ -46,7 +45,7 @@ const SecuritySection = () => {
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de la modification des paramètres",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
     } finally {
@@ -62,93 +61,84 @@ const SecuritySection = () => {
       
       toast({
         title: "Biométrie activée",
-        description: "L'authentification biométrique a été activée avec succès",
+        description: "L'authentification biométrique a été activée",
       });
     } catch (error) {
       toast({
         title: "Erreur",
-        description: "Une erreur est survenue lors de l'activation de la biométrie",
+        description: "Une erreur est survenue",
         variant: "destructive",
       });
     }
   };
 
+  const securityItems = [
+    {
+      icon: Smartphone,
+      title: 'SMS',
+      description: 'Code à usage unique',
+      checked: securitySettings.smsAuth,
+      onToggle: () => handleToggleSecurity('SMS'),
+    },
+    {
+      icon: Fingerprint,
+      title: 'Biométrie',
+      description: 'Empreinte ou visage',
+      checked: biometricEnabled,
+      onToggle: handleToggleBiometric,
+      loading: isLoading,
+    },
+    {
+      icon: Lock,
+      title: '2FA',
+      description: 'Double authentification',
+      checked: securitySettings.twoFactorAuth,
+      onToggle: () => handleToggleSecurity('2FA'),
+    },
+  ];
+
   return (
     <>
-      <Card className="mb-4">
+      <Card className="border-0 shadow-sm bg-card/80 backdrop-blur-sm">
         <CardHeader className="pb-2">
-          <CardTitle className="text-lg">Sécurité & Authentification</CardTitle>
+          <CardTitle className="text-base font-medium">Sécurité</CardTitle>
         </CardHeader>
-        <CardContent className="pt-0">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-blue-100 rounded-full flex items-center justify-center text-blue-600">
-                  <Smartphone className="h-4 w-4" />
+        <CardContent className="pt-0 space-y-2">
+          {securityItems.map((item) => (
+            <div 
+              key={item.title}
+              className="flex items-center justify-between p-3 rounded-xl bg-muted/40"
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                  <item.icon className="h-4 w-4 text-primary" />
                 </div>
                 <div>
-                  <p className="font-medium">Authentification par SMS</p>
-                  <p className="text-xs text-gray-500">
-                    Recevez un code à usage unique par SMS
-                  </p>
+                  <p className="text-sm font-medium">{item.title}</p>
+                  <p className="text-[10px] text-muted-foreground">{item.description}</p>
                 </div>
               </div>
-              <Switch defaultChecked onCheckedChange={() => handleToggleSecurity('authentification SMS')} />
-            </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-8 w-8 bg-green-100 rounded-full flex items-center justify-center text-green-600">
-                  <Fingerprint className="h-4 w-4" />
-                </div>
-                <div>
-                  <p className="font-medium">Reconnaissance biométrique</p>
-                  <p className="text-xs text-gray-500">
-                    Utilisez votre empreinte ou visage
-                  </p>
-                </div>
-              </div>
-              {isLoading ? (
-                <div className="h-5 w-5 flex items-center justify-center">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                </div>
+              {item.loading ? (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
               ) : (
                 <Switch 
-                  checked={biometricEnabled} 
-                  onCheckedChange={handleToggleBiometric} 
+                  checked={item.checked} 
+                  onCheckedChange={item.onToggle}
+                  className="scale-90"
                 />
               )}
             </div>
-            
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="h-10 w-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                  <Lock className="h-5 w-5" />
-                </div>
-                <div>
-                  <p className="font-medium">Authentification à 2 facteurs</p>
-                  <p className="text-xs text-muted-foreground">Code de vérification SMS</p>
-                </div>
-              </div>
-              <Switch 
-                checked={securitySettings.twoFactorAuth}
-                onCheckedChange={(checked) => handleToggleSecurity('twoFactorAuth')}
-                disabled={isLoading}
-                className="data-[state=checked]:bg-primary"
-              />
-            </div>
+          ))}
 
-            <Button 
+          {/* Bouton Déconnexion */}
+          <div className="pt-3">
+            <LogoutButton 
               variant="outline" 
-              className="w-full mt-2"
-              onClick={() => toast({
-                title: "Sécurité avancée",
-                description: "Configuration de la sécurité avancée à venir",
-              })}
-            >
-              <Shield className="h-4 w-4 mr-2" />
-              Paramètres de sécurité avancés
-            </Button>
+              size="sm"
+              className="w-full border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+              text="Se déconnecter"
+              redirectPath="/auth"
+            />
           </div>
         </CardContent>
       </Card>
