@@ -5,18 +5,13 @@ import { Input } from '@/components/ui/input';
 import { useMobileMoneyOperations } from '@/hooks/mobile-money';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { mobileMoneyProviders } from '@/config/mobileMoneyProviders';
 
 interface MobileMoneyTabProps {
   paymentStatus: 'pending' | 'success' | 'failed' | null;
   handlePayment: () => void;
   isWithdrawal?: boolean;
 }
-
-const providers = [
-  { id: 'orange', name: 'Orange', color: 'from-orange-400 to-orange-500' },
-  { id: 'mtn', name: 'MTN', color: 'from-yellow-400 to-yellow-500' },
-  { id: 'moov', name: 'Moov', color: 'from-blue-400 to-blue-500' },
-];
 
 export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({ 
   paymentStatus, 
@@ -43,25 +38,28 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         <label className="text-sm font-medium text-muted-foreground mb-3 block">
           Opérateur
         </label>
-        <div className="grid grid-cols-3 gap-3">
-          {providers.map((p) => (
+        <div className="grid grid-cols-4 gap-2">
+          {mobileMoneyProviders.map((p) => (
             <button
               key={p.id}
               onClick={() => setProvider(p.id)}
               disabled={isProcessing}
               className={cn(
-                "flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200",
+                "flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200",
                 provider === p.id 
                   ? "border-primary bg-primary/5 shadow-soft-sm" 
                   : "border-border bg-muted/30 hover:border-muted-foreground/30",
                 isProcessing && "opacity-50 cursor-not-allowed"
               )}
             >
-              <div className={cn(
-                "w-10 h-10 rounded-full bg-gradient-to-br mb-2",
-                p.color
-              )} />
-              <span className="text-xs font-medium">{p.name}</span>
+              <img 
+                src={p.logo} 
+                alt={p.name} 
+                className="w-10 h-10 rounded-lg object-contain mb-1"
+              />
+              <span className="text-[10px] font-medium text-center leading-tight">
+                {p.shortName}
+              </span>
             </button>
           ))}
         </div>
