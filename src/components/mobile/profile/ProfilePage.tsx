@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ProfileHeader from './ProfileHeader';
@@ -8,7 +7,6 @@ import NotificationsSection from './NotificationsSection';
 import PersonalInfoSection from './PersonalInfoSection';
 import AdvancedSettingsSection from './AdvancedSettingsSection';
 import { useAuth } from '@/hooks/useAuth';
-import { Wallet, Shield, User } from 'lucide-react';
 
 const ProfilePage = () => {
   const [activeTab, setActiveTab] = useState('accounts');
@@ -20,44 +18,41 @@ const ProfilePage = () => {
 
       <Tabs 
         defaultValue={activeTab} 
-        className="w-full mt-6 px-4"
+        className="w-full mt-4 px-4"
         onValueChange={setActiveTab}
       >
-        <TabsList className="grid grid-cols-3 gap-2 bg-muted/50 p-1 rounded-xl mb-6">
+        <TabsList className="grid grid-cols-3 bg-muted/30 p-1 rounded-xl mb-4 h-10">
           <TabsTrigger 
             value="accounts"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 hover:bg-primary/10 rounded-lg"
+            className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all"
           >
-            <Wallet className="mr-2 h-4 w-4" />
             Comptes
           </TabsTrigger>
           <TabsTrigger 
             value="security"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 hover:bg-primary/10 rounded-lg"
+            className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all"
           >
-            <Shield className="mr-2 h-4 w-4" />
             Sécurité
           </TabsTrigger>
           <TabsTrigger 
             value="profile"
-            className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-lg transition-all duration-300 hover:bg-primary/10 rounded-lg"
+            className="text-xs data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all"
           >
-            <User className="mr-2 h-4 w-4" />
             Profil
           </TabsTrigger>
         </TabsList>
         
-        <TabsContent value="accounts" className="space-y-4">
+        <TabsContent value="accounts" className="space-y-3 mt-0">
           <SfdAccountsSection />
         </TabsContent>
         
-        <TabsContent value="security" className="space-y-4">
+        <TabsContent value="security" className="space-y-3 mt-0">
           <SecuritySection />
           <NotificationsSection />
           <AdvancedSettingsSection />
         </TabsContent>
         
-        <TabsContent value="profile" className="space-y-4">
+        <TabsContent value="profile" className="space-y-3 mt-0">
           {user && <PersonalInfoSection user={user} />}
         </TabsContent>
       </Tabs>
