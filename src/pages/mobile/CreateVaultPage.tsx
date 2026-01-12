@@ -294,13 +294,15 @@ const CreateVaultPage: React.FC = () => {
                     </motion.button>
                   </PopoverTrigger>
                   <PopoverContent 
-                    className="w-auto p-0 pointer-events-auto rounded-2xl border-border/50 shadow-soft-lg" 
+                    className="w-auto p-0 pointer-events-auto rounded-2xl border-border/50 shadow-soft-lg z-[60]" 
                     align="center"
+                    sideOffset={8}
                   >
                     <CalendarComponent
                       mode="single"
                       selected={formData.deadline ? new Date(formData.deadline) : undefined}
                       onSelect={(date) => {
+                        console.log("📅 Date sélectionnée:", date);
                         if (date) {
                           setFormData({ 
                             ...formData, 
@@ -311,7 +313,8 @@ const CreateVaultPage: React.FC = () => {
                       }}
                       disabled={(date) => date < new Date()}
                       locale={fr}
-                      className="rounded-2xl pointer-events-auto"
+                      className="rounded-2xl"
+                      initialFocus
                     />
                   </PopoverContent>
                 </Popover>
