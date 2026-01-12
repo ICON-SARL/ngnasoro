@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useMutation } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Users, Lock, Globe, UserCheck } from 'lucide-react';
+import { ArrowLeft, Users, Lock, Globe, UserCheck, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -43,7 +43,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
     onSuccess: () => {
       toast({
         title: 'Coffre créé !',
-        description: 'Votre coffre collaboratif a été créé avec succès',
+        description: 'Votre coffre collectif a été créé avec succès',
       });
       navigate('/mobile-flow/collaborative-vaults');
     },
@@ -87,7 +87,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
   ];
 
   const withdrawalRules = [
-    { value: 'creator_only', label: 'Créateur uniquement', description: 'Seul le créateur peut retirer' },
+    { value: 'creator_only', label: 'Admin uniquement', description: 'Seul l\'admin peut retirer' },
     { value: 'majority_vote', label: 'Vote majoritaire', description: 'Majorité des membres doit approuver' },
     { value: 'unanimous', label: 'Unanimité', description: 'Tous les membres doivent approuver' }
   ];
@@ -95,17 +95,19 @@ const CreateCollaborativeVaultPage: React.FC = () => {
   return (
     <div className="min-h-screen bg-background pb-20">
       {/* Header */}
-      <div className="bg-gradient-to-br from-orange-500 to-pink-600 text-white p-6 pb-8">
-        <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-2xl font-bold mb-2">Créer un Coffre Collaboratif</h1>
-        <p className="text-sm opacity-90">Définissez votre objectif d'épargne commun</p>
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-10">
+          <button onClick={() => navigate(-1)} className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors">
+            <ArrowLeft className="w-6 h-6 text-white" />
+          </button>
+          <h1 className="text-2xl font-bold text-white mb-2">Nouveau Coffre Collectif</h1>
+          <p className="text-sm text-white/80">Définissez votre objectif d'épargne commun</p>
+        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="px-4 -mt-4 space-y-6">
+      <form onSubmit={handleSubmit} className="px-4 -mt-4 space-y-4">
         {/* Basic Info Card */}
-        <div className="bg-card rounded-3xl p-6 border border-border">
+        <div className="bg-card rounded-2xl p-5 border border-border/50 shadow-soft-sm">
           <h2 className="font-semibold mb-4 text-foreground flex items-center gap-2">
             <Users className="w-5 h-5 text-primary" />
             Informations de base
@@ -119,7 +121,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                 placeholder="Ex: Vacances 2025"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
 
@@ -130,7 +132,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 value={formData.description}
                 onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                 placeholder="Décrivez l'objectif de ce coffre..."
-                className="mt-1"
+                className="mt-1 rounded-xl"
                 rows={3}
               />
             </div>
@@ -143,7 +145,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 value={formData.target_amount}
                 onChange={(e) => setFormData({ ...formData, target_amount: e.target.value })}
                 placeholder="500000"
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
 
@@ -154,14 +156,14 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 type="date"
                 value={formData.deadline}
                 onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-                className="mt-1"
+                className="mt-1 rounded-xl"
               />
             </div>
           </div>
         </div>
 
         {/* Visibility Card */}
-        <div className="bg-card rounded-3xl p-6 border border-border">
+        <div className="bg-card rounded-2xl p-5 border border-border/50 shadow-soft-sm">
           <h2 className="font-semibold mb-4 text-foreground">Visibilité</h2>
           <div className="space-y-2">
             {visibilityOptions.map((option) => {
@@ -170,10 +172,10 @@ const CreateCollaborativeVaultPage: React.FC = () => {
                 <div
                   key={option.value}
                   onClick={() => setFormData({ ...formData, visibility: option.value })}
-                  className={`p-4 rounded-2xl cursor-pointer transition-all ${
+                  className={`p-4 rounded-xl cursor-pointer transition-all ${
                     formData.visibility === option.value
                       ? 'bg-primary/10 border-2 border-primary'
-                      : 'bg-muted border-2 border-transparent hover:bg-accent'
+                      : 'bg-muted/50 border-2 border-transparent hover:bg-accent'
                   }`}
                 >
                   <div className="flex items-start gap-3">
@@ -190,17 +192,17 @@ const CreateCollaborativeVaultPage: React.FC = () => {
         </div>
 
         {/* Withdrawal Rules Card */}
-        <div className="bg-card rounded-3xl p-6 border border-border">
+        <div className="bg-card rounded-2xl p-5 border border-border/50 shadow-soft-sm">
           <h2 className="font-semibold mb-4 text-foreground">Règles de retrait</h2>
           <div className="space-y-2">
             {withdrawalRules.map((rule) => (
               <div
                 key={rule.value}
                 onClick={() => setFormData({ ...formData, withdrawal_rule: rule.value })}
-                className={`p-4 rounded-2xl cursor-pointer transition-all ${
+                className={`p-4 rounded-xl cursor-pointer transition-all ${
                   formData.withdrawal_rule === rule.value
                     ? 'bg-primary/10 border-2 border-primary'
-                    : 'bg-muted border-2 border-transparent hover:bg-accent'
+                    : 'bg-muted/50 border-2 border-transparent hover:bg-accent'
                 }`}
               >
                 <p className="font-medium text-foreground">{rule.label}</p>
@@ -209,7 +211,7 @@ const CreateCollaborativeVaultPage: React.FC = () => {
             ))}
           </div>
 
-          <div className="mt-4 flex items-center justify-between p-4 bg-muted rounded-2xl">
+          <div className="mt-4 flex items-center justify-between p-4 bg-muted/50 rounded-xl">
             <div>
               <Label htmlFor="allow_withdrawal">Autoriser les retraits avant l'objectif</Label>
               <p className="text-xs text-muted-foreground mt-1">Les membres peuvent retirer même si l'objectif n'est pas atteint</p>
@@ -226,9 +228,16 @@ const CreateCollaborativeVaultPage: React.FC = () => {
         <Button
           type="submit"
           disabled={createVaultMutation.isPending}
-          className="w-full bg-gradient-to-r from-orange-500 to-pink-600 h-12 text-base font-semibold"
+          className="w-full bg-primary hover:bg-primary/90 h-12 text-base font-semibold rounded-xl"
         >
-          {createVaultMutation.isPending ? 'Création...' : 'Créer le coffre'}
+          {createVaultMutation.isPending ? (
+            <>
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              Création...
+            </>
+          ) : (
+            'Créer le coffre'
+          )}
         </Button>
       </form>
     </div>

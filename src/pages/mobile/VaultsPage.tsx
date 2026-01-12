@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Vault, Plus, Target, Calendar, Lock } from 'lucide-react';
+import { ArrowLeft, Vault, Plus, Target, Lock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { motion } from 'framer-motion';
 
@@ -64,17 +64,18 @@ const VaultsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-gradient-to-b from-primary to-primary/80 text-white p-6 pb-8">
-        <button
-          onClick={() => navigate(-1)}
-          className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
-        >
-          <ArrowLeft className="w-6 h-6" />
-        </button>
-        <h1 className="text-2xl font-bold mb-2">Mes Coffres d'Épargne</h1>
-        <p className="text-sm opacity-90">
-          Gérez vos objectifs d'épargne
-        </p>
+      {/* Header */}
+      <div className="bg-gradient-to-b from-primary via-primary/90 to-background">
+        <div className="px-4 py-6 pb-10">
+          <button
+            onClick={() => navigate(-1)}
+            className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
+          >
+            <ArrowLeft className="w-6 h-6 text-white" />
+          </button>
+          <h1 className="text-2xl font-bold text-white mb-2">Coffres Individuels</h1>
+          <p className="text-sm text-white/80">Gérez vos objectifs d'épargne</p>
+        </div>
       </div>
 
       <div className="px-4 -mt-4">
@@ -97,7 +98,7 @@ const VaultsPage: React.FC = () => {
         {isLoading ? (
           <div className="space-y-3">
             {[1, 2, 3].map((i) => (
-              <div key={i} className="h-32 bg-muted rounded-3xl animate-pulse" />
+              <div key={i} className="h-32 bg-muted rounded-2xl animate-pulse" />
             ))}
           </div>
         ) : vaults && vaults.length > 0 ? (
@@ -114,11 +115,11 @@ const VaultsPage: React.FC = () => {
                   animate={{ opacity: 1, y: 0 }}
                   whileTap={{ scale: 0.98 }}
                   onClick={() => navigate(`/mobile-flow/vault/${vault.id}`)}
-                  className="bg-card rounded-3xl p-5 border border-border shadow-sm"
+                  className="bg-card rounded-2xl p-5 border border-border/50 shadow-soft-sm"
                 >
                   <div className="flex items-start justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
                         <Vault className="w-6 h-6 text-primary" />
                       </div>
                       <div>
@@ -185,7 +186,7 @@ const VaultsPage: React.FC = () => {
               className="bg-primary hover:bg-primary/90 text-primary-foreground rounded-2xl"
             >
               <Plus className="w-4 h-4 mr-2" />
-              Créer un coffre
+              Nouveau coffre individuel
             </Button>
           </div>
         )}
@@ -194,7 +195,7 @@ const VaultsPage: React.FC = () => {
       <div className="fixed bottom-20 right-4">
         <Button
           onClick={() => navigate('/mobile-flow/create-vault')}
-          className="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-lg"
+          className="w-14 h-14 rounded-full bg-primary hover:bg-primary/90 text-primary-foreground shadow-soft-lg"
         >
           <Plus className="w-6 h-6" />
         </Button>
