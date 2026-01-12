@@ -10,8 +10,9 @@ export function useMobileMoneyOperations(): MobileMoneyOperationsHook {
   const [error, setError] = useState<string | null>(null);
   const [mobileMoneyProviders, setMobileMoneyProviders] = useState<MobileMoneyProvider[]>([
     { id: 'orange', name: 'Orange Money' },
-    { id: 'mtn', name: 'MTN Money' },
-    { id: 'moov', name: 'Moov Money' }
+    { id: 'mtn', name: 'MTN MoMo' },
+    { id: 'moov', name: 'Moov Money' },
+    { id: 'wave', name: 'Wave' }
   ]);
   
   // Update error state when payment or withdrawal errors change

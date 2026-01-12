@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
@@ -7,6 +8,7 @@ import { useMobileMoneyOperations } from '@/hooks/mobile-money';
 import { CheckCircle, Smartphone, X, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { motion, AnimatePresence } from 'framer-motion';
+import { mobileMoneyProviders } from '@/config/mobileMoneyProviders';
 
 interface MobileMoneyModalProps {
   onClose: () => void;
@@ -14,12 +16,6 @@ interface MobileMoneyModalProps {
   amount?: number;
   loanId?: string;
 }
-
-const providers = [
-  { id: 'orange', name: 'Orange', color: 'from-orange-400 to-orange-500' },
-  { id: 'mtn', name: 'MTN', color: 'from-yellow-400 to-yellow-500' },
-  { id: 'moov', name: 'Moov', color: 'from-blue-400 to-blue-500' },
-];
 
 const quickAmounts = [5000, 10000, 25000, 50000];
 
@@ -177,23 +173,26 @@ const MobileMoneyModal: React.FC<MobileMoneyModalProps> = ({
           <label className="text-sm font-medium text-muted-foreground mb-3 block">
             Opérateur
           </label>
-          <div className="grid grid-cols-3 gap-3">
-            {providers.map((p) => (
+          <div className="grid grid-cols-4 gap-2">
+            {mobileMoneyProviders.map((p) => (
               <button
                 key={p.id}
                 onClick={() => setProvider(p.id)}
                 className={cn(
-                  "flex flex-col items-center p-4 rounded-xl border-2 transition-all duration-200",
+                  "flex flex-col items-center p-3 rounded-xl border-2 transition-all duration-200",
                   provider === p.id 
                     ? "border-primary bg-primary/5 shadow-soft-sm" 
                     : "border-border bg-muted/30 hover:border-muted-foreground/30"
                 )}
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-full bg-gradient-to-br mb-2",
-                  p.color
-                )} />
-                <span className="text-xs font-medium">{p.name}</span>
+                <img 
+                  src={p.logo} 
+                  alt={p.name} 
+                  className="w-10 h-10 rounded-lg object-contain mb-1"
+                />
+                <span className="text-[10px] font-medium text-center leading-tight">
+                  {p.shortName}
+                </span>
               </button>
             ))}
           </div>
