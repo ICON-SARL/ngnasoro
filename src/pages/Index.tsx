@@ -17,40 +17,46 @@ const Index = () => {
       return;
     }
 
-    // Si pas d'utilisateur connecté
-    if (!user) {
-      // Sur mobile natif (Android/iOS), rediriger vers la page de connexion
-      const isNative = Capacitor.isNativePlatform();
-      if (isNative) {
-        console.log('📱 Mobile native détecté, redirection vers /auth');
-        navigate('/auth', { replace: true });
-        return;
-      }
+    // Si utilisateur connecté → redirection selon le rôle
+    if (user) {
+      console.log('📍 User authenticated with role:', userRole);
       
-      // Sur web, afficher la landing page
-      console.log('🌐 Web détecté, affichage de la landing page');
-      setShouldShowLanding(true);
+      switch (userRole) {
+        case UserRole.Admin:
+          navigate('/super-admin-dashboard', { replace: true });
+          break;
+        case UserRole.SfdAdmin:
+          navigate('/agency-dashboard', { replace: true });
+          break;
+        case UserRole.Client:
+          navigate('/mobile-flow/dashboard', { replace: true });
+          break;
+        case UserRole.User:
+        default:
+          navigate('/sfd-selection', { replace: true });
+          break;
+      }
       return;
     }
 
-    // Rediriger selon le rôle de l'utilisateur
-    console.log('📍 User authenticated with role:', userRole);
+    // Utilisateur non connecté - vérifier l'onboarding
+    const hasSeenOnboarding = localStorage.getItem('hasSeenOnboarding');
     
-    switch (userRole) {
-      case UserRole.Admin:
-        navigate('/super-admin-dashboard', { replace: true });
-        break;
-      case UserRole.SfdAdmin:
-        navigate('/agency-dashboard', { replace: true });
-        break;
-      case UserRole.Client:
-        navigate('/mobile-flow/dashboard', { replace: true });
-        break;
-      case UserRole.User:
-      default:
-        // L'utilisateur a un compte mais n'est pas encore client d'une SFD
-        navigate('/sfd-selection', { replace: true });
-        break;
+    if (!hasSeenOnboarding) {
+      // Première visite → onboarding
+      console.log('🎉 Première visite, redirection vers onboarding');
+      navigate('/onboarding', { replace: true });
+      return;
+    }
+
+    // Onboarding déjà vu
+    const isNative = Capacitor.isNativePlatform();
+    if (isNative) {
+      console.log('📱 Mobile native, redirection vers /auth');
+      navigate('/auth', { replace: true });
+    } else {
+      console.log('🌐 Web, affichage de la landing page');
+      setShouldShowLanding(true);
     }
   }, [user, loading, userRole, isCheckingRole, navigate]);
 
@@ -68,7 +74,7 @@ const Index = () => {
     );
   }
 
-  // Afficher la landing page pour les visiteurs non connectés
+  // Afficher la landing page pour les visiteurs web non connectés
   if (shouldShowLanding) {
     return <LandingPage />;
   }
