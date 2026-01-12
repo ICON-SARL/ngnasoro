@@ -10,7 +10,6 @@ const QuickActions: React.FC = () => {
     {
       icon: CreditCard,
       label: 'Prêt',
-      description: 'Demander un financement',
       bgColor: 'bg-primary/10',
       iconColor: 'text-primary',
       action: () => navigate('/mobile-flow/loan-plans')
@@ -18,7 +17,6 @@ const QuickActions: React.FC = () => {
     {
       icon: Vault,
       label: 'Coffre',
-      description: 'Gérer votre épargne',
       bgColor: 'bg-accent/10',
       iconColor: 'text-accent',
       action: () => navigate('/mobile-flow/vaults-hub')
@@ -26,32 +24,23 @@ const QuickActions: React.FC = () => {
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      className="grid grid-cols-2 gap-3"
-    >
+    <div className="flex gap-3">
       {actions.map((action) => (
         <motion.button
           key={action.label}
-          whileTap={{ scale: 0.97 }}
+          whileTap={{ scale: 0.96 }}
           onClick={action.action}
-          className="flex flex-col items-center gap-2 py-5 px-4 rounded-2xl bg-card border border-border/50 hover:bg-muted/50 transition-all duration-200"
+          className="flex-1 flex flex-col items-center gap-2 py-4 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors"
         >
-          <div className={`p-4 rounded-2xl ${action.bgColor}`}>
-            <action.icon className={`w-6 h-6 ${action.iconColor}`} />
+          <div className={`p-3 rounded-xl ${action.bgColor}`}>
+            <action.icon className={`w-5 h-5 ${action.iconColor}`} />
           </div>
-          <div className="text-center">
-            <span className="text-sm font-semibold text-foreground block">
-              {action.label}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {action.description}
-            </span>
-          </div>
+          <span className="text-sm font-medium text-foreground">
+            {action.label}
+          </span>
         </motion.button>
       ))}
-    </motion.div>
+    </div>
   );
 };
 
