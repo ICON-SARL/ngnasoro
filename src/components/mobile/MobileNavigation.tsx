@@ -12,8 +12,8 @@ const MobileNavigation: React.FC = () => {
   const navItems = [
     { icon: Home, label: 'Accueil', path: '/mobile-flow/dashboard' },
     { icon: CreditCard, label: 'Prêts', path: '/mobile-flow/loans' },
-    { icon: User, label: 'Profil', path: '/mobile-flow/profile' },
     { icon: Headset, label: 'Support', path: '/mobile-flow/support' },
+    { icon: User, label: 'Profil', path: '/mobile-flow/profile' },
   ];
   
   return (

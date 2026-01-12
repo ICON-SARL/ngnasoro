@@ -64,7 +64,7 @@ const VaultsPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background pb-20">
-      <div className="bg-gradient-to-br from-purple-500 to-indigo-600 text-white p-6 pb-8">
+      <div className="bg-gradient-to-b from-primary to-primary/80 text-white p-6 pb-8">
         <button
           onClick={() => navigate(-1)}
           className="mb-4 p-2 hover:bg-white/10 rounded-full transition-colors"
