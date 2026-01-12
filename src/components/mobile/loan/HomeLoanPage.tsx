@@ -51,7 +51,7 @@ const HomeLoanPage: React.FC = () => {
         <Button 
           variant="ghost" 
           size="icon" 
-          onClick={() => navigate('/mobile-flow/main')}
+          onClick={() => navigate('/mobile-flow/dashboard')}
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
