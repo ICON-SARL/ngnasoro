@@ -72,12 +72,12 @@ export const MobileMoneyTab: React.FC<MobileMoneyTabProps> = ({
         </label>
         <div className="relative">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 flex items-center gap-2 text-muted-foreground">
-            <span className="text-lg">🇧🇯</span>
-            <span className="text-sm font-medium">+229</span>
+            <span className="text-lg">🇲🇱</span>
+            <span className="text-sm font-medium">+223</span>
           </div>
           <Input
             type="tel"
-            placeholder="97 00 00 00"
+            placeholder="6X XX XX XX"
             value={phoneNumber}
             onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
             className="pl-20 h-12 rounded-xl border-border focus:ring-2 focus:ring-primary/20"
