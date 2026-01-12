@@ -1,6 +1,11 @@
 // Phone validation constants and utility functions
 export const MALI_PHONE_REGEX = /^(\+223)?[67]\d{7}$/;
 
+// Mali phone number constants
+export const MALI_COUNTRY_CODE = '+223';
+export const MALI_FLAG_EMOJI = '🇲🇱';
+export const MALI_PHONE_PLACEHOLDER = '6X XX XX XX';
+
 export const PHONE_FORMAT_MESSAGE = 'Le numéro de téléphone doit être un numéro malien valide (+223 67 ou 66 XXXXXXX)';
 
 export const MALI_REGIONS = [

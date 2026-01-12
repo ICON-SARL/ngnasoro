@@ -171,7 +171,7 @@ export function SfdEditDialog({
                 <FormItem>
                   <FormLabel>Téléphone</FormLabel>
                   <FormControl>
-                    <Input placeholder="+226 XX XX XX XX" {...field} />
+                    <Input placeholder="+223 6X XX XX XX" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

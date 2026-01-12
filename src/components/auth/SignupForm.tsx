@@ -122,7 +122,7 @@ const SignupForm: React.FC<SignupFormProps> = ({ onSwitchToLogin }) => {
         <Input
           id="phone"
           type="tel"
-          placeholder="+226 70 12 34 56"
+          placeholder="+223 6X XX XX XX"
           {...register('phone')}
           disabled={isLoading}
         />
