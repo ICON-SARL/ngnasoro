@@ -95,20 +95,18 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     try {
       const fullPhone = getFullPhoneNumber();
       
-      // Check if user exists with this phone
-      const { data, error } = await supabase.rpc('verify_user_pin', {
-        p_phone: fullPhone,
-        p_pin: '0000' // Dummy PIN to check if user exists and has PIN set
+      // Use read-only lookup function (no side effects on pin_attempts)
+      const { data, error } = await supabase.rpc('get_pin_login_state', {
+        p_phone: fullPhone
       });
 
       if (error) throw error;
 
       const result = data as { 
-        success: boolean; 
-        error?: string; 
-        needs_setup?: boolean; 
-        user_id?: string;
-        locked_until?: string;
+        exists: boolean; 
+        user_id: string | null;
+        needs_setup: boolean; 
+        locked_until: string | null;
       };
 
       if (result.locked_until) {
@@ -121,7 +119,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         return;
       }
 
-      if (result.error === 'Utilisateur non trouvé') {
+      if (!result.exists) {
         if (isLogin) {
           toast({
             title: 'Compte non trouvé',
@@ -146,7 +144,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         return;
       }
 
-      // User exists with PIN, go to PIN entry
+      // User exists with PIN configured, go to PIN entry
       setStep('pin');
     } catch (error: any) {
       toast({
@@ -171,73 +169,65 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     try {
       const fullPhone = getFullPhoneNumber();
       
-      const { data, error } = await supabase.rpc('verify_user_pin', {
-        p_phone: fullPhone,
-        p_pin: formData.pin
+      // Call edge function to verify PIN and get session tokens
+      const { data: response, error: fetchError } = await supabase.functions.invoke('pin-auth-session', {
+        body: { phone: fullPhone, pin: formData.pin }
       });
 
-      if (error) throw error;
+      if (fetchError) throw fetchError;
 
-      const result = data as { 
-        success: boolean; 
-        error?: string; 
-        user_id?: string;
-        attempts_remaining?: number;
-        locked_until?: string;
-      };
-
-      if (result.locked_until) {
-        const lockTime = new Date(result.locked_until);
+      // Handle locked account
+      if (response.locked_until) {
+        const lockTime = new Date(response.locked_until);
         setPinError(`Compte bloqué jusqu'à ${lockTime.toLocaleTimeString('fr-FR')}`);
         return;
       }
 
-      if (!result.success) {
-        if (result.attempts_remaining !== undefined) {
-          setAttemptsRemaining(result.attempts_remaining);
-          setPinError(`PIN incorrect. ${result.attempts_remaining} essai(s) restant(s)`);
+      // Handle needs setup
+      if (response.needs_setup && response.user_id) {
+        setUserId(response.user_id);
+        setStep('setup_pin');
+        toast({
+          title: 'Configuration du PIN',
+          description: 'Créez votre code PIN à 4 chiffres'
+        });
+        return;
+      }
+
+      // Handle wrong PIN
+      if (!response.success) {
+        if (response.attempts_remaining !== undefined) {
+          setAttemptsRemaining(response.attempts_remaining);
+          setPinError(`PIN incorrect. ${response.attempts_remaining} essai(s) restant(s)`);
         } else {
-          setPinError(result.error || 'PIN incorrect');
+          setPinError(response.error || 'PIN incorrect');
         }
         setFormData(prev => ({ ...prev, pin: '' }));
         return;
       }
 
-      // PIN verified successfully - sign in with a custom session
-      // For now, we'll use signInWithPassword with a generated password based on user_id
-      // This is a simplified approach - in production, use a proper token-based auth
+      // Success! Set the session with returned tokens
+      const { access_token, refresh_token } = response;
       
-      if (result.user_id) {
-        // Create a magic link session or use admin auth
-        // For demo, we'll fetch the user and create a session
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
-          phone: fullPhone,
-          password: formData.pin // Using PIN as password for simplicity
-        });
+      const { error: sessionError } = await supabase.auth.setSession({
+        access_token,
+        refresh_token
+      });
 
-        // If phone/password auth fails, try to sign in directly
-        if (signInError) {
-          // Fallback: create user session via edge function or redirect
-          setShowConfetti(true);
-          toast({
-            title: '✅ PIN vérifié',
-            description: 'Connexion réussie!'
-          });
-          
-          // Manual redirect after PIN verification
-          setTimeout(() => {
-            navigate('/mobile-flow/dashboard');
-          }, 1500);
-          return;
-        }
-
-        setShowConfetti(true);
-        toast({
-          title: '✅ Connexion réussie',
-          description: 'Bienvenue sur N\'GNA SÔRÔ!'
-        });
+      if (sessionError) {
+        console.error('Error setting session:', sessionError);
+        throw new Error('Erreur de création de session');
       }
+
+      setShowConfetti(true);
+      toast({
+        title: '✅ Connexion réussie',
+        description: 'Bienvenue sur N\'GNA SÔRÔ!'
+      });
+
+      // AuthContext will pick up the session and redirect based on role
     } catch (error: any) {
+      console.error('PIN verification error:', error);
       setPinError(error.message || 'Erreur de vérification');
     } finally {
       setLoading(false);

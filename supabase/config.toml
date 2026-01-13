@@ -68,3 +68,6 @@ verify_jwt = true
 
 [functions.reject-sfd]
 verify_jwt = true
+
+[functions.pin-auth-session]
+verify_jwt = false
