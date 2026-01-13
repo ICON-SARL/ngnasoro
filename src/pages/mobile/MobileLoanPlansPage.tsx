@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, CreditCard, Loader2, AlertTriangle, Info, RefreshCw } from 'lucide-react';
+import { ArrowLeft, Loader2, AlertTriangle, Info, RefreshCw, Calculator } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import SfdLoanPlansTable from '@/components/mobile/loan/SfdLoanPlansTable';
@@ -197,11 +197,14 @@ const MobileLoanPlansPage: React.FC = () => {
           </Tabs>
         )}
         
-        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t">
-          <div className="text-center text-sm text-gray-600">
-            <Info className="h-4 w-4 inline-block mr-1" />
-            Sélectionnez un plan ci-dessus pour faire une demande
-          </div>
+        <div className="fixed bottom-0 left-0 right-0 bg-white p-4 border-t shadow-lg">
+          <Button
+            onClick={() => navigate('/mobile-flow/loan-simulator')}
+            className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl"
+          >
+            <Calculator className="h-5 w-5 mr-2" />
+            Simuler un prêt
+          </Button>
         </div>
       </div>
     </div>
