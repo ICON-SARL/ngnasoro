@@ -62,9 +62,22 @@ import { MerefAdminLayout } from './components/admin/meref/layout/MerefAdminLayo
 import SubsidyApprovalsPage from './pages/meref/SubsidyApprovalsPage';
 import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
 import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
+import CreditsApprovalsPage from './pages/meref/CreditsApprovalsPage';
+import ApprovalsHistoryPage from './pages/meref/ApprovalsHistoryPage';
+import SfdsManagementPage from './pages/meref/SfdsManagementPage';
+import AdminsManagementPage from './pages/meref/AdminsManagementPage';
+import UsersManagementPage from './pages/meref/UsersManagementPage';
+import TontinesMonitoringPage from './pages/meref/TontinesMonitoringPage';
+import MobileMoneyMonitoringPage from './pages/meref/MobileMoneyMonitoringPage';
+import ReportsHistoryPage from './pages/meref/ReportsHistoryPage';
+import MerefSystemSettingsPage from './pages/meref/MerefSystemSettingsPage';
+import AuditLogsPage from './pages/meref/AuditLogsPage';
 import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import JoinSfdPage from './pages/mobile/JoinSfdPage';
+import SfdTransactionsPage from './pages/sfd/SfdTransactionsPage';
+import SfdSubsidyRequestsPage from './pages/sfd/SfdSubsidyRequestsPage';
+import SfdSettingsPage from './pages/sfd/SfdSettingsPage';
 
 const router = createBrowserRouter([
   {
@@ -181,6 +194,96 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <ReportsGenerationPage /> }],
   },
   {
+    path: '/meref/approvals/credits',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <CreditsApprovalsPage /> }],
+  },
+  {
+    path: '/meref/approvals/history',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <ApprovalsHistoryPage /> }],
+  },
+  {
+    path: '/meref/management/sfds',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <SfdsManagementPage /> }],
+  },
+  {
+    path: '/meref/management/admins',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <AdminsManagementPage /> }],
+  },
+  {
+    path: '/meref/management/users',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <UsersManagementPage /> }],
+  },
+  {
+    path: '/meref/monitoring/tontines',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <TontinesMonitoringPage /> }],
+  },
+  {
+    path: '/meref/monitoring/mobile-money',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <MobileMoneyMonitoringPage /> }],
+  },
+  {
+    path: '/meref/reports/history',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <ReportsHistoryPage /> }],
+  },
+  {
+    path: '/meref/system/settings',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <MerefSystemSettingsPage /> }],
+  },
+  {
+    path: '/meref/system/logs',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <AuditLogsPage /> }],
+  },
+  {
     path: '/admin/system-settings',
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
@@ -242,13 +345,7 @@ const router = createBrowserRouter([
     path: '/sfd-transactions',
     element: (
       <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <div className="min-h-screen bg-gray-50">
-          <SfdHeader />
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold">Transactions SFD</h1>
-            <p className="text-gray-600">Gestion des transactions de la SFD</p>
-          </div>
-        </div>
+        <SfdTransactionsPage />
       </RoleGuard>
     ),
   },
@@ -264,13 +361,7 @@ const router = createBrowserRouter([
     path: '/sfd-subsidy-requests',
     element: (
       <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <div className="min-h-screen bg-gray-50">
-          <SfdHeader />
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold">Demandes de subvention</h1>
-            <p className="text-gray-600">Gestion des demandes de subvention</p>
-          </div>
-        </div>
+        <SfdSubsidyRequestsPage />
       </RoleGuard>
     ),
   },
@@ -278,13 +369,7 @@ const router = createBrowserRouter([
     path: '/sfd-settings',
     element: (
       <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <div className="min-h-screen bg-gray-50">
-          <SfdHeader />
-          <div className="container mx-auto px-4 py-6">
-            <h1 className="text-2xl font-bold">Paramètres SFD</h1>
-            <p className="text-gray-600">Configuration de votre SFD</p>
-          </div>
-        </div>
+        <SfdSettingsPage />
       </RoleGuard>
     ),
   },
