@@ -1,15 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Download, Menu, X } from 'lucide-react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Menu, X, LogIn } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 interface NavigationHeaderProps {
-  onDownloadClick: () => void;
+  onDownloadClick?: () => void;
 }
 
-const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) => {
+const NavigationHeader: React.FC<NavigationHeaderProps> = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
@@ -18,94 +18,68 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
     const handleScroll = () => {
       setScrolled(window.scrollY > 50);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const scrollToSection = (sectionId: string) => {
-    const element = document.getElementById(sectionId);
-    if (element) {
-      const offset = 80; // Header height
-      const elementPosition = element.getBoundingClientRect().top;
-      const offsetPosition = elementPosition + window.pageYOffset - offset;
-
-      window.scrollTo({
-        top: offsetPosition,
-        behavior: 'smooth'
-      });
-      setMobileMenuOpen(false);
-    }
-  };
-
   const navLinks = [
-    { label: 'Accueil', action: () => scrollToSection('hero') },
-    { label: 'Fonctionnalités', action: () => scrollToSection('features') },
+    { label: 'Accueil', href: '#hero' },
+    { label: 'Fonctionnalités', href: '#features' },
     { label: 'SFD Partenaires', action: () => navigate('/sfd-partners') },
-    { label: 'Support', action: () => navigate('/faq') },
+    { label: 'FAQ', action: () => navigate('/faq') },
   ];
+
+  const handleNavClick = (link: typeof navLinks[0]) => {
+    if (link.action) {
+      link.action();
+    } else if (link.href) {
+      const element = document.querySelector(link.href);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+    setMobileMenuOpen(false);
+  };
 
   return (
     <>
       <motion.header
         initial={{ y: -100 }}
         animate={{ y: 0 }}
-        transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ease-premium ${
+        transition={{ duration: 0.4 }}
+        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           scrolled
-            ? 'bg-white/90 backdrop-blur-xl border-b border-border/50 shadow-soft-md'
+            ? 'bg-background/95 backdrop-blur-lg border-b border-border/50 shadow-sm'
             : 'bg-transparent'
         }`}
       >
         <nav className="container mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-20">
+          <div className="flex items-center justify-between h-16">
             {/* Logo */}
-            <motion.button
+            <button
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-              className="flex items-center gap-3 cursor-pointer group"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center gap-2"
             >
-              <div className="relative">
-                {/* Bordure gradient */}
-                <div className="absolute -inset-0.5 bg-gradient-to-br from-primary via-[#FFAB2E] to-primary 
-                                rounded-2xl opacity-75 group-hover:opacity-100 
-                                transition-opacity duration-300" />
-                
-                {/* Container logo */}
-                <div className={`
-                  relative w-12 h-12 rounded-2xl overflow-hidden
-                  transition-all duration-300
-                  ${scrolled 
-                    ? 'bg-white shadow-md' 
-                    : 'bg-white/95 backdrop-blur-sm shadow-lg'
-                  }
-                  group-hover:shadow-xl
-                `}>
-                  <img 
-                    src={logoNgnaSoro} 
-                    alt="N'GNA SÔRÔ Logo" 
-                    className="w-full h-full object-cover p-1.5"
-                  />
-                </div>
-              </div>
-              <span
-                className={`text-xl font-bold transition-colors ${
-                  scrolled ? 'text-gray-900' : 'text-white'
-                }`}
-              >
+              <img 
+                src={logoNgnaSoro} 
+                alt="N'GNA SÔRÔ" 
+                className="w-9 h-9 rounded-xl object-cover shadow-sm"
+              />
+              <span className={`text-lg font-bold transition-colors ${
+                scrolled ? 'text-foreground' : 'text-white'
+              }`}>
                 N'GNA SÔRÔ
               </span>
-            </motion.button>
+            </button>
 
             {/* Desktop Navigation */}
-            <div className="hidden md:flex items-center gap-8">
+            <div className="hidden md:flex items-center gap-6">
               {navLinks.map((link) => (
                 <button
                   key={link.label}
-                  onClick={link.action}
-                  className={`font-medium transition-colors hover:text-[#0D6A51] ${
-                    scrolled ? 'text-gray-700' : 'text-white'
+                  onClick={() => handleNavClick(link)}
+                  className={`text-sm font-medium transition-colors hover:text-primary ${
+                    scrolled ? 'text-muted-foreground' : 'text-white/80'
                   }`}
                 >
                   {link.label}
@@ -113,28 +87,29 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
               ))}
             </div>
 
-            {/* CTA + Mobile Menu */}
-            <div className="flex items-center gap-4">
+            {/* CTA */}
+            <div className="flex items-center gap-3">
               <Button
-                onClick={onDownloadClick}
-                className={`h-11 px-6 rounded-xl font-semibold transition-all ${
+                onClick={() => navigate('/auth')}
+                size="sm"
+                className={`rounded-xl font-medium ${
                   scrolled
-                    ? 'bg-[#0D6A51] hover:bg-[#176455] text-white'
-                    : 'bg-white text-[#0D6A51] hover:bg-white/90'
+                    ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
+                    : 'bg-white text-primary hover:bg-white/90'
                 }`}
               >
-                <Download className="w-4 h-4 mr-2" />
-                <span className="hidden sm:inline">Télécharger</span>
+                <LogIn className="w-4 h-4 mr-1.5" />
+                Connexion
               </Button>
 
               {/* Mobile Menu Button */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className={`md:hidden p-2 rounded-lg transition-colors ${
-                  scrolled ? 'text-gray-900 hover:bg-gray-100' : 'text-white hover:bg-white/10'
+                  scrolled ? 'text-foreground hover:bg-muted' : 'text-white hover:bg-white/10'
                 }`}
               >
-                {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -145,40 +120,28 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = ({ onDownloadClick }) 
       <AnimatePresence>
         {mobileMenuOpen && (
           <motion.div
-            initial={{ opacity: 0, y: -20 }}
+            initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-0 z-40 md:hidden"
-            style={{ top: '80px' }}
+            exit={{ opacity: 0, y: -10 }}
+            className="fixed inset-x-0 top-16 z-40 md:hidden"
           >
-            {/* Backdrop */}
             <div
-              className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+              className="absolute inset-0 bg-black/40 backdrop-blur-sm h-screen"
               onClick={() => setMobileMenuOpen(false)}
             />
-
-            {/* Menu Content */}
-            <motion.div
-              initial={{ y: -20 }}
-              animate={{ y: 0 }}
-              exit={{ y: -20 }}
-              className="relative bg-white rounded-b-3xl shadow-2xl p-6"
-            >
-              <div className="space-y-4">
-                {navLinks.map((link, index) => (
-                  <motion.button
+            <div className="relative bg-background rounded-b-2xl shadow-lg p-4 mx-4 border border-border/50">
+              <div className="space-y-1">
+                {navLinks.map((link) => (
+                  <button
                     key={link.label}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.1 }}
-                    onClick={link.action}
-                    className="block w-full text-left px-4 py-3 rounded-xl font-medium text-gray-900 hover:bg-gray-100 transition-colors"
+                    onClick={() => handleNavClick(link)}
+                    className="block w-full text-left px-4 py-3 rounded-xl text-foreground hover:bg-muted transition-colors"
                   >
                     {link.label}
-                  </motion.button>
+                  </button>
                 ))}
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
