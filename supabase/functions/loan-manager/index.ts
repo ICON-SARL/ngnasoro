@@ -121,20 +121,44 @@ serve(async (req) => {
       const nextPaymentDate = new Date();
       nextPaymentDate.setDate(nextPaymentDate.getDate() + 30);
       
+      // Calculate monthly payment if not provided
+      const interestRate = data.interest_rate || 0;
+      const durationMonths = data.duration_months;
+      const amount = data.amount;
+      
+      let monthlyPayment = data.monthly_payment;
+      if (!monthlyPayment || monthlyPayment <= 0) {
+        if (interestRate > 0) {
+          // Amortized loan calculation
+          const monthlyInterestRate = interestRate / 100 / 12;
+          monthlyPayment = (amount * monthlyInterestRate * 
+            Math.pow(1 + monthlyInterestRate, durationMonths)) / 
+            (Math.pow(1 + monthlyInterestRate, durationMonths) - 1);
+        } else {
+          // Simple division for zero interest
+          monthlyPayment = amount / durationMonths;
+        }
+      }
+      
+      // Calculate total amount with interest
+      const totalAmount = data.total_amount || (amount * (1 + interestRate / 100));
+      
+      console.log(`Calculated: monthlyPayment=${monthlyPayment}, totalAmount=${totalAmount}`);
+      
       // Create loan record using service role to bypass RLS
       const { data: loan, error: loanError } = await supabase
         .from("sfd_loans")
         .insert({
           client_id: clientId,
           sfd_id: data.sfd_id,
-          amount: data.amount,
-          duration_months: data.duration_months,
-          interest_rate: data.interest_rate || 0,
+          amount: amount,
+          duration_months: durationMonths,
+          interest_rate: interestRate,
           purpose: data.purpose || "Non spécifié",
           loan_plan_id: data.loan_plan_id || null,
-          monthly_payment: data.monthly_payment || 0,
-          total_amount: data.total_amount || data.amount,
-          remaining_amount: data.remaining_amount || data.total_amount || data.amount,
+          monthly_payment: Math.round(monthlyPayment * 100) / 100,
+          total_amount: Math.round(totalAmount * 100) / 100,
+          remaining_amount: Math.round(totalAmount * 100) / 100,
           next_payment_date: nextPaymentDate.toISOString(),
           status: "pending",
         })

@@ -1,24 +1,24 @@
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
-import { ChevronLeft, Calendar, Wallet, TrendingUp, Clock } from 'lucide-react';
+import { ChevronLeft, Calendar, Wallet, TrendingUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Loan, LoanPayment } from '@/types/sfdClients';
 import { Skeleton } from '@/components/ui/skeleton';
 import { CashierQRScanner } from '@/components/mobile/funds/CashierQRScanner';
-import { useToast } from '@/hooks/use-toast';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
+import MobileMoneyRepaymentModal from '@/components/mobile/loan/MobileMoneyRepaymentModal';
 
 const MobileLoanDetailsPage = () => {
   const navigate = useNavigate();
   const { loanId } = useParams();
   const [searchParams] = useSearchParams();
-  const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'tracking');
   const [showQRScanner, setShowQRScanner] = useState(false);
   const [showMobileMoneyModal, setShowMobileMoneyModal] = useState(false);
@@ -381,22 +381,18 @@ const MobileLoanDetailsPage = () => {
         />
       )}
 
-      {/* Mobile Money Modal (placeholder) */}
-      {showMobileMoneyModal && (
-        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-          <div className="bg-background rounded-3xl p-6 max-w-sm w-full">
-            <h3 className="text-xl font-bold mb-4">Mobile Money</h3>
-            <p className="text-muted-foreground mb-6">
-              Fonctionnalité en cours de développement
-            </p>
-            <Button
-              onClick={() => setShowMobileMoneyModal(false)}
-              className="w-full rounded-full"
-            >
-              Fermer
-            </Button>
-          </div>
-        </div>
+      {/* Mobile Money Modal */}
+      {showMobileMoneyModal && loan && (
+        <MobileMoneyRepaymentModal
+          isOpen={showMobileMoneyModal}
+          onClose={() => setShowMobileMoneyModal(false)}
+          loan={loan}
+          suggestedAmount={loan.monthly_payment || 0}
+          onPaymentSuccess={() => {
+            queryClient.invalidateQueries({ queryKey: ['loan', loanId] });
+            queryClient.invalidateQueries({ queryKey: ['loan-payments', loanId] });
+          }}
+        />
       )}
 
       {/* Bottom Navigation */}
