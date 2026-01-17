@@ -6,14 +6,16 @@ import { Badge } from '@/components/ui/badge';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { Loan } from '@/types/sfdClients';
+import { Loan, LoanPayment } from '@/types/sfdClients';
 import { sfdLoanApi } from '@/utils/sfdLoanApi';
 import { sfdClientApi } from '@/utils/sfdClientApi';
 import { useAuth } from '@/hooks/auth/AuthContext';
 import { Separator } from '@/components/ui/separator';
-import { CheckCircle, XCircle, Ban, ArrowRight, Calendar, CreditCard, Phone, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, ArrowRight, Calendar, CreditCard, Phone, AlertCircle, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LoanDetailsDialogProps {
   isOpen: boolean;
@@ -29,6 +31,21 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // Fetch loan payments
+  const { data: payments = [], isLoading: isLoadingPayments } = useQuery({
+    queryKey: ['loan-payments', loan?.id],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('loan_payments')
+        .select('*')
+        .eq('loan_id', loan.id)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data as LoanPayment[];
+    },
+    enabled: isOpen && !!loan?.id,
+  });
   
   useEffect(() => {
     if (isOpen && loan) {
@@ -377,23 +394,59 @@ const LoanDetailsDialog = ({ isOpen, onClose, loan, onLoanUpdated }: LoanDetails
             
             <h4 className="text-sm font-medium">Historique des paiements</h4>
             <div className="border rounded-md overflow-hidden">
-              <table className="min-w-full">
-                <thead className="bg-muted/50">
-                  <tr>
-                    <th className="px-4 py-2 text-left text-xs font-medium">Date</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium">Montant</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium">Méthode</th>
-                    <th className="px-4 py-2 text-left text-xs font-medium">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-4 py-3 text-sm" colSpan={4}>
-                      <p className="text-center text-muted-foreground">Aucun paiement enregistré</p>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
+              {isLoadingPayments ? (
+                <div className="p-4 flex justify-center">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : (
+                <table className="min-w-full">
+                  <thead className="bg-muted/50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium">Date</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium">Montant</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium">Méthode</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {payments.length === 0 ? (
+                      <tr>
+                        <td className="px-4 py-3 text-sm" colSpan={4}>
+                          <p className="text-center text-muted-foreground">Aucun paiement enregistré</p>
+                        </td>
+                      </tr>
+                    ) : (
+                      payments.map((payment) => (
+                        <tr key={payment.id}>
+                          <td className="px-4 py-3 text-sm">
+                            {format(new Date(payment.created_at), 'dd MMM yyyy', { locale: fr })}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-medium">
+                            {payment.amount.toLocaleString()} FCFA
+                          </td>
+                          <td className="px-4 py-3 text-sm capitalize">
+                            {payment.payment_method.replace('_', ' ')}
+                          </td>
+                          <td className="px-4 py-3 text-sm">
+                            <Badge
+                              className={
+                                payment.status === 'completed'
+                                  ? 'bg-green-100 text-green-800'
+                                  : payment.status === 'pending'
+                                  ? 'bg-amber-100 text-amber-800'
+                                  : 'bg-red-100 text-red-800'
+                              }
+                            >
+                              {payment.status === 'completed' ? 'Effectué' : 
+                               payment.status === 'pending' ? 'En attente' : 'Échoué'}
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              )}
             </div>
           </TabsContent>
         </Tabs>

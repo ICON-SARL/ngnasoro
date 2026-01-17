@@ -449,7 +449,7 @@ const router = createBrowserRouter([
         },
         {
           path: 'loan-application',
-          element: <Navigate to="/mobile-flow/loans" replace />,
+          element: <MobileLoanApplicationPage />,
         },
       {
         path: 'loan-application/:planId',
