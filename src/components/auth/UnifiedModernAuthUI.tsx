@@ -434,7 +434,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
         className="w-full max-w-md relative z-10"
       >
-        <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 rounded-3xl shadow-2xl p-8 space-y-6 border border-white/30">
+        <div className="backdrop-blur-xl bg-white/95 dark:bg-gray-900/95 rounded-[32px] shadow-2xl shadow-black/15 p-10 space-y-6 border border-white/40">
           
           {/* Logo and title */}
           <div className="text-center space-y-3">
@@ -445,7 +445,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
               transition={{ type: "spring", duration: 0.6 }}
             >
               <AnimatedLogo 
-                size={100} 
+                size={120} 
                 withGlow={false}
                 withPulse 
                 className="mx-auto"
@@ -614,12 +614,25 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   Se connecter
                 </UltraButton>
 
-                {/* Back link */}
-                <div className="text-center pt-2">
+                {/* Forgot PIN and Back links */}
+                <div className="flex flex-col items-center gap-3 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toast({
+                        title: 'Réinitialisation du PIN',
+                        description: 'Contactez votre agence SFD ou le support au +223 XX XX XX XX pour réinitialiser votre code PIN.',
+                        duration: 8000
+                      });
+                    }}
+                    className="text-sm text-primary hover:text-primary/80 font-medium transition-colors"
+                  >
+                    PIN oublié ?
+                  </button>
                   <button
                     type="button"
                     onClick={handleBackToPhone}
-                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mx-auto"
+                    className="flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
                   >
                     <ArrowLeft size={16} />
                     Modifier le numéro
@@ -744,6 +757,25 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
               </button>
             </div>
           )}
+
+          {/* Legal links - always visible */}
+          <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border/10 flex items-center justify-center gap-2">
+            <a 
+              href="/legal/terms" 
+              className="hover:text-primary hover:underline transition-colors"
+              target="_blank"
+            >
+              Conditions d'utilisation
+            </a>
+            <span className="text-border">•</span>
+            <a 
+              href="/legal/privacy" 
+              className="hover:text-primary hover:underline transition-colors"
+              target="_blank"
+            >
+              Politique de confidentialité
+            </a>
+          </div>
         </div>
       </motion.div>
     </div>

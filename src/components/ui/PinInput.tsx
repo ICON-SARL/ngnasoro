@@ -24,7 +24,8 @@ const PinInput = forwardRef<HTMLDivElement, PinInputProps>(
     }, [autoFocus]);
 
     const handleChange = (index: number, digit: string) => {
-      const sanitized = digit.replace(/\D/g, '').slice(-1);
+      // Strict numeric filter - only allow digits 0-9
+      const sanitized = digit.replace(/[^0-9]/g, '').slice(-1);
       const valueArray = value.split('');
       valueArray[index] = sanitized;
       
@@ -62,7 +63,8 @@ const PinInput = forwardRef<HTMLDivElement, PinInputProps>(
 
     const handlePaste = (e: React.ClipboardEvent) => {
       e.preventDefault();
-      const pasted = e.clipboardData.getData('text').replace(/\D/g, '').slice(0, length);
+      // Strict numeric filter for pasted content
+      const pasted = e.clipboardData.getData('text').replace(/[^0-9]/g, '').slice(0, length);
       onChange(pasted);
       const focusIndex = Math.min(pasted.length, length - 1);
       inputRefs.current[focusIndex]?.focus();
@@ -92,8 +94,9 @@ const PinInput = forwardRef<HTMLDivElement, PinInputProps>(
             >
               <input
                 ref={(el) => (inputRefs.current[index] = el)}
-                type="text"
+                type="tel"
                 inputMode="numeric"
+                pattern="[0-9]*"
                 maxLength={1}
                 value={value[index] || ''}
                 onChange={(e) => handleChange(index, e.target.value)}
@@ -101,16 +104,17 @@ const PinInput = forwardRef<HTMLDivElement, PinInputProps>(
                 onPaste={handlePaste}
                 onFocus={() => handleFocus(index)}
                 disabled={disabled}
+                autoComplete="one-time-code"
                 className={cn(
-                  "w-14 h-16 text-center text-2xl font-bold",
-                  "rounded-xl border-2 transition-all duration-200",
-                  "bg-background shadow-sm",
-                  "focus:outline-none focus:ring-2 focus:ring-offset-1",
+                  "w-16 h-20 text-center text-3xl font-bold",
+                  "rounded-2xl border-2 transition-all duration-300",
+                  "bg-background shadow-lg",
+                  "focus:outline-none focus:ring-4 focus:ring-offset-2",
                   error
                     ? "border-destructive focus:border-destructive focus:ring-destructive/20"
                     : value[index]
-                      ? "border-primary/60 bg-primary/5 focus:border-primary focus:ring-primary/20"
-                      : "border-border focus:border-primary focus:ring-primary/20",
+                      ? "border-primary bg-primary/5 focus:border-primary focus:ring-primary/30 shadow-primary/20"
+                      : "border-border/50 focus:border-primary focus:ring-primary/20",
                   disabled && "opacity-50 cursor-not-allowed bg-muted"
                 )}
                 style={{
