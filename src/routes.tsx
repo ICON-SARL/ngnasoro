@@ -48,6 +48,8 @@ import LoansPage from './pages/LoansPage';
 import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoginPage from './pages/LoginPage';
 import AdminLoginPage from './pages/AdminLoginPage';
+import ForgotPasswordPage from './pages/ForgotPasswordPage';
+import ResetPasswordPage from './pages/ResetPasswordPage';
 import SystemSettingsPage from './pages/admin/SystemSettingsPage';
 import ClientAdhesionManagementPage from './pages/admin/ClientAdhesionManagementPage';
 import KycUpgradePage from './pages/KycUpgradePage';
@@ -135,6 +137,14 @@ const router = createBrowserRouter([
   {
     path: '/sfd/auth',
     element: <SfdLoginPage />,
+  },
+  {
+    path: '/forgot-password',
+    element: <ForgotPasswordPage />,
+  },
+  {
+    path: '/reset-password',
+    element: <ResetPasswordPage />,
   },
   {
     path: '/pending-approval',

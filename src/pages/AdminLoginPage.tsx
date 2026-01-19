@@ -1,14 +1,8 @@
 import React from 'react';
-import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
-import { AdminSystemSetup } from '@/components/admin/setup/AdminSystemSetup';
+import WebAdminAuthUI from '@/components/auth/WebAdminAuthUI';
 
 const AdminLoginPage = () => {
-  return (
-    <div className="space-y-8">
-      <UnifiedModernAuthUI mode="admin" />
-      <AdminSystemSetup />
-    </div>
-  );
+  return <WebAdminAuthUI mode="admin" />;
 };
 
 export default AdminLoginPage;
