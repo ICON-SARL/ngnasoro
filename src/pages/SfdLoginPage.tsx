@@ -1,8 +1,8 @@
 import React from 'react';
-import UnifiedModernAuthUI from '@/components/auth/UnifiedModernAuthUI';
+import WebAdminAuthUI from '@/components/auth/WebAdminAuthUI';
 
 const SfdLoginPage = () => {
-  return <UnifiedModernAuthUI mode="sfd_admin" />;
+  return <WebAdminAuthUI mode="sfd_admin" />;
 };
 
 export default SfdLoginPage;
