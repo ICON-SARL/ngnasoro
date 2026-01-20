@@ -69,21 +69,21 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
         throw new Error('Échec de la connexion');
       }
 
-      // 2. Verify user role
-      const { data: roleData, error: roleError } = await supabase
+      // 2. Verify user role (user may have multiple roles)
+      const { data: rolesData, error: roleError } = await supabase
         .from('user_roles')
         .select('role')
-        .eq('user_id', authData.user.id)
-        .single();
+        .eq('user_id', authData.user.id);
 
-      if (roleError || !roleData) {
+      if (roleError || !rolesData || rolesData.length === 0) {
         await supabase.auth.signOut();
         throw new Error('Accès non autorisé - Rôle non trouvé');
       }
 
-      // 3. Check if user has required role
-      const hasRequiredRole = roleData.role === currentConfig.requiredRole || 
-        (mode === 'sfd_admin' && roleData.role === 'admin'); // Admins can access SFD too
+      // 3. Check if user has required role (check all roles)
+      const userRoles = rolesData.map(r => r.role);
+      const hasRequiredRole = userRoles.includes(currentConfig.requiredRole as typeof userRoles[number]) || 
+        (mode === 'sfd_admin' && userRoles.includes('admin')); // Admins can access SFD too
 
       if (!hasRequiredRole) {
         await supabase.auth.signOut();
@@ -97,7 +97,7 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
         category: 'authentication',
         severity: 'info',
         status: 'success',
-        details: { email: authData.user.email, role: roleData.role },
+        details: { email: authData.user.email, roles: userRoles },
       });
 
       toast({

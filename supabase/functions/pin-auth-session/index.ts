@@ -6,6 +6,20 @@ const corsHeaders = {
   'Access-Control-Allow-Methods': 'POST, OPTIONS',
 };
 
+// Derive a technical password from phone and PIN (min 6 chars for Supabase)
+function deriveTechPassword(phone: string, pin: string): string {
+  const phoneDigits = phone.replace(/\D/g, '');
+  const lastDigits = phoneDigits.slice(-4);
+  // Format: PIN + last 4 digits of phone = 8 characters (meets min 6 requirement)
+  return `${pin}${lastDigits}`;
+}
+
+// Create synthetic email from phone number
+function createSyntheticEmail(phone: string): string {
+  const cleanPhone = phone.replace(/\D/g, '');
+  return `client_${cleanPhone}@noemail.ngnasoro.local`;
+}
+
 interface PinAuthRequest {
   phone: string;
   pin: string;
@@ -45,14 +59,17 @@ Deno.serve(async (req) => {
       );
     }
 
+    const cleanPhone = phone.replace(/\s/g, '');
+    console.log('[pin-auth-session] Verifying PIN for phone:', cleanPhone);
+
     // Verify PIN using database function (handles lockout + bcrypt)
     const { data: verifyResult, error: verifyError } = await supabaseAdmin.rpc('verify_user_pin', {
-      p_phone: phone,
+      p_phone: cleanPhone,
       p_pin: pin
     });
 
     if (verifyError) {
-      console.error('Error verifying PIN:', verifyError);
+      console.error('[pin-auth-session] Error verifying PIN:', verifyError);
       return new Response(
         JSON.stringify({ success: false, error: 'Erreur de vérification' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -69,7 +86,7 @@ Deno.serve(async (req) => {
             error: 'Compte temporairement bloqué',
             locked_until: verifyResult.locked_until
           }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -82,7 +99,7 @@ Deno.serve(async (req) => {
             needs_setup: true,
             user_id: verifyResult.user_id
           }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }
 
@@ -93,18 +110,19 @@ Deno.serve(async (req) => {
           error: verifyResult.error || 'PIN incorrect',
           attempts_remaining: verifyResult.attempts_remaining
         }),
-        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
     // PIN verified successfully - get user details
     const userId = verifyResult.user_id;
+    console.log('[pin-auth-session] PIN verified for user:', userId);
 
     // Get user from auth
     const { data: userData, error: userError } = await supabaseAdmin.auth.admin.getUserById(userId);
 
     if (userError || !userData.user) {
-      console.error('Error fetching user:', userError);
+      console.error('[pin-auth-session] Error fetching user:', userError);
       return new Response(
         JSON.stringify({ success: false, error: 'Utilisateur non trouvé' }),
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -112,7 +130,27 @@ Deno.serve(async (req) => {
     }
 
     const user = userData.user;
-    const userEmail = user.email;
+    
+    // Generate synthetic email and technical password
+    const syntheticEmail = createSyntheticEmail(cleanPhone);
+    const techPassword = deriveTechPassword(cleanPhone, pin);
+    
+    // Ensure user has a valid email (set synthetic if missing or different)
+    let userEmail = user.email;
+    if (!userEmail || !userEmail.includes('@')) {
+      console.log('[pin-auth-session] Setting synthetic email for user');
+      const { error: emailError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
+        email: syntheticEmail,
+        email_confirm: true
+      });
+      
+      if (emailError) {
+        console.error('[pin-auth-session] Error setting email:', emailError);
+        // Try to continue with existing email if any
+      } else {
+        userEmail = syntheticEmail;
+      }
+    }
 
     if (!userEmail) {
       return new Response(
@@ -121,15 +159,15 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Update user's password to match PIN (so we can create a session)
+    // Update user's password to the derived technical password (>= 6 chars)
     const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(userId, {
-      password: pin
+      password: techPassword
     });
 
     if (updateError) {
-      console.error('Error updating password:', updateError);
+      console.error('[pin-auth-session] Error updating password:', updateError);
       return new Response(
-        JSON.stringify({ success: false, error: 'Erreur de mise à jour' }),
+        JSON.stringify({ success: false, error: 'Erreur de mise à jour des identifiants' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -141,11 +179,11 @@ Deno.serve(async (req) => {
 
     const { data: sessionData, error: sessionError } = await supabaseAnon.auth.signInWithPassword({
       email: userEmail,
-      password: pin
+      password: techPassword
     });
 
     if (sessionError || !sessionData.session) {
-      console.error('Error creating session:', sessionError);
+      console.error('[pin-auth-session] Error creating session:', sessionError);
       return new Response(
         JSON.stringify({ success: false, error: 'Erreur de création de session' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -159,8 +197,10 @@ Deno.serve(async (req) => {
       category: 'authentication',
       severity: 'info',
       status: 'success',
-      details: { phone }
+      details: { phone: cleanPhone }
     });
+
+    console.log('[pin-auth-session] Session created successfully for user:', userId);
 
     // Return tokens to frontend
     return new Response(
@@ -175,7 +215,7 @@ Deno.serve(async (req) => {
     );
 
   } catch (error) {
-    console.error('Unexpected error:', error);
+    console.error('[pin-auth-session] Unexpected error:', error);
     return new Response(
       JSON.stringify({ success: false, error: 'Erreur inattendue' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
