@@ -286,41 +286,36 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
           setIsLogin(true);
         }, 1500);
       } else {
-        // New user registration - create account first
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
-          phone: fullPhone,
-          password: formData.pin, // Use PIN as initial password
-          options: {
-            data: {
-              full_name: formData.fullName,
-              phone: fullPhone
-            }
+        // New user registration - use backend edge function
+        const { data: response, error: fetchError } = await supabase.functions.invoke('client-signup', {
+          body: {
+            fullName: formData.fullName.trim(),
+            phone: fullPhone,
+            pin: formData.pin,
+            acceptTerms: formData.acceptTerms
           }
         });
 
-        if (signUpError) throw signUpError;
+        if (fetchError) {
+          console.error('Signup fetch error:', fetchError);
+          throw new Error('Erreur de connexion au serveur');
+        }
 
-        if (signUpData.user) {
-          // Set the PIN for the new user
-          const { error: pinError } = await supabase.rpc('set_user_pin', {
-            p_user_id: signUpData.user.id,
-            p_pin: formData.pin
-          });
+        if (!response.success) {
+          throw new Error(response.error || 'Erreur lors de la création du compte');
+        }
 
-          if (pinError) {
-            console.warn('PIN setup warning:', pinError);
-          }
+        // Set the session with returned tokens
+        const { access_token, refresh_token } = response;
+        
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token,
+          refresh_token
+        });
 
-          // Update profile
-          await supabase
-            .from('profiles')
-            .update({
-              full_name: formData.fullName,
-              phone: fullPhone,
-              terms_accepted_at: new Date().toISOString(),
-              terms_version: '1.0'
-            })
-            .eq('id', signUpData.user.id);
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          throw new Error('Erreur de création de session');
         }
 
         setShowConfetti(true);
@@ -328,8 +323,11 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
           title: '✅ Compte créé',
           description: 'Bienvenue sur N\'GNA SÔRÔ!'
         });
+
+        // AuthContext will pick up the session and redirect based on role
       }
     } catch (error: any) {
+      console.error('Signup error:', error);
       setPinError(error.message || 'Erreur lors de la création du compte');
     } finally {
       setLoading(false);
@@ -531,7 +529,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                       >
                         J'accepte les{' '}
                         <a 
-                          href="/legal/terms" 
+                          href="/legal/cgu" 
                           className="text-primary font-medium underline" 
                           target="_blank"
                           onClick={(e) => e.stopPropagation()}
@@ -761,7 +759,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
           {/* Legal links - always visible */}
           <div className="text-center text-xs text-muted-foreground pt-4 border-t border-border/10 flex items-center justify-center gap-2">
             <a 
-              href="/legal/terms" 
+              href="/legal/cgu" 
               className="hover:text-primary hover:underline transition-colors"
               target="_blank"
             >

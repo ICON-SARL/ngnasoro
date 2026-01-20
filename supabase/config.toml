@@ -71,3 +71,6 @@ verify_jwt = true
 
 [functions.pin-auth-session]
 verify_jwt = false
+
+[functions.client-signup]
+verify_jwt = false
