@@ -300,6 +300,15 @@ const router = createBrowserRouter([
     children: [{ index: true, element: <AuditLogsPage /> }],
   },
   {
+    path: '/meref/sfd-loans',
+    element: (
+      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
+        <MerefAdminLayout />
+      </RoleGuard>
+    ),
+    children: [{ index: true, element: <MerefSfdLoansPage /> }],
+  },
+  {
     path: '/admin/system-settings',
     element: (
       <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
