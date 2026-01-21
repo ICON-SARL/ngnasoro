@@ -74,6 +74,7 @@ import MobileMoneyMonitoringPage from './pages/meref/MobileMoneyMonitoringPage';
 import ReportsHistoryPage from './pages/meref/ReportsHistoryPage';
 import MerefSystemSettingsPage from './pages/meref/MerefSystemSettingsPage';
 import AuditLogsPage from './pages/meref/AuditLogsPage';
+import MerefSfdLoansPage from './pages/meref/MerefSfdLoansPage';
 import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import JoinSfdPage from './pages/mobile/JoinSfdPage';

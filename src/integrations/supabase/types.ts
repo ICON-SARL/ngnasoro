@@ -53,6 +53,13 @@ export type Database = {
             foreignKeyName: "accounts_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -289,6 +296,13 @@ export type Database = {
             foreignKeyName: "cash_sessions_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "cash_sessions_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -355,6 +369,13 @@ export type Database = {
             foreignKeyName: "cashier_qr_codes_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "cashier_qr_codes_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -389,6 +410,13 @@ export type Database = {
           performed_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "client_activities_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "client_activities_client_id_fkey"
             columns: ["client_id"]
@@ -449,6 +477,13 @@ export type Database = {
             foreignKeyName: "client_adhesion_requests_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "client_adhesion_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -495,6 +530,13 @@ export type Database = {
           verified_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "client_documents_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_id"]
+          },
           {
             foreignKeyName: "client_documents_client_id_fkey"
             columns: ["client_id"]
@@ -868,6 +910,13 @@ export type Database = {
             foreignKeyName: "collaborative_vaults_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "collaborative_vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -957,6 +1006,13 @@ export type Database = {
             foreignKeyName: "loan_activities_loan_id_fkey"
             columns: ["loan_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_loan_id"]
+          },
+          {
+            foreignKeyName: "loan_activities_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
             referencedRelation: "sfd_loans"
             referencedColumns: ["id"]
           },
@@ -1019,6 +1075,13 @@ export type Database = {
             foreignKeyName: "loan_payment_schedules_loan_id_fkey"
             columns: ["loan_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_loan_id"]
+          },
+          {
+            foreignKeyName: "loan_payment_schedules_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
             referencedRelation: "sfd_loans"
             referencedColumns: ["id"]
           },
@@ -1068,6 +1131,13 @@ export type Database = {
           status?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "loan_payments_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_loan_id"]
+          },
           {
             foreignKeyName: "loan_payments_loan_id_fkey"
             columns: ["loan_id"]
@@ -1126,8 +1196,22 @@ export type Database = {
             foreignKeyName: "meref_loan_requests_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "meref_loan_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "sfd_clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meref_loan_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
           },
           {
             foreignKeyName: "meref_loan_requests_sfd_id_fkey"
@@ -1231,6 +1315,167 @@ export type Database = {
           value?: string | null
         }
         Relationships: []
+      }
+      meref_sfd_loan_payments: {
+        Row: {
+          amount: number
+          created_at: string | null
+          id: string
+          interest_amount: number | null
+          meref_loan_id: string
+          notes: string | null
+          payment_method: string | null
+          principal_amount: number | null
+          recorded_by: string | null
+          reference: string | null
+          sfd_id: string
+          status: string | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          id?: string
+          interest_amount?: number | null
+          meref_loan_id: string
+          notes?: string | null
+          payment_method?: string | null
+          principal_amount?: number | null
+          recorded_by?: string | null
+          reference?: string | null
+          sfd_id: string
+          status?: string | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          id?: string
+          interest_amount?: number | null
+          meref_loan_id?: string
+          notes?: string | null
+          payment_method?: string | null
+          principal_amount?: number | null
+          recorded_by?: string | null
+          reference?: string | null
+          sfd_id?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meref_sfd_loan_payments_meref_loan_id_fkey"
+            columns: ["meref_loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["meref_loan_id"]
+          },
+          {
+            foreignKeyName: "meref_sfd_loan_payments_meref_loan_id_fkey"
+            columns: ["meref_loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_sfd_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meref_sfd_loan_payments_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "meref_sfd_loan_payments_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      meref_sfd_loans: {
+        Row: {
+          amount: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          disbursed_at: string | null
+          duration_months: number | null
+          id: string
+          interest_rate: number | null
+          justification: string | null
+          last_payment_date: string | null
+          monthly_payment: number | null
+          next_payment_date: string | null
+          payments_made: number | null
+          purpose: string
+          reference: string | null
+          rejection_reason: string | null
+          remaining_amount: number | null
+          sfd_id: string
+          status: string | null
+          total_amount: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          disbursed_at?: string | null
+          duration_months?: number | null
+          id?: string
+          interest_rate?: number | null
+          justification?: string | null
+          last_payment_date?: string | null
+          monthly_payment?: number | null
+          next_payment_date?: string | null
+          payments_made?: number | null
+          purpose: string
+          reference?: string | null
+          rejection_reason?: string | null
+          remaining_amount?: number | null
+          sfd_id: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          disbursed_at?: string | null
+          duration_months?: number | null
+          id?: string
+          interest_rate?: number | null
+          justification?: string | null
+          last_payment_date?: string | null
+          monthly_payment?: number | null
+          next_payment_date?: string | null
+          payments_made?: number | null
+          purpose?: string
+          reference?: string | null
+          rejection_reason?: string | null
+          remaining_amount?: number | null
+          sfd_id?: string
+          status?: string | null
+          total_amount?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "meref_sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "meref_sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       mobile_money_settings: {
         Row: {
@@ -1418,6 +1663,13 @@ export type Database = {
             foreignKeyName: "sfd_accounts_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "sfd_accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -1452,6 +1704,13 @@ export type Database = {
           sfd_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sfd_approval_history_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
           {
             foreignKeyName: "sfd_approval_history_sfd_id_fkey"
             columns: ["sfd_id"]
@@ -1509,6 +1768,13 @@ export type Database = {
             foreignKeyName: "sfd_clients_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "sfd_clients_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -1556,6 +1822,13 @@ export type Database = {
             foreignKeyName: "sfd_loan_plans_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "sfd_loan_plans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -1570,9 +1843,11 @@ export type Database = {
           created_at: string | null
           disbursed_at: string | null
           duration_months: number
+          funded_by_meref: boolean | null
           id: string
           interest_rate: number
           loan_plan_id: string | null
+          meref_source_loan_id: string | null
           monthly_payment: number
           next_payment_date: string | null
           purpose: string | null
@@ -1591,9 +1866,11 @@ export type Database = {
           created_at?: string | null
           disbursed_at?: string | null
           duration_months: number
+          funded_by_meref?: boolean | null
           id?: string
           interest_rate: number
           loan_plan_id?: string | null
+          meref_source_loan_id?: string | null
           monthly_payment: number
           next_payment_date?: string | null
           purpose?: string | null
@@ -1612,9 +1889,11 @@ export type Database = {
           created_at?: string | null
           disbursed_at?: string | null
           duration_months?: number
+          funded_by_meref?: boolean | null
           id?: string
           interest_rate?: number
           loan_plan_id?: string | null
+          meref_source_loan_id?: string | null
           monthly_payment?: number
           next_payment_date?: string | null
           purpose?: string | null
@@ -1630,6 +1909,13 @@ export type Database = {
             foreignKeyName: "sfd_loans_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "sfd_clients"
             referencedColumns: ["id"]
           },
@@ -1639,6 +1925,27 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "sfd_loan_plans"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_meref_source_loan_id_fkey"
+            columns: ["meref_source_loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["meref_loan_id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_meref_source_loan_id_fkey"
+            columns: ["meref_source_loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_sfd_loans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
           },
           {
             foreignKeyName: "sfd_loans_sfd_id_fkey"
@@ -1684,6 +1991,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sfd_stats_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: true
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
           {
             foreignKeyName: "sfd_stats_sfd_id_fkey"
             columns: ["sfd_id"]
@@ -1740,6 +2054,13 @@ export type Database = {
           used_amount?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "sfd_subsidies_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
           {
             foreignKeyName: "sfd_subsidies_sfd_id_fkey"
             columns: ["sfd_id"]
@@ -1899,6 +2220,13 @@ export type Database = {
             foreignKeyName: "subsidy_alert_thresholds_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: true
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "subsidy_alert_thresholds_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: true
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -1990,6 +2318,13 @@ export type Database = {
             foreignKeyName: "subsidy_requests_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "subsidy_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -2021,6 +2356,13 @@ export type Database = {
           used_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "subsidy_usage_loan_id_fkey"
+            columns: ["loan_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_loan_id"]
+          },
           {
             foreignKeyName: "subsidy_usage_loan_id_fkey"
             columns: ["loan_id"]
@@ -2124,6 +2466,13 @@ export type Database = {
             foreignKeyName: "tontine_members_client_id_fkey"
             columns: ["client_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["client_id"]
+          },
+          {
+            foreignKeyName: "tontine_members_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
             referencedRelation: "sfd_clients"
             referencedColumns: ["id"]
           },
@@ -2186,6 +2535,13 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "tontines_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
           {
             foreignKeyName: "tontines_sfd_id_fkey"
             columns: ["sfd_id"]
@@ -2274,6 +2630,13 @@ export type Database = {
             foreignKeyName: "transactions_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "transactions_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -2353,6 +2716,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_sfds_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
           {
             foreignKeyName: "user_sfds_sfd_id_fkey"
             columns: ["sfd_id"]
@@ -2503,6 +2873,13 @@ export type Database = {
             foreignKeyName: "vaults_sfd_id_fkey"
             columns: ["sfd_id"]
             isOneToOne: false
+            referencedRelation: "meref_loan_traceability"
+            referencedColumns: ["sfd_id"]
+          },
+          {
+            foreignKeyName: "vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
@@ -2517,7 +2894,27 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      meref_loan_traceability: {
+        Row: {
+          client_id: string | null
+          client_loan_amount: number | null
+          client_loan_id: string | null
+          client_loan_status: Database["public"]["Enums"]["loan_status"] | null
+          client_name: string | null
+          client_phone: string | null
+          client_remaining: number | null
+          meref_amount: number | null
+          meref_created_at: string | null
+          meref_loan_id: string | null
+          meref_reference: string | null
+          meref_remaining: number | null
+          meref_status: string | null
+          sfd_code: string | null
+          sfd_id: string | null
+          sfd_name: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_months_to_date: {
