@@ -406,6 +406,7 @@ export type Database = {
           full_name: string
           id: string
           phone: string | null
+          reference_number: string | null
           rejection_reason: string | null
           reviewed_at: string | null
           reviewed_by: string | null
@@ -420,6 +421,7 @@ export type Database = {
           full_name: string
           id?: string
           phone?: string | null
+          reference_number?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -434,6 +436,7 @@ export type Database = {
           full_name?: string
           id?: string
           phone?: string | null
+          reference_number?: string | null
           rejection_reason?: string | null
           reviewed_at?: string | null
           reviewed_by?: string | null
@@ -1294,6 +1297,7 @@ export type Database = {
           avatar_url: string | null
           client_code: string | null
           created_at: string | null
+          email: string | null
           full_name: string | null
           id: string
           kyc_level: number | null
@@ -1310,6 +1314,7 @@ export type Database = {
           avatar_url?: string | null
           client_code?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string | null
           id: string
           kyc_level?: number | null
@@ -1326,6 +1331,7 @@ export type Database = {
           avatar_url?: string | null
           client_code?: string | null
           created_at?: string | null
+          email?: string | null
           full_name?: string | null
           id?: string
           kyc_level?: number | null

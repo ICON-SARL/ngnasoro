@@ -25,6 +25,7 @@ interface SignupRequest {
   fullName: string;
   phone: string;
   pin: string;
+  email?: string;
   acceptTerms: boolean;
 }
 
@@ -49,7 +50,7 @@ serve(async (req) => {
 
     // Parse request body
     const body: SignupRequest = await req.json();
-    const { fullName, phone, pin, acceptTerms } = body;
+    const { fullName, phone, pin, email, acceptTerms } = body;
 
     // Validate input
     if (!fullName || fullName.trim().length < 2) {
@@ -95,15 +96,15 @@ serve(async (req) => {
       );
     }
 
-    // Generate synthetic email and technical password
-    const syntheticEmail = createSyntheticEmail(cleanPhone);
+    // Use real email if provided, otherwise generate synthetic
+    const userEmail = email?.trim() || createSyntheticEmail(cleanPhone);
     const techPassword = deriveTechPassword(cleanPhone, pin);
 
-    console.log('[client-signup] Creating user with synthetic email:', syntheticEmail);
+    console.log('[client-signup] Creating user with email:', userEmail);
 
     // Create user via admin API
     const { data: userData, error: createError } = await adminClient.auth.admin.createUser({
-      email: syntheticEmail,
+      email: userEmail,
       password: techPassword,
       email_confirm: true,
       phone: cleanPhone,
@@ -149,6 +150,7 @@ serve(async (req) => {
       .update({
         full_name: fullName.trim(),
         phone: cleanPhone,
+        email: email?.trim() || null,
         terms_accepted_at: new Date().toISOString(),
         terms_version: '1.0'
       })
@@ -160,7 +162,7 @@ serve(async (req) => {
 
     // Create session using anon client
     const { data: sessionData, error: sessionError } = await anonClient.auth.signInWithPassword({
-      email: syntheticEmail,
+      email: userEmail,
       password: techPassword
     });
 
