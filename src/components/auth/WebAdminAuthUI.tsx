@@ -46,6 +46,8 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
   const currentConfig = config[mode];
   const IconComponent = currentConfig.icon;
 
+  const [isVerifyingRole, setIsVerifyingRole] = useState(false);
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
@@ -62,12 +64,18 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
         if (authError.message.includes('Invalid login credentials')) {
           throw new Error('Email ou mot de passe incorrect');
         }
-        throw authError;
+        if (authError.message.includes('Email not confirmed')) {
+          throw new Error('Veuillez confirmer votre email avant de vous connecter');
+        }
+        throw new Error(authError.message || 'Erreur d\'authentification');
       }
 
       if (!authData.user) {
         throw new Error('Échec de la connexion');
       }
+
+      // 2. Show role verification state
+      setIsVerifyingRole(true);
 
       // 2. Verify user role (user may have multiple roles)
       const { data: rolesData, error: roleError } = await supabase
@@ -75,9 +83,15 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
         .select('role')
         .eq('user_id', authData.user.id);
 
-      if (roleError || !rolesData || rolesData.length === 0) {
+      if (roleError) {
+        console.error('Error fetching roles:', roleError);
         await supabase.auth.signOut();
-        throw new Error('Accès non autorisé - Rôle non trouvé');
+        throw new Error('Erreur lors de la vérification des droits d\'accès');
+      }
+
+      if (!rolesData || rolesData.length === 0) {
+        await supabase.auth.signOut();
+        throw new Error('Accès non autorisé - Aucun rôle attribué à ce compte');
       }
 
       // 3. Check if user has required role (check all roles)
@@ -87,38 +101,48 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
 
       if (!hasRequiredRole) {
         await supabase.auth.signOut();
-        throw new Error(`Accès réservé aux ${isAdmin ? 'administrateurs MEREF' : 'administrateurs SFD'}`);
+        const roleDisplay = userRoles.join(', ');
+        throw new Error(`Accès réservé aux ${isAdmin ? 'administrateurs MEREF' : 'administrateurs SFD'}. Votre rôle actuel: ${roleDisplay}`);
       }
 
       // 4. Log successful login
-      await supabase.from('audit_logs').insert({
-        user_id: authData.user.id,
-        action: `${mode}_login`,
-        category: 'authentication',
-        severity: 'info',
-        status: 'success',
-        details: { email: authData.user.email, roles: userRoles },
-      });
+      try {
+        await supabase.from('audit_logs').insert({
+          user_id: authData.user.id,
+          action: `${mode}_login`,
+          category: 'authentication',
+          severity: 'info',
+          status: 'success',
+          details: { email: authData.user.email, roles: userRoles },
+        });
+      } catch (logError) {
+        console.error('Error logging login:', logError);
+        // Don't fail login if audit log fails
+      }
 
       toast({
-        title: 'Connexion réussie',
+        title: '✅ Connexion réussie',
         description: `Bienvenue dans l'espace ${isAdmin ? 'MEREF' : 'SFD'}`,
       });
 
       // 5. Redirect to dashboard
-      navigate(currentConfig.redirectPath);
+      navigate(currentConfig.redirectPath, { replace: true });
 
     } catch (err: any) {
       console.error('Login error:', err);
-      setError(err.message || 'Une erreur est survenue');
+      const errorMessage = err.message || 'Une erreur est survenue. Veuillez réessayer.';
+      setError(errorMessage);
+      // Don't clear email on error - preserve for user convenience
+      setPassword('');
       
       toast({
         title: 'Erreur de connexion',
-        description: err.message || 'Vérifiez vos identifiants',
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
+      setIsVerifyingRole(false);
     }
   };
 
@@ -298,7 +322,7 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
               {isLoading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Connexion en cours...
+                  {isVerifyingRole ? 'Vérification des droits...' : 'Connexion en cours...'}
                 </>
               ) : (
                 'Se connecter'

@@ -30,6 +30,7 @@ export interface AuthContextProps {
   signUp: (email: string, password: string, metadata?: any) => Promise<any>;
   signOut: () => Promise<any>;
   refreshSession: () => Promise<void>;
+  forceRefreshRole: () => Promise<UserRole | null>;
   biometricEnabled: boolean;
   toggleBiometricAuth: () => Promise<void>;
 }

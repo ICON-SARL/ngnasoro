@@ -175,7 +175,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         body: { phone: fullPhone, pin: formData.pin }
       });
 
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('PIN auth fetch error:', fetchError);
+        throw new Error('Erreur de connexion au serveur. Veuillez réessayer.');
+      }
+
+      // Check if response exists
+      if (!response) {
+        throw new Error('Réponse serveur invalide');
+      }
 
       // Handle locked account
       if (response.locked_until) {
@@ -195,7 +203,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         return;
       }
 
-      // Handle wrong PIN
+      // Handle wrong PIN or other errors
       if (!response.success) {
         if (response.attempts_remaining !== undefined) {
           setAttemptsRemaining(response.attempts_remaining);
@@ -207,8 +215,11 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         return;
       }
 
-      // Success! Set the session with returned tokens
+      // Validate required tokens
       const { access_token, refresh_token } = response;
+      if (!access_token || !refresh_token) {
+        throw new Error('Tokens de session manquants');
+      }
       
       const { error: sessionError } = await supabase.auth.setSession({
         access_token,
@@ -226,10 +237,19 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         description: 'Bienvenue sur N\'GNA SÔRÔ!'
       });
 
-      // AuthContext will pick up the session and redirect based on role
+      // Redirect after animation based on role (or let AuthContext handle)
+      setTimeout(() => {
+        navigate('/sfd-selection', { replace: true });
+      }, 1500);
     } catch (error: any) {
       console.error('PIN verification error:', error);
-      setPinError(error.message || 'Erreur de vérification');
+      const errorMessage = error.message || 'Erreur de vérification. Veuillez réessayer.';
+      setPinError(errorMessage);
+      toast({
+        title: 'Erreur de connexion',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
@@ -300,15 +320,25 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
 
         if (fetchError) {
           console.error('Signup fetch error:', fetchError);
-          throw new Error('Erreur de connexion au serveur');
+          throw new Error('Erreur de connexion au serveur. Veuillez réessayer.');
+        }
+
+        // Check response exists and is successful
+        if (!response) {
+          throw new Error('Réponse serveur invalide');
         }
 
         if (!response.success) {
-          throw new Error(response.error || 'Erreur lors de la création du compte');
+          // Extract specific error message from response
+          const errorMsg = response.error || 'Erreur lors de la création du compte';
+          throw new Error(errorMsg);
         }
 
-        // Set the session with returned tokens
+        // Validate required tokens
         const { access_token, refresh_token } = response;
+        if (!access_token || !refresh_token) {
+          throw new Error('Tokens de session manquants');
+        }
         
         const { error: sessionError } = await supabase.auth.setSession({
           access_token,
@@ -322,15 +352,24 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
 
         setShowConfetti(true);
         toast({
-          title: '✅ Compte créé',
-          description: 'Bienvenue sur N\'GNA SÔRÔ!'
+          title: '✅ Compte créé avec succès',
+          description: 'Bienvenue sur N\'GNA SÔRÔ! Choisissez maintenant votre SFD.'
         });
 
-        // AuthContext will pick up the session and redirect based on role
+        // Explicit redirect to SFD selection after animation
+        setTimeout(() => {
+          navigate('/sfd-selection', { replace: true });
+        }, 2000);
       }
     } catch (error: any) {
       console.error('Signup error:', error);
-      setPinError(error.message || 'Erreur lors de la création du compte');
+      const errorMessage = error.message || 'Erreur lors de la création du compte';
+      setPinError(errorMessage);
+      toast({
+        title: 'Erreur',
+        description: errorMessage,
+        variant: 'destructive'
+      });
     } finally {
       setLoading(false);
     }
