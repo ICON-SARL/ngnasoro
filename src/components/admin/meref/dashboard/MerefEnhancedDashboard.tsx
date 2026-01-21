@@ -1,14 +1,18 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Building, Users, CreditCard, TrendingUp, AlertTriangle, CheckCircle, RefreshCw } from 'lucide-react';
+import { Building, Users, CreditCard, TrendingUp, AlertTriangle, CheckCircle, RefreshCw, Landmark, ArrowRight } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useMerefDashboardData } from '@/hooks/useMerefDashboardData';
+import { useMerefSfdLoans } from '@/hooks/useMerefSfdLoans';
+import { useNavigate } from 'react-router-dom';
 
 export function MerefEnhancedDashboard() {
   const { data, isLoading, error, refetch } = useMerefDashboardData();
+  const { stats: sfdLoanStats, isLoading: sfdLoansLoading } = useMerefSfdLoans();
+  const navigate = useNavigate();
 
   if (error) {
     return (
@@ -38,7 +42,7 @@ export function MerefEnhancedDashboard() {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
@@ -52,7 +56,7 @@ export function MerefEnhancedDashboard() {
             ) : (
               <>
                 <div className="text-2xl font-bold">{stats?.totalSfds || 0}</div>
-                <div className="text-xs text-green-500 flex items-center gap-1 mt-1">
+                <div className="text-xs text-emerald-600 flex items-center gap-1 mt-1">
                   <CheckCircle className="h-3 w-3" />
                   {stats?.activeSfds || 0} actifs
                 </div>
@@ -81,7 +85,7 @@ export function MerefEnhancedDashboard() {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
-              Prêts Actifs
+              Prêts Clients
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -107,9 +111,47 @@ export function MerefEnhancedDashboard() {
               <>
                 <div className="text-2xl font-bold">{stats?.totalSubsidies || 0}</div>
                 {(stats?.pendingSubsidies || 0) > 0 && (
-                  <div className="text-xs text-orange-500 flex items-center gap-1 mt-1">
+                  <div className="text-xs text-amber-600 flex items-center gap-1 mt-1">
                     <AlertTriangle className="h-3 w-3" />
                     {stats?.pendingSubsidies} en attente
+                  </div>
+                )}
+              </>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* NEW: SFD Loans KPI Card */}
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
+              <Landmark className="h-4 w-4" />
+              Prêts aux SFD
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {sfdLoansLoading ? (
+              <Skeleton className="h-8 w-20" />
+            ) : (
+              <>
+                <div className="text-2xl font-bold">{sfdLoanStats?.activeLoans || 0}</div>
+                <div className="flex items-center justify-between mt-1">
+                  <span className="text-xs text-muted-foreground">
+                    Encours: {((sfdLoanStats?.totalOutstanding || 0) / 1000000).toFixed(1)}M
+                  </span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    className="h-6 px-2 text-xs"
+                    onClick={() => navigate('/meref/sfd-loans')}
+                  >
+                    Voir <ArrowRight className="h-3 w-3 ml-1" />
+                  </Button>
+                </div>
+                {(sfdLoanStats?.defaultedLoans || 0) > 0 && (
+                  <div className="text-xs text-destructive flex items-center gap-1 mt-1">
+                    <AlertTriangle className="h-3 w-3" />
+                    {sfdLoanStats?.defaultedLoans} en défaut
                   </div>
                 )}
               </>

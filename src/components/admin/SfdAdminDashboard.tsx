@@ -10,6 +10,7 @@ import { SfdStatusAlert } from './dashboard/SfdStatusAlert';
 import { useSfdStatusCheck } from '@/hooks/useSfdStatusCheck';
 import { LoanManagement } from '@/components/sfd/LoanManagement';
 import { ClientDocumentsVerification } from './documents/ClientDocumentsVerification';
+import { SfdMerefLoansTab } from '@/components/sfd/SfdMerefLoansTab';
 
 const SfdAdminDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -36,11 +37,12 @@ const SfdAdminDashboard: React.FC = () => {
         onValueChange={setActiveTab} 
         className="space-y-4"
       >
-        <TabsList className="grid md:grid-cols-5 grid-cols-2 w-full">
+        <TabsList className="grid md:grid-cols-6 grid-cols-2 w-full">
           <TabsTrigger value="overview">Vue d'ensemble</TabsTrigger>
           <TabsTrigger value="clients">Clients</TabsTrigger>
           <TabsTrigger value="accounts">Comptes SFD</TabsTrigger>
           <TabsTrigger value="loans">Prêts</TabsTrigger>
+          <TabsTrigger value="meref-funding">Financement MEREF</TabsTrigger>
           <TabsTrigger value="kyc-documents">Documents KYC</TabsTrigger>
         </TabsList>
         
@@ -58,6 +60,10 @@ const SfdAdminDashboard: React.FC = () => {
         
         <TabsContent value="loans" className="space-y-6">
           <LoanManagement />
+        </TabsContent>
+        
+        <TabsContent value="meref-funding" className="space-y-6">
+          <SfdMerefLoansTab />
         </TabsContent>
         
         <TabsContent value="kyc-documents" className="space-y-6">

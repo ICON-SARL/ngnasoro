@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -9,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader } from '@/components/ui/loader';
 import { Camera, CheckCircle, XCircle, Scan, ArrowUpCircle, ArrowDownCircle } from 'lucide-react';
 import { AmountDisplay } from '@/components/shared/AmountDisplay';
+import jsQR from 'jsqr';
 
 interface CashierQRScannerProps {
   isWithdrawal?: boolean;
@@ -29,15 +30,23 @@ export function CashierQRScanner({
   const [scannedQR, setScannedQR] = useState<string | null>(null);
   const [transactionResult, setTransactionResult] = useState<any>(null);
   const [cameraPermission, setCameraPermission] = useState<'pending' | 'granted' | 'denied'>('pending');
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const streamRef = useRef<MediaStream | null>(null);
+  const animationRef = useRef<number | null>(null);
 
   // Check camera permission
   useEffect(() => {
     checkCameraPermission();
+    return () => {
+      stopCamera();
+    };
   }, []);
 
   const checkCameraPermission = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
       stream.getTracks().forEach(track => track.stop());
       setCameraPermission('granted');
     } catch {
@@ -45,24 +54,70 @@ export function CashierQRScanner({
     }
   };
 
-  const startScanning = () => {
+  const stopCamera = useCallback(() => {
+    if (animationRef.current) {
+      cancelAnimationFrame(animationRef.current);
+      animationRef.current = null;
+    }
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+  }, []);
+
+  const startScanning = async () => {
     setScanning(true);
-    // In a real implementation, use a QR scanning library
-    // For demo, we simulate scanning after a delay
-    simulateScan();
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video: { facingMode: 'environment', width: { ideal: 640 }, height: { ideal: 480 } } 
+      });
+      streamRef.current = stream;
+      
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        videoRef.current.play();
+        
+        // Wait for video to be ready then start scanning
+        videoRef.current.onloadedmetadata = () => {
+          scanQRCode();
+        };
+      }
+    } catch (error) {
+      console.error('Camera error:', error);
+      setCameraPermission('denied');
+      setScanning(false);
+    }
   };
 
-  const simulateScan = () => {
-    // Simulate QR code scanning
-    // In production, integrate with a camera-based QR scanner
-    setTimeout(() => {
-      // This would be replaced by actual QR scanning logic
-      toast({
-        title: 'Scanner actif',
-        description: 'Pointez la caméra vers le QR code du guichet'
-      });
-    }, 500);
-  };
+  const scanQRCode = useCallback(() => {
+    if (!videoRef.current || !canvasRef.current || !scanning) return;
+    
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    const context = canvas.getContext('2d');
+    
+    if (!context || video.readyState !== video.HAVE_ENOUGH_DATA) {
+      animationRef.current = requestAnimationFrame(scanQRCode);
+      return;
+    }
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    context.drawImage(video, 0, 0, canvas.width, canvas.height);
+    
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    const code = jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'dontInvert',
+    });
+    
+    if (code) {
+      stopCamera();
+      setScanning(false);
+      handleQRScanned(code.data);
+    } else {
+      animationRef.current = requestAnimationFrame(scanQRCode);
+    }
+  }, [scanning, stopCamera]);
 
   const handleQRScanned = async (qrData: string) => {
     setScannedQR(qrData);
@@ -132,24 +187,24 @@ export function CashierQRScanner({
   // Transaction success view
   if (transactionResult) {
     return (
-      <Card className="border-emerald-200 bg-emerald-50">
+      <Card className="border-primary/30 bg-primary/5">
         <CardHeader className="text-center">
-          <CheckCircle className="h-16 w-16 text-emerald-600 mx-auto mb-4" />
-          <CardTitle className="text-emerald-900">Transaction Réussie</CardTitle>
-          <CardDescription className="text-emerald-700">
+          <CheckCircle className="h-16 w-16 text-primary mx-auto mb-4" />
+          <CardTitle>Transaction Réussie</CardTitle>
+          <CardDescription>
             {isWithdrawal ? 'Retrait' : 'Dépôt'} effectué avec succès
           </CardDescription>
         </CardHeader>
         <CardContent className="text-center space-y-4">
-          <div className="bg-white rounded-lg p-4 shadow-sm">
+          <div className="bg-background rounded-lg p-4 shadow-sm border">
             <p className="text-sm text-muted-foreground mb-1">Montant</p>
-            <p className="text-3xl font-bold text-emerald-600">
+            <p className="text-3xl font-bold text-primary">
               <AmountDisplay amount={parseFloat(amount)} />
             </p>
           </div>
           
           {transactionResult.new_balance !== undefined && (
-            <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="bg-background rounded-lg p-4 shadow-sm border">
               <p className="text-sm text-muted-foreground mb-1">Nouveau solde</p>
               <p className="text-2xl font-semibold">
                 <AmountDisplay amount={transactionResult.new_balance} />
@@ -211,7 +266,7 @@ export function CashierQRScanner({
             </>
           ) : (
             <>
-              <ArrowUpCircle className="h-5 w-5 text-emerald-600" />
+              <ArrowUpCircle className="h-5 w-5 text-primary" />
               Dépôt au guichet
             </>
           )}
@@ -221,11 +276,15 @@ export function CashierQRScanner({
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Hidden video and canvas for QR scanning */}
+        <video ref={videoRef} className={scanning ? "w-full rounded-lg" : "hidden"} playsInline muted />
+        <canvas ref={canvasRef} className="hidden" />
+        
         {/* QR Scanner Area */}
         {!scannedQR && (
           <div className="relative">
             {scanning ? (
-              <div className="aspect-square bg-muted rounded-lg flex flex-col items-center justify-center border-2 border-dashed border-primary">
+              <div className="flex flex-col items-center justify-center py-4">
                 <Loader size="lg" className="mb-4" />
                 <p className="text-sm text-muted-foreground">Recherche de QR code...</p>
                 <p className="text-xs text-muted-foreground mt-1">Pointez vers le QR du guichet</p>
@@ -258,10 +317,10 @@ export function CashierQRScanner({
         {/* Amount input after QR scanned */}
         {scannedQR && (
           <div className="space-y-4">
-            <div className="bg-emerald-50 p-4 rounded-lg text-center border border-emerald-200">
-              <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
-              <p className="text-sm font-medium text-emerald-900">QR Code validé</p>
-              <p className="text-xs text-emerald-700">Guichet de caisse identifié</p>
+            <div className="bg-primary/5 p-4 rounded-lg text-center border border-primary/20">
+              <CheckCircle className="h-8 w-8 text-primary mx-auto mb-2" />
+              <p className="text-sm font-medium">QR Code validé</p>
+              <p className="text-xs text-muted-foreground">Guichet de caisse identifié</p>
             </div>
 
             <div className="space-y-2">

@@ -248,7 +248,7 @@ export function useMerefSfdLoans(sfdId?: string) {
     }
   });
 
-  // Record payment mutation
+  // Record payment mutation with validation
   const recordPayment = useMutation({
     mutationFn: async (paymentData: {
       meref_loan_id: string;
@@ -259,6 +259,30 @@ export function useMerefSfdLoans(sfdId?: string) {
       notes?: string;
       recorded_by?: string;
     }) => {
+      // 1. Fetch current loan to validate payment amount
+      const { data: loan, error: loanError } = await supabase
+        .from('meref_sfd_loans')
+        .select('remaining_amount, status')
+        .eq('id', paymentData.meref_loan_id)
+        .single();
+
+      if (loanError) throw new Error('Impossible de vérifier le prêt');
+      
+      if (!loan) throw new Error('Prêt introuvable');
+      
+      if (loan.status === 'completed') {
+        throw new Error('Ce prêt est déjà entièrement remboursé');
+      }
+      
+      if (paymentData.amount > (loan.remaining_amount || 0)) {
+        throw new Error(`Le montant dépasse le reste dû (${(loan.remaining_amount || 0).toLocaleString()} FCFA)`);
+      }
+      
+      if (paymentData.amount <= 0) {
+        throw new Error('Le montant doit être supérieur à 0');
+      }
+
+      // 2. Insert payment (trigger will update remaining_amount)
       const { data, error } = await supabase
         .from('meref_sfd_loan_payments')
         .insert(paymentData)
@@ -275,6 +299,13 @@ export function useMerefSfdLoans(sfdId?: string) {
       });
       queryClient.invalidateQueries({ queryKey: ['meref-sfd-loans'] });
       queryClient.invalidateQueries({ queryKey: ['meref-sfd-loan-payments'] });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: 'Erreur de paiement',
+        description: error.message,
+        variant: 'destructive',
+      });
     }
   });
 
