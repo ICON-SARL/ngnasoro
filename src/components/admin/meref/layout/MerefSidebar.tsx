@@ -99,7 +99,12 @@ export function MerefSidebar({ collapsed, onCollapse }: MerefSidebarProps) {
       badge: notifications?.overdueLoans,
       children: [
         {
-          title: 'Prêts',
+          title: 'Prêts aux SFD',
+          href: '/meref/sfd-loans',
+          icon: <Building className="h-4 w-4" />
+        },
+        {
+          title: 'Prêts clients',
           href: '/meref/monitoring/loans',
           icon: <CreditCard className="h-4 w-4" />,
           badge: notifications?.overdueLoans
