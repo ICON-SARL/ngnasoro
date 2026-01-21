@@ -4,9 +4,10 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { LoadingState, AmountDisplay, DateDisplay, DataTable, StatusBadge } from '@/components/shared';
-import { Users, DollarSign, TrendingUp, AlertCircle, Wallet, Clock } from 'lucide-react';
+import { Users, DollarSign, TrendingUp, AlertCircle, Wallet, Clock, Banknote } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AdminLogout from '@/components/admin/shared/AdminLogout';
+import { CashierManagement } from '@/components/sfd/CashierManagement';
 
 export default function SfdAdminDashboard() {
   const { user } = useAuth();
@@ -239,7 +240,7 @@ export default function SfdAdminDashboard() {
 
       {/* Tabs */}
       <Tabs defaultValue="pending-loans" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="pending-loans">
             Prêts en attente ({pendingLoans.length})
           </TabsTrigger>
@@ -248,6 +249,10 @@ export default function SfdAdminDashboard() {
           </TabsTrigger>
           <TabsTrigger value="adhesions">
             Adhésions ({pendingAdhesions.length})
+          </TabsTrigger>
+          <TabsTrigger value="cash-management">
+            <Banknote className="h-4 w-4 mr-1" />
+            Gestion Caisse
           </TabsTrigger>
         </TabsList>
 
@@ -303,6 +308,10 @@ export default function SfdAdminDashboard() {
               />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="cash-management">
+          <CashierManagement sfdId={sfd?.id} />
         </TabsContent>
       </Tabs>
     </div>

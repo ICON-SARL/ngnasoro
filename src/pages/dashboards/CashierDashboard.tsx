@@ -8,10 +8,11 @@ import { EmptyState } from '@/components/shared/EmptyState';
 import { AmountDisplay } from '@/components/shared/AmountDisplay';
 import { StatusBadge } from '@/components/shared/StatusBadge';
 import { DataTable } from '@/components/shared/DataTable';
-import { Wallet, DollarSign, TrendingUp, AlertCircle } from 'lucide-react';
+import { Wallet, DollarSign, TrendingUp, AlertCircle, QrCode } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import AdminLogout from '@/components/admin/shared/AdminLogout';
 import { CashSessionManager } from '@/components/cash/CashSessionManager';
+import { CashierQRCodeDisplay } from '@/components/cash/CashierQRCodeDisplay';
 
 export default function CashierDashboard() {
   const { user, activeSfdId } = useAuth();
@@ -170,8 +171,8 @@ export default function CashierDashboard() {
         />
       ) : (
         <>
-          {/* Stats Cards */}
-          <div className="grid gap-4 md:grid-cols-4">
+          {/* Stats Cards + QR Code */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Solde d'ouverture</CardTitle>
@@ -199,10 +200,10 @@ export default function CashierDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Entrées</CardTitle>
-                <TrendingUp className="h-4 w-4 text-green-600" />
+                <TrendingUp className="h-4 w-4 text-emerald-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-green-600">
+                <div className="text-2xl font-bold text-emerald-600">
                   <AmountDisplay amount={stats.totalIn} />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -214,10 +215,10 @@ export default function CashierDashboard() {
             <Card>
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium">Sorties</CardTitle>
-                <AlertCircle className="h-4 w-4 text-red-600" />
+                <AlertCircle className="h-4 w-4 text-destructive" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold text-red-600">
+                <div className="text-2xl font-bold text-destructive">
                   <AmountDisplay amount={stats.totalOut} />
                 </div>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -225,6 +226,13 @@ export default function CashierDashboard() {
                 </p>
               </CardContent>
             </Card>
+
+            {/* QR Code Display */}
+            <CashierQRCodeDisplay
+              sessionId={currentSession.id}
+              sfdId={currentSession.sfd_id}
+              stationName={currentSession.station_name || 'Caisse Principale'}
+            />
           </div>
 
           {/* Session Info */}
