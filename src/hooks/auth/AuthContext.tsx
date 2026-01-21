@@ -180,6 +180,21 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
+  // Force refresh role - useful after critical actions like signup or adhesion approval
+  const forceRefreshRole = async (): Promise<UserRole | null> => {
+    if (!user) return null;
+    
+    console.log('🔄 Force refreshing role for user:', user.id);
+    // Invalidate cache
+    lastRoleFetch = null;
+    
+    const newRole = await fetchUserRole(user.id, true);
+    if (newRole) {
+      setUserRole(newRole);
+    }
+    return newRole;
+  };
+
   useEffect(() => {
     const initializeAuth = async () => {
       try {
@@ -480,6 +495,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signUp,
     signOut,
     refreshSession,
+    forceRefreshRole,
     biometricEnabled,
     toggleBiometricAuth
   };
