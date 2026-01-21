@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { User, ArrowLeft, Lock, KeyRound } from 'lucide-react';
+import { User, ArrowLeft, Lock, KeyRound, Mail } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
@@ -31,6 +31,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
   const [userId, setUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
     phone: '',
     pin: '',
     confirmPin: '',
@@ -290,6 +291,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
         const { data: response, error: fetchError } = await supabase.functions.invoke('client-signup', {
           body: {
             fullName: formData.fullName.trim(),
+            email: formData.email.trim() || undefined,
             phone: fullPhone,
             pin: formData.pin,
             acceptTerms: formData.acceptTerms
@@ -352,6 +354,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     setStep('phone');
     setFormData({
       fullName: '',
+      email: '',
       phone: '',
       pin: '',
       confirmPin: '',
@@ -481,12 +484,13 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 transition={{ duration: 0.3 }}
                 className="space-y-5"
               >
-                {/* Name field for registration */}
+                {/* Name and Email fields for registration */}
                 {!isLogin && (
                   <motion.div
                     initial={{ opacity: 0, height: 0 }}
                     animate={{ opacity: 1, height: 'auto' }}
                     exit={{ opacity: 0, height: 0 }}
+                    className="space-y-4"
                   >
                     <UltraInput
                       type="text"
@@ -496,6 +500,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                       onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
                       required
                       placeholder="Amadou Diallo"
+                    />
+                    <UltraInput
+                      type="email"
+                      label="Email (optionnel)"
+                      icon={<Mail size={20} />}
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                      placeholder="votre@email.com"
+                      helperText="Pour recevoir vos notifications"
                     />
                   </motion.div>
                 )}

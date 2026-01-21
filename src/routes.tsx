@@ -77,6 +77,7 @@ import AuditLogsPage from './pages/meref/AuditLogsPage';
 import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
 import SfdSetupPage from './pages/SfdSetupPage';
 import JoinSfdPage from './pages/mobile/JoinSfdPage';
+import AdhesionStatusPage from './pages/mobile/AdhesionStatusPage';
 import SfdTransactionsPage from './pages/sfd/SfdTransactionsPage';
 import SfdSubsidyRequestsPage from './pages/sfd/SfdSubsidyRequestsPage';
 import SfdSettingsPage from './pages/sfd/SfdSettingsPage';
@@ -153,6 +154,10 @@ const router = createBrowserRouter([
   {
     path: '/sfd-selection',
     element: <SfdSelectionPage />,
+  },
+  {
+    path: '/adhesion-status',
+    element: <AdhesionStatusPage />,
   },
   
   // Super Admin routes
@@ -480,6 +485,10 @@ const router = createBrowserRouter([
       {
         path: 'join-sfd',
         element: <JoinSfdPage />,
+      },
+      {
+        path: 'adhesion-status',
+        element: <AdhesionStatusPage />,
       },
       {
         path: 'support',
