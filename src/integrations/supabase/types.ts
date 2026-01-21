@@ -2574,7 +2574,13 @@ export type Database = {
     }
     Enums: {
       account_status: "active" | "inactive" | "frozen" | "closed"
-      app_role: "admin" | "sfd_admin" | "client" | "user"
+      app_role:
+        | "admin"
+        | "sfd_admin"
+        | "client"
+        | "user"
+        | "cashier"
+        | "supervisor"
       document_type:
         | "identity"
         | "proof_of_address"
@@ -2727,7 +2733,14 @@ export const Constants = {
   public: {
     Enums: {
       account_status: ["active", "inactive", "frozen", "closed"],
-      app_role: ["admin", "sfd_admin", "client", "user"],
+      app_role: [
+        "admin",
+        "sfd_admin",
+        "client",
+        "user",
+        "cashier",
+        "supervisor",
+      ],
       document_type: [
         "identity",
         "proof_of_address",
