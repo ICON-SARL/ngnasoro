@@ -4,11 +4,12 @@ const config: CapacitorConfig = {
   appId: 'app.lovable.6419ce7ac12b4202935f2f82ad556905',
   appName: 'N\'GNA SÔRÔ!',
   webDir: 'dist',
-  server: {
-    // Mode développement avec hot-reload depuis le sandbox Lovable
-    url: 'https://6419ce7a-c12b-4202-935f-2f82ad556905.lovableproject.com?forceHideBadge=true',
-    cleartext: true
-  },
+  // PRODUCTION: Bloc server commenté - l'app utilise le bundle local dist/
+  // Pour le développement avec hot-reload, décommenter le bloc ci-dessous:
+  // server: {
+  //   url: 'https://6419ce7a-c12b-4202-935f-2f82ad556905.lovableproject.com?forceHideBadge=true',
+  //   cleartext: true
+  // },
   android: {
     buildOptions: {
       keystorePath: undefined,
