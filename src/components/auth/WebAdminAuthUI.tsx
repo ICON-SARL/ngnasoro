@@ -361,20 +361,6 @@ const WebAdminAuthUI: React.FC<WebAdminAuthUIProps> = ({ mode }) => {
             )}
           </motion.div>
 
-          {/* Client access link */}
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 1 }}
-            className="text-center mt-4"
-          >
-            <Link
-              to="/auth"
-              className="text-sm text-muted-foreground hover:text-primary transition-colors"
-            >
-              Accès client mobile ? <span className="font-medium text-primary">Par ici</span>
-            </Link>
-          </motion.div>
 
           {/* Legal links */}
           <motion.div
