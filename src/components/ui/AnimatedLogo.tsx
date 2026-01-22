@@ -55,32 +55,6 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         transition={{ duration: 0.3 }}
       />
 
-      {/* Orbiting particles */}
-      {withPulse && (
-        <>
-          {[0, 120, 240].map((rotation, i) => (
-            <motion.div
-              key={i}
-              className="absolute top-1/2 left-1/2 w-2 h-2 rounded-full bg-primary"
-              style={{
-                marginLeft: -4,
-                marginTop: -4,
-              }}
-              animate={{
-                rotate: [rotation, rotation + 360],
-                x: [0, Math.cos(rotation * Math.PI / 180) * (size * 0.7)],
-                y: [0, Math.sin(rotation * Math.PI / 180) * (size * 0.7)],
-              }}
-              transition={{
-                duration: 4,
-                repeat: Infinity,
-                ease: 'linear',
-                delay: i * 0.3,
-              }}
-            />
-          ))}
-        </>
-      )}
     </motion.div>
   );
 };
