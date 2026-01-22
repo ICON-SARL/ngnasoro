@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/auth/AuthContext';
 import { UserRole } from '@/hooks/auth/types';
 import LandingPage from './LandingPage';
-import { Skeleton } from '@/components/ui/skeleton';
+import LoadingScreen from '@/components/ui/LoadingScreen';
 import { Capacitor } from '@capacitor/core';
 
 const Index = () => {
@@ -60,18 +60,9 @@ const Index = () => {
     }
   }, [user, loading, userRole, isCheckingRole, navigate]);
 
-  // Afficher un loader pendant le chargement
+  // Afficher un loader moderne pendant le chargement
   if (loading || isCheckingRole) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-          </div>
-          <Skeleton className="h-4 w-32" />
-        </div>
-      </div>
-    );
+    return <LoadingScreen message="Préparation de votre espace..." />;
   }
 
   // Afficher la landing page pour les visiteurs web non connectés

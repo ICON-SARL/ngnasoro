@@ -31,7 +31,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const storedSfdId = localStorage.getItem('activeSfdId');
     if (storedSfdId && storedSfdId.trim() !== '') {
-      console.log('💾 Loading stored SFD ID:', storedSfdId);
       setActiveSfdId(storedSfdId);
     }
   }, []);
@@ -39,7 +38,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Save activeSfdId to localStorage when it changes
   useEffect(() => {
     if (activeSfdId && activeSfdId.trim() !== '') {
-      console.log('💾 Saving SFD ID to localStorage:', activeSfdId);
       localStorage.setItem('activeSfdId', activeSfdId);
     }
   }, [activeSfdId]);
@@ -121,11 +119,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsCheckingRole(true);
       
-      // Timeout de sécurité : force isCheckingRole à false après 5 secondes
+      // Timeout de sécurité : force isCheckingRole à false après 2 secondes (optimisé)
       const timeoutId = setTimeout(() => {
-        console.warn('Role check timeout - forcing isCheckingRole to false');
+        if (import.meta.env.DEV) console.warn('Role check timeout - forcing isCheckingRole to false');
         setIsCheckingRole(false);
-      }, 5000);
+      }, 2000);
       
       console.log('Fetching roles for user:', userId);
       
