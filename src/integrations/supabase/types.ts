@@ -63,6 +63,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       admin_notifications: {
@@ -306,6 +313,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "cash_sessions_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       cashier_qr_codes: {
@@ -377,6 +391,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "cashier_qr_codes_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -485,6 +506,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "client_adhesion_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -921,6 +949,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "collaborative_vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "collaborative_vaults_vault_account_id_fkey"
             columns: ["vault_account_id"]
             isOneToOne: false
@@ -1220,6 +1255,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meref_loan_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meref_request_activities: {
@@ -1388,6 +1430,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "meref_sfd_loan_payments_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       meref_sfd_loans: {
@@ -1473,6 +1522,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "meref_sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1673,6 +1729,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sfd_accounts_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sfd_approval_history: {
@@ -1716,6 +1779,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_approval_history_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1778,6 +1848,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sfd_clients_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sfd_loan_plans: {
@@ -1830,6 +1907,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_loan_plans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -1954,6 +2038,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "sfd_loans_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       sfd_stats: {
@@ -2003,6 +2094,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: true
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_stats_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: true
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2066,6 +2164,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "sfd_subsidies_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2230,6 +2335,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "subsidy_alert_thresholds_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: true
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       subsidy_request_activities: {
@@ -2326,6 +2438,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "subsidy_requests_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2549,6 +2668,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "tontines_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       transaction_types: {
@@ -2640,6 +2766,13 @@ export type Database = {
             referencedRelation: "sfds"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "transactions_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
         ]
       }
       user_2fa: {
@@ -2728,6 +2861,13 @@ export type Database = {
             columns: ["sfd_id"]
             isOneToOne: false
             referencedRelation: "sfds"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_sfds_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
             referencedColumns: ["id"]
           },
         ]
@@ -2884,6 +3024,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "vaults_sfd_id_fkey"
+            columns: ["sfd_id"]
+            isOneToOne: false
+            referencedRelation: "sfds_public"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "vaults_vault_account_id_fkey"
             columns: ["vault_account_id"]
             isOneToOne: false
@@ -2912,6 +3059,36 @@ export type Database = {
           sfd_code: string | null
           sfd_id: string | null
           sfd_name: string | null
+        }
+        Relationships: []
+      }
+      sfds_public: {
+        Row: {
+          code: string | null
+          created_at: string | null
+          id: string | null
+          logo_url: string | null
+          name: string | null
+          region: string | null
+          status: Database["public"]["Enums"]["sfd_status"] | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          region?: string | null
+          status?: Database["public"]["Enums"]["sfd_status"] | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string | null
+          id?: string | null
+          logo_url?: string | null
+          name?: string | null
+          region?: string | null
+          status?: Database["public"]["Enums"]["sfd_status"] | null
         }
         Relationships: []
       }
