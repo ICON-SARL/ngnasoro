@@ -5,6 +5,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { SfdClient } from '@/types/sfdClients';
+import { logger } from '@/utils/logger';
 import { 
   synchronizeClientCode, 
   createOrUpdateSfdClient,
@@ -31,8 +32,7 @@ export function useSfdClientOperations() {
       if (!activeSfdId) return [];
       
       try {
-        console.log('Fetching SFD clients for SFD:', activeSfdId);
-        
+        logger.log('Fetching SFD clients for SFD:', activeSfdId);
         const { data, error } = await supabase
           .from('sfd_clients')
           .select(`
@@ -52,7 +52,7 @@ export function useSfdClientOperations() {
           .eq('sfd_id', activeSfdId);
           
         if (error) {
-          console.error('Error fetching SFD clients:', error);
+          logger.error('Error fetching SFD clients:', error);
           throw error;
         }
         
@@ -61,14 +61,14 @@ export function useSfdClientOperations() {
             // client_code doesn't exist in database, just return client as-is
             return client;
           } catch (err) {
-            console.error('Error processing client:', err);
+            logger.error('Error processing client:', err);
             return client;
           }
         }));
         
         return processedClients as SfdClient[];
       } catch (err) {
-        console.error('Error fetching SFD clients:', err);
+        logger.error('Error fetching SFD clients:', err);
         return [];
       }
     },
@@ -87,13 +87,12 @@ export function useSfdClientOperations() {
     
     setIsSearching(true);
     try {
-      console.log('Searching for client by code:', clientCode);
+      logger.log('Searching for client by code:', clientCode);
       
       const { data: existingClient, error: lookupError } = await getSfdClientByCode(clientCode, activeSfdId);
       
       if (existingClient) {
-        console.log('Client found in this SFD:', existingClient);
-        
+        logger.log('Client found in this SFD:', existingClient);
         toast({
           title: "Client trouvé",
           description: `${existingClient.full_name} est déjà client de votre SFD`,
@@ -105,8 +104,7 @@ export function useSfdClientOperations() {
       const userProfile = await lookupUserByClientCode(clientCode, activeSfdId);
       
       if (!userProfile) {
-        console.log('No user found with client code:', clientCode);
-        
+        logger.log('No user found with client code:', clientCode);
         toast({
           title: "Code non trouvé",
           description: "Aucun utilisateur trouvé avec ce code client",
@@ -116,7 +114,7 @@ export function useSfdClientOperations() {
         return null;
       }
       
-      console.log('User found by client code:', userProfile);
+      logger.log('User found by client code:', userProfile);
       
       if (userProfile.user_id) {
         const { data: existingSfdClient, error: clientCheckError } = await supabase
@@ -127,13 +125,12 @@ export function useSfdClientOperations() {
           .maybeSingle();
           
         if (clientCheckError && clientCheckError.code !== 'PGRST116') {
-          console.error('Error checking existing client:', clientCheckError);
+          logger.error('Error checking existing client:', clientCheckError);
           throw clientCheckError;
         }
         
         if (existingSfdClient) {
-          console.log('User is already a client in this SFD:', existingSfdClient);
-          
+          logger.log('User is already a client in this SFD:', existingSfdClient);
           toast({
             title: "Client déjà enregistré",
             description: `${userProfile.full_name} est déjà client de votre SFD`,
@@ -158,12 +155,12 @@ export function useSfdClientOperations() {
       }
       
       return null;
-    } catch (error: any) {
-      console.error('Error searching client by code:', error);
-      
+    } catch (error: unknown) {
+      const err = error as Error;
+      logger.error('Error searching client by code:', err);
       toast({
         title: "Erreur",
-        description: error.message || "Erreur lors de la recherche du client",
+        description: err.message || "Erreur lors de la recherche du client",
         variant: "destructive"
       });
       
@@ -180,13 +177,13 @@ export function useSfdClientOperations() {
       phone?: string;
       user_id?: string;
       client_code?: string;
-      [key: string]: any;
+      [key: string]: unknown;
     }) => {
       if (!activeSfdId) throw new Error('No active SFD ID');
       
+      logger.log('Creating client with data:', clientData);
+      
       try {
-        console.log('Creating client with data:', clientData);
-        
         if (clientData.user_id) {
           const result = await createOrUpdateSfdClient(
             activeSfdId, 
@@ -215,15 +212,16 @@ export function useSfdClientOperations() {
           .single();
           
         if (error) {
-          console.error('Error creating client:', error);
+          logger.error('Error creating client:', error);
           throw error;
         }
         
         return data;
-      } catch (error: any) {
-        console.error('Error creating client:', error);
+      } catch (error: unknown) {
+        const err = error as { code?: string; message: string };
+        logger.error('Error creating client:', err);
         
-        if (error.code === '23505') {
+        if (err.code === '23505') {
           throw new Error('Ce client existe déjà dans cette SFD');
         }
         throw error;
