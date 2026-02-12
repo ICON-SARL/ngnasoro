@@ -6,7 +6,9 @@ const RootLayout: React.FC = () => {
   return (
     <>
       <ScrollToTop />
-      <Outlet />
+      <div className="page-transition">
+        <Outlet />
+      </div>
     </>
   );
 };

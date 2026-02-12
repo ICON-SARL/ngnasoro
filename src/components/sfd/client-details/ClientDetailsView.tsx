@@ -2,19 +2,30 @@
 import React, { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
 import { Loader } from '@/components/ui/loader';
-import { User } from 'lucide-react';
 
 import { ClientDetailsHeader } from './ClientDetailsHeader';
 import { ClientDetailsTab } from './ClientDetailsTab';
 import { ClientActivityTab } from './ClientActivityTab';
 import { ClientBankAccountTab } from './ClientBankAccountTab';
-import { ClientStatusBadge } from '../ClientStatusBadge';
+
+interface SfdClientData {
+  id: string;
+  full_name: string;
+  email?: string | null;
+  phone?: string | null;
+  address?: string | null;
+  client_code?: string | null;
+  status?: string | null;
+  sfd_id: string;
+  kyc_level?: number | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  user_id?: string | null;
+}
 
 interface ClientDetailsViewProps {
-  client: any;
+  client: SfdClientData;
   onClose: () => void;
 }
 
@@ -31,10 +42,7 @@ export default function ClientDetailsView({ client, onClose }: ClientDetailsView
 
   return (
     <div className="space-y-6">
-      <ClientDetailsHeader 
-        client={client} 
-        onClose={onClose} 
-      />
+      <ClientDetailsHeader client={client} onClose={onClose} />
       
       <Tabs defaultValue="details" value={activeTab} onValueChange={setActiveTab}>
         <TabsList className="grid w-full grid-cols-4">

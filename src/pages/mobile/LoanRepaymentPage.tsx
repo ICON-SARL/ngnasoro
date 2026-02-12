@@ -1,8 +1,10 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Wallet, Calendar, TrendingDown } from 'lucide-react';
+import { ArrowLeft, Wallet, Calendar, TrendingDown, Smartphone, Building2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 import { useSfdLoan } from '@/hooks/useSfdLoan';
 import { useLoanSchedule } from '@/hooks/useLoanSchedule';
 import { LoanScheduleCard } from '@/components/mobile/loan/schedule/LoanScheduleCard';
@@ -11,7 +13,6 @@ import { PaymentHistoryCard } from '@/components/mobile/loan/repayment/PaymentHi
 import { PaymentOptionCard } from '@/components/mobile/loan/repayment/PaymentOptionCard';
 import MobileNavigation from '@/components/mobile/MobileNavigation';
 import { usePaymentActions } from '@/components/mobile/loan/repayment/usePaymentActions';
-import { Smartphone, Building2 } from 'lucide-react';
 
 const LoanRepaymentPage: React.FC = () => {
   const { loanId } = useParams<{ loanId: string }>();
@@ -30,12 +31,32 @@ const LoanRepaymentPage: React.FC = () => {
   const { handlePaymentMethod } = usePaymentActions({
     loanId,
     onMobileMoneyPayment: () => {
-      // QR code agency payment
       navigate('/mobile-flow/qr-scanner', {
         state: { isRepayment: true, loanId }
       });
     },
     sfdId: loan?.sfd_id
+  });
+
+  // Fetch payment history from loan_payments table
+  const { data: payments = [] } = useQuery({
+    queryKey: ['loan-payments', loanId],
+    queryFn: async () => {
+      if (!loanId) return [];
+      const { data, error } = await supabase
+        .from('loan_payments')
+        .select('*')
+        .eq('loan_id', loanId)
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return (data || []).map((p, index) => ({
+        id: index + 1,
+        date: p.created_at || '',
+        amount: p.amount,
+        status: p.status || 'completed',
+      }));
+    },
+    enabled: !!loanId,
   });
 
   if (loanLoading || scheduleLoading) {
@@ -151,7 +172,7 @@ const LoanRepaymentPage: React.FC = () => {
 
           <TabsContent value="history" className="mt-4">
             <PaymentHistoryCard
-              paymentHistory={[]} // TODO: Implémenter récupération historique
+              paymentHistory={payments}
             />
           </TabsContent>
 

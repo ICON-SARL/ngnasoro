@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { logger } from '@/utils/logger';
 
 export interface AdminUser {
   id: string;
@@ -36,265 +37,142 @@ export function useSuperAdminManagement() {
     setLoadAttempted(true);
 
     try {
-      console.log('Fetching admin users using the functions API...');
+      logger.debug('Fetching admin users using the functions API...');
       
-      // Use the Edge Function to fetch administrators
       const { data, error: funcError } = await supabase.functions.invoke('fetch-admin-users', {
         method: 'POST',
-        // Add a timestamp to the request to avoid caching
-        body: JSON.stringify({ 
-          timestamp: Date.now(),
-          forceRefresh: true 
-        }),
+        body: JSON.stringify({ timestamp: Date.now(), forceRefresh: true }),
       });
       
-      if (funcError) {
-        throw new Error(`Error calling function: ${funcError.message}`);
-      }
+      if (funcError) throw new Error(`Error calling function: ${funcError.message}`);
+      if (!data) throw new Error('No data returned from function');
       
-      if (!data) {
-        throw new Error('No data returned from function');
-      }
-      
-      // Map API data to our AdminUser interface
-      const mappedAdmins = data.map((admin: any) => ({
+      const mappedAdmins = data.map((admin: AdminUser) => ({
         ...admin,
         is_active: admin.is_active !== undefined ? admin.is_active : true
       }));
       
       setAdmins(mappedAdmins as AdminUser[]);
-      console.log(`Successfully loaded ${mappedAdmins.length} admin users:`, mappedAdmins);
+      logger.debug(`Successfully loaded ${mappedAdmins.length} admin users`);
       
-    } catch (err: any) {
-      console.error('Error fetching admin users:', err);
-      setError(err.message || 'Failed to load administrators');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to load administrators';
+      logger.error('Error fetching admin users:', err);
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  // Function to create a new administrator
   const createAdmin = async (adminData: AdminCreateData) => {
     setIsCreating(true);
-    
     try {
-      // Call the Edge Function to create an administrator
       const { data, error: createError } = await supabase.functions.invoke('create-admin-user', {
         method: 'POST',
         body: JSON.stringify(adminData)
       });
       
-      if (createError) {
-        throw new Error(`Creation error: ${createError.message}`);
-      }
+      if (createError) throw new Error(`Creation error: ${createError.message}`);
+      if (!data || !data.success) throw new Error(data?.message || 'Failed to create administrator');
       
-      if (!data || !data.success) {
-        throw new Error(data?.message || 'Failed to create administrator');
-      }
-      
-      toast({
-        title: "Success",
-        description: `Administrator ${adminData.full_name} was created successfully`,
-      });
-      
-      // Refresh the administrators list
+      toast({ title: "Success", description: `Administrator ${adminData.full_name} was created successfully` });
       fetchAdmins();
-      
       return true;
-    } catch (err: any) {
-      console.error('Error creating admin:', err);
-      
-      toast({
-        title: "Error",
-        description: err.message || "An error occurred while creating the administrator",
-        variant: "destructive"
-      });
-      
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      logger.error('Error creating admin:', err);
+      toast({ title: "Error", description: message, variant: "destructive" });
       return false;
     } finally {
       setIsCreating(false);
     }
   };
 
-  // Function to activate/deactivate an administrator
   const toggleAdminStatus = async (adminId: string, active: boolean) => {
     setIsUpdating(true);
     try {
-      console.log(`Updating admin status for ${adminId} to ${active ? 'active' : 'inactive'}`);
+      logger.debug(`Updating admin status for ${adminId} to ${active ? 'active' : 'inactive'}`);
       
-      // Call the Edge Function to update admin status
-      const { data, error: updateError } = await supabase.functions.invoke('update-admin-status', {
+      const { error: updateError } = await supabase.functions.invoke('update-admin-status', {
         method: 'POST',
-        body: JSON.stringify({ 
-          adminId,
-          isActive: active
-        })
+        body: JSON.stringify({ adminId, isActive: active })
       });
       
-      if (updateError) {
-        throw new Error(`Status update error: ${updateError.message}`);
-      }
+      if (updateError) throw new Error(`Status update error: ${updateError.message}`);
       
-      // Update in local state
-      setAdmins(prevAdmins => 
-        prevAdmins.map(admin => 
-          admin.id === adminId 
-            ? { ...admin, is_active: active }
-            : admin
-        )
-      );
-      
-      toast({
-        title: "Status updated",
-        description: `Administrator is now ${active ? 'active' : 'inactive'}.`,
-      });
-      
+      setAdmins(prev => prev.map(a => a.id === adminId ? { ...a, is_active: active } : a));
+      toast({ title: "Status updated", description: `Administrator is now ${active ? 'active' : 'inactive'}.` });
       return true;
-    } catch (err: any) {
-      console.error('Error toggling admin status:', err);
-      
-      // Still update in local state for demo purposes
-      setAdmins(prevAdmins => 
-        prevAdmins.map(admin => 
-          admin.id === adminId 
-            ? { ...admin, is_active: active }
-            : admin
-        )
-      );
-      
-      toast({
-        title: "Update Status",
-        description: "Status updated locally. Server sync pending.",
-      });
-      
+    } catch (err: unknown) {
+      logger.error('Error toggling admin status:', err);
+      setAdmins(prev => prev.map(a => a.id === adminId ? { ...a, is_active: active } : a));
+      toast({ title: "Update Status", description: "Status updated locally. Server sync pending." });
       return false;
     } finally {
       setIsUpdating(false);
     }
   };
   
-  // Function to update admin details
   const updateAdmin = async (adminId: string, adminData: Partial<AdminUser>) => {
     setIsUpdating(true);
     try {
-      console.log(`Updating admin ${adminId} with data:`, adminData);
+      logger.debug(`Updating admin ${adminId}`);
       
-      // Call the Edge Function to update admin
-      const { data, error: updateError } = await supabase.functions.invoke('update-admin-user', {
+      const { error: updateError } = await supabase.functions.invoke('update-admin-user', {
         method: 'POST',
-        body: JSON.stringify({ 
-          adminId,
-          adminData
-        })
+        body: JSON.stringify({ adminId, adminData })
       });
       
-      if (updateError) {
-        throw new Error(`Update error: ${updateError.message}`);
-      }
+      if (updateError) throw new Error(`Update error: ${updateError.message}`);
       
-      // Update in local state
-      setAdmins(prevAdmins => 
-        prevAdmins.map(admin => 
-          admin.id === adminId 
-            ? { ...admin, ...adminData }
-            : admin
-        )
-      );
-      
-      toast({
-        title: "Admin updated",
-        description: "Administrator details updated successfully",
-      });
-      
+      setAdmins(prev => prev.map(a => a.id === adminId ? { ...a, ...adminData } : a));
+      toast({ title: "Admin updated", description: "Administrator details updated successfully" });
       return true;
-    } catch (err: any) {
-      console.error('Error updating admin:', err);
-      
-      // Still update in local state for demo purposes
-      setAdmins(prevAdmins => 
-        prevAdmins.map(admin => 
-          admin.id === adminId 
-            ? { ...admin, ...adminData }
-            : admin
-        )
-      );
-      
-      toast({
-        title: "Update Status",
-        description: "Details updated locally. Server sync pending.",
-      });
-      
+    } catch (err: unknown) {
+      logger.error('Error updating admin:', err);
+      setAdmins(prev => prev.map(a => a.id === adminId ? { ...a, ...adminData } : a));
+      toast({ title: "Update Status", description: "Details updated locally. Server sync pending." });
       return false;
     } finally {
       setIsUpdating(false);
     }
   };
 
-  // Function to reset administrator password
   const resetAdminPassword = async (adminEmail: string) => {
     try {
-      // Call Supabase password reset function
       const { error } = await supabase.auth.resetPasswordForEmail(adminEmail, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
-      
       if (error) throw error;
-      
-      toast({
-        title: "Email sent",
-        description: "A password reset email has been sent.",
-      });
-      
+      toast({ title: "Email sent", description: "A password reset email has been sent." });
       return true;
-    } catch (err: any) {
-      console.error('Error resetting admin password:', err);
-      
-      toast({
-        title: "Error",
-        description: "Unable to send the reset email.",
-        variant: "destructive"
-      });
-      
+    } catch (err: unknown) {
+      logger.error('Error resetting admin password:', err);
+      toast({ title: "Error", description: "Unable to send the reset email.", variant: "destructive" });
       return false;
     }
   };
 
-  // Set a maximum loading time (10 seconds)
   useEffect(() => {
     let timer: NodeJS.Timeout;
-    
     if (isLoading) {
       timer = setTimeout(() => {
         if (isLoading) {
           setIsLoading(false);
-          if (!error) {
-            setError("Loading took too long. Please try again.");
-          }
+          if (!error) setError("Loading took too long. Please try again.");
         }
       }, 10000);
     }
-    
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
+    return () => { if (timer) clearTimeout(timer); };
   }, [isLoading, error]);
 
   useEffect(() => {
-    if (!loadAttempted) {
-      fetchAdmins();
-    }
+    if (!loadAttempted) fetchAdmins();
   }, [loadAttempted, fetchAdmins]);
 
   return {
-    admins,
-    isLoading,
-    isCreating,
-    isUpdating,
-    error,
-    refetchAdmins: fetchAdmins,
-    createAdmin,
-    updateAdmin,
-    toggleAdminStatus,
-    resetAdminPassword
+    admins, isLoading, isCreating, isUpdating, error,
+    refetchAdmins: fetchAdmins, createAdmin, updateAdmin,
+    toggleAdminStatus, resetAdminPassword
   };
 }

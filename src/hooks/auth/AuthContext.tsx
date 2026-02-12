@@ -6,10 +6,10 @@ import { AuditLogCategory, AuditLogSeverity } from '@/utils/audit/auditLoggerTyp
 import { useToast } from '@/hooks/use-toast';
 import { cleanupAuthState, handleRobustSignOut } from '@/utils/auth/authCleanup';
 import { UserRole, AuthContextProps, User } from './types';
+import { logger } from '@/utils/logger';
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
-// Hiérarchie des rôles (du plus élevé au plus bas)
 const ROLE_HIERARCHY = {
   [UserRole.Admin]: 4,
   [UserRole.SfdAdmin]: 3,
@@ -27,7 +27,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [biometricEnabled, setBiometricEnabled] = useState(false);
   const { toast } = useToast();
 
-  // Load activeSfdId from localStorage on mount
   useEffect(() => {
     const storedSfdId = localStorage.getItem('activeSfdId');
     if (storedSfdId && storedSfdId.trim() !== '') {
@@ -35,35 +34,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, []);
 
-  // Save activeSfdId to localStorage when it changes
   useEffect(() => {
     if (activeSfdId && activeSfdId.trim() !== '') {
       localStorage.setItem('activeSfdId', activeSfdId);
     }
   }, [activeSfdId]);
 
-  // Helper functions to check user roles
   const isAdmin = userRole === UserRole.Admin;
   const isSfdAdmin = userRole === UserRole.SfdAdmin;
   const isClient = userRole === UserRole.Client;
 
-  // Function to enhance user with additional properties
-  const enhanceUser = (supabaseUser: SupabaseUser): User => {
-    return {
-      ...supabaseUser,
-      full_name: supabaseUser.user_metadata?.full_name || supabaseUser.app_metadata?.full_name || '',
-      avatar_url: supabaseUser.user_metadata?.avatar_url || supabaseUser.app_metadata?.avatar_url,
-      sfd_id: supabaseUser.app_metadata?.sfd_id || supabaseUser.user_metadata?.sfd_id
-    };
-  };
+  const enhanceUser = (supabaseUser: SupabaseUser): User => ({
+    ...supabaseUser,
+    full_name: supabaseUser.user_metadata?.full_name || supabaseUser.app_metadata?.full_name || '',
+    avatar_url: supabaseUser.user_metadata?.avatar_url || supabaseUser.app_metadata?.avatar_url,
+    sfd_id: supabaseUser.app_metadata?.sfd_id || supabaseUser.user_metadata?.sfd_id
+  });
 
-  // Fonction pour obtenir le rôle le plus élevé
   const getHighestRole = (roles: string[]): UserRole => {
     if (roles.length === 0) return UserRole.User;
-    
     let highestRole = UserRole.User;
     let highestPriority = 0;
-    
     roles.forEach(role => {
       const normalizedRole = role as UserRole;
       const priority = ROLE_HIERARCHY[normalizedRole] || 0;
@@ -72,14 +63,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         highestRole = normalizedRole;
       }
     });
-    
     return highestRole;
   };
 
-  // Cache pour éviter les appels redondants à fetchUserRole
   let lastRoleFetch: { userId: string; role: UserRole; timestamp: number } | null = null;
 
-  // Fonction pour nettoyer les rôles en doublon (optimisée)
   const cleanupDuplicateRoles = async (userId: string, primaryRole: UserRole): Promise<void> => {
     try {
       if (primaryRole !== UserRole.User) {
@@ -92,7 +80,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const hasOtherRoles = existingRoles?.some(r => r.role !== 'user');
         
         if (hasUserRole && hasOtherRoles) {
-          console.log('🧹 Cleaning up duplicate user role for:', userId);
+          logger.log('🧹 Cleaning up duplicate user role for:', userId);
           await supabase
             .from('user_roles')
             .delete()
@@ -101,17 +89,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }
       }
     } catch (err) {
-      console.error('❌ Error cleaning up duplicate roles:', err);
+      logger.error('❌ Error cleaning up duplicate roles:', err);
     }
   };
 
-  // Function to fetch user role from database with cache and timeout
   const fetchUserRole = async (userId: string, forceRefresh = false): Promise<UserRole | null> => {
-    // Cache de 30 secondes pour éviter les appels redondants
     if (!forceRefresh && lastRoleFetch?.userId === userId) {
       const age = Date.now() - lastRoleFetch.timestamp;
       if (age < 30000) {
-        console.log('Using cached role:', lastRoleFetch.role);
+        logger.debug('Using cached role:', lastRoleFetch.role);
         return lastRoleFetch.role;
       }
     }
@@ -119,89 +105,78 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setIsCheckingRole(true);
       
-      // Timeout de sécurité : force isCheckingRole à false après 2 secondes (optimisé)
       const timeoutId = setTimeout(() => {
-        if (import.meta.env.DEV) console.warn('Role check timeout - forcing isCheckingRole to false');
+        logger.warn('Role check timeout - forcing isCheckingRole to false');
         setIsCheckingRole(false);
       }, 2000);
       
-      console.log('Fetching roles for user:', userId);
+      logger.debug('Fetching roles for user:', userId);
       
       const { data, error } = await supabase
         .from('user_roles')
         .select('role')
         .eq('user_id', userId);
 
-      clearTimeout(timeoutId); // Annuler le timeout si succès
+      clearTimeout(timeoutId);
 
       if (error) {
-        console.error('Error fetching user roles:', error);
+        logger.error('Error fetching user roles:', error);
         return null;
       }
 
       if (!data || data.length === 0) {
-        console.log('No roles found for user, assigning default user role');
+        logger.log('No roles found for user, assigning default user role');
         
-        // Assigner le rôle par défaut 'user'
         const { error: insertError } = await supabase
           .from('user_roles')
           .insert({ user_id: userId, role: 'user' });
         
         if (insertError) {
-          console.error('Error inserting default role:', insertError);
+          logger.error('Error inserting default role:', insertError);
         }
         
         return UserRole.User;
       }
 
       const roles = data.map(r => r.role);
-      console.log('User roles from database:', roles);
+      logger.debug('User roles from database:', roles);
       
-      // Obtenir le rôle le plus élevé
       const primaryRole = getHighestRole(roles);
-      console.log('Primary role determined:', primaryRole);
+      logger.log('Primary role determined:', primaryRole);
       
-      // Mettre en cache
       lastRoleFetch = { userId, role: primaryRole, timestamp: Date.now() };
       
-      // Nettoyer les doublons en arrière-plan
       setTimeout(async () => {
         await cleanupDuplicateRoles(userId, primaryRole);
       }, 0);
       
       return primaryRole;
     } catch (err) {
-      console.error('Exception fetching user role:', err);
+      logger.error('Exception fetching user role:', err);
       return UserRole.User;
     } finally {
       setIsCheckingRole(false);
     }
   };
 
-  // Force refresh role - useful after critical actions like signup or adhesion approval
   const forceRefreshRole = async (): Promise<UserRole | null> => {
     if (!user) return null;
-    
-    console.log('🔄 Force refreshing role for user:', user.id);
-    // Invalidate cache
+    logger.log('🔄 Force refreshing role for user:', user.id);
     lastRoleFetch = null;
-    
     const newRole = await fetchUserRole(user.id, true);
-    if (newRole) {
-      setUserRole(newRole);
-    }
+    if (newRole) setUserRole(newRole);
     return newRole;
   };
 
   useEffect(() => {
     const initializeAuth = async () => {
       try {
-        console.log('Starting auth initialization...');
+        logger.log('Starting auth initialization...');
         
         const { data, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.error('Error fetching session:', error);
+          logger.error('Error fetching session:', error);
           setLoading(false);
           return;
         }
@@ -212,24 +187,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const enhancedUser = enhanceUser(data.session.user);
           setUser(enhancedUser);
           
-          console.log('Initial session user:', {
-            id: enhancedUser.id,
-            email: enhancedUser.email,
-            role: enhancedUser.app_metadata?.role,
-          });
+          logger.debug('Initial session user:', { id: enhancedUser.id, email: enhancedUser.email });
           
-          // Fetch role from database as source of truth
           const dbRole = await fetchUserRole(enhancedUser.id);
           if (dbRole) {
             setUserRole(dbRole);
-            console.log('User role set to:', dbRole);
+            logger.log('User role set to:', dbRole);
           }
         } else {
           setUser(null);
           setUserRole(null);
         }
       } catch (err) {
-        console.error('Error in auth initialization:', err);
+        logger.error('Error in auth initialization:', err);
         toast({
           title: "Erreur d'authentification",
           description: "Une erreur est survenue lors de l'initialisation. Veuillez rafraîchir la page.",
@@ -242,78 +212,69 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     initializeAuth();
 
-    // Listen for auth changes with debouncing
     let authChangeTimeout: NodeJS.Timeout | null = null;
     const { data: authListener } = supabase.auth.onAuthStateChange(
       async (event, newSession) => {
-        console.log('📢 Auth state change event:', event);
+        logger.log('📢 Auth state change event:', event);
         
-        // Débouncer : attendre 200ms avant de traiter (réduit pour réactivité)
         if (authChangeTimeout) clearTimeout(authChangeTimeout);
         
         authChangeTimeout = setTimeout(async () => {
-        
-        if (newSession?.user) {
-          const enhancedUser = enhanceUser(newSession.user);
-          setUser(enhancedUser);
-          setSession(newSession);
-          
-          console.log('🔄 Fetching user role for:', enhancedUser.id);
-          
-          // Fetch role from database with cache
-          const dbRole = await fetchUserRole(enhancedUser.id, false);
-          if (dbRole) {
-            console.log('✅ Role fetched:', dbRole);
-            setUserRole(dbRole);
+          if (newSession?.user) {
+            const enhancedUser = enhanceUser(newSession.user);
+            setUser(enhancedUser);
+            setSession(newSession);
+            
+            const dbRole = await fetchUserRole(enhancedUser.id, false);
+            if (dbRole) {
+              logger.debug('✅ Role fetched:', dbRole);
+              setUserRole(dbRole);
+            }
+          } else {
+            logger.log('🚪 User signed out, clearing state');
+            setUser(null);
+            setSession(newSession);
+            setUserRole(null);
+            setActiveSfdId(null);
           }
-        } else {
-          console.log('🚪 User signed out, clearing state');
-          setUser(null);
-          setSession(newSession);
-          setUserRole(null);
-          setActiveSfdId(null);
-        }
-        
-        setLoading(false);
-        
-        // Log auth events
-        if (event === 'SIGNED_IN') {
-          try {
-            await logAuditEvent(
-              AuditLogCategory.AUTHENTICATION,
-              'user_login',
-              {
-                login_method: 'password',
-                timestamp: new Date().toISOString(),
-                user_role: newSession?.user.app_metadata?.role
-              },
-              newSession?.user.id,
-              AuditLogSeverity.INFO,
-              'success'
-            );
-          } catch (error) {
-            console.error('Error logging sign-in event:', error);
-          }
-        } else if (event === 'SIGNED_OUT') {
-          const userId = user?.id;
-          if (userId) {
+          
+          setLoading(false);
+          
+          if (event === 'SIGNED_IN') {
             try {
               await logAuditEvent(
                 AuditLogCategory.AUTHENTICATION,
-                'user_logout',
+                'user_login',
                 {
-                  timestamp: new Date().toISOString()
+                  login_method: 'password',
+                  timestamp: new Date().toISOString(),
+                  user_role: newSession?.user.app_metadata?.role
                 },
-                userId,
+                newSession?.user.id,
                 AuditLogSeverity.INFO,
                 'success'
               );
             } catch (error) {
-              console.error('Error logging sign-out event:', error);
+              logger.error('Error logging sign-in event:', error);
+            }
+          } else if (event === 'SIGNED_OUT') {
+            const userId = user?.id;
+            if (userId) {
+              try {
+                await logAuditEvent(
+                  AuditLogCategory.AUTHENTICATION,
+                  'user_logout',
+                  { timestamp: new Date().toISOString() },
+                  userId,
+                  AuditLogSeverity.INFO,
+                  'success'
+                );
+              } catch (error) {
+                logger.error('Error logging sign-out event:', error);
+              }
             }
           }
-        }
-        }, 200); // Fin du setTimeout - réduit à 200ms pour meilleure réactivité
+        }, 200);
       }
     );
 
@@ -325,17 +286,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signIn = async (email: string, password: string) => {
     try {
       cleanupAuthState();
-      
       try {
         await supabase.auth.signOut({ scope: 'global' });
       } catch (err) {
-        console.log('Pre-signout cleanup (can be ignored):', err);
+        logger.debug('Pre-signout cleanup (can be ignored):', err);
       }
 
       const result = await supabase.auth.signInWithPassword({ email, password });
       
       if (result.error) {
-        console.error('Sign in error:', result.error);
+        logger.error('Sign in error:', result.error);
         toast({
           title: "Erreur de connexion",
           description: result.error.message || "Impossible de se connecter",
@@ -346,85 +306,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           await logAuditEvent(
             AuditLogCategory.AUTHENTICATION,
             'failed_login',
-            {
-              email,
-              reason: result.error.message,
-              timestamp: new Date().toISOString()
-            },
+            { email, reason: result.error.message, timestamp: new Date().toISOString() },
             undefined,
             AuditLogSeverity.WARNING,
             'failure'
           );
         } catch (logError) {
-          console.error('Error logging failed login:', logError);
+          logger.error('Error logging failed login:', logError);
         }
       } else if (result.data.user) {
-        console.log('Login successful:', {
-          userId: result.data.user.id,
-          role: result.data.user.app_metadata?.role,
-        });
-        
-        toast({
-          title: "Connexion réussie",
-          description: "Vous êtes maintenant connecté",
-        });
+        logger.log('Login successful:', { userId: result.data.user.id });
+        toast({ title: "Connexion réussie", description: "Vous êtes maintenant connecté" });
       }
       
       return result;
     } catch (error) {
-      console.error('Error signing in:', error);
-      toast({
-        title: "Erreur de connexion",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive"
-      });
+      logger.error('Error signing in:', error);
+      toast({ title: "Erreur de connexion", description: "Une erreur inattendue s'est produite", variant: "destructive" });
       return { error };
     }
   };
 
-  const signUp = async (email: string, password: string, metadata?: any) => {
+  const signUp = async (email: string, password: string, metadata?: Record<string, unknown>) => {
     try {
       const result = await supabase.auth.signUp({
         email,
         password,
-        options: {
-          data: metadata || {}
-        }
+        options: { data: metadata || {} }
       });
       
       if (result.error) {
-        toast({
-          title: "Erreur d'inscription",
-          description: result.error.message,
-          variant: "destructive"
-        });
+        toast({ title: "Erreur d'inscription", description: result.error.message, variant: "destructive" });
       } else {
-        toast({
-          title: "Inscription réussie",
-          description: "Veuillez vérifier votre email pour confirmer votre compte",
-        });
+        toast({ title: "Inscription réussie", description: "Veuillez vérifier votre email pour confirmer votre compte" });
       }
       
       return result;
     } catch (error) {
-      console.error('Error signing up:', error);
-      toast({
-        title: "Erreur d'inscription",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive"
-      });
+      logger.error('Error signing up:', error);
+      toast({ title: "Erreur d'inscription", description: "Une erreur inattendue s'est produite", variant: "destructive" });
       return { error };
     }
   };
 
   const signOut = async () => {
     try {
-      console.log('AuthContext - Starting robust sign out');
-      
-      toast({
-        title: "Déconnexion en cours",
-        description: "Veuillez patienter..."
-      });
+      logger.log('AuthContext - Starting robust sign out');
+      toast({ title: "Déconnexion en cours", description: "Veuillez patienter..." });
       
       await handleRobustSignOut(supabase);
       
@@ -433,19 +361,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUserRole(null);
       setActiveSfdId(null);
       
-      toast({
-        title: "Déconnexion réussie",
-        description: "Vous avez été déconnecté avec succès"
-      });
-      
+      toast({ title: "Déconnexion réussie", description: "Vous avez été déconnecté avec succès" });
       return { error: null };
     } catch (error) {
-      console.error('Exception during signOut:', error);
-      toast({
-        title: "Erreur de déconnexion",
-        description: "Une erreur inattendue s'est produite",
-        variant: "destructive"
-      });
+      logger.error('Exception during signOut:', error);
+      toast({ title: "Erreur de déconnexion", description: "Une erreur inattendue s'est produite", variant: "destructive" });
       return { error };
     }
   };
@@ -454,19 +374,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) {
-        console.error('Error refreshing session:', error);
+        logger.error('Error refreshing session:', error);
         return;
       }
-      
       setSession(data.session);
       if (data.session?.user) {
-        const enhancedUser = enhanceUser(data.session.user);
-        setUser(enhancedUser);
+        setUser(enhanceUser(data.session.user));
       } else {
         setUser(null);
       }
     } catch (error) {
-      console.error('Error refreshing session:', error);
+      logger.error('Error refreshing session:', error);
     }
   };
 
@@ -479,23 +397,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   const value = {
-    user,
-    session,
-    loading,
-    userRole,
-    isAdmin,
-    isSfdAdmin,
-    isClient,
-    isCheckingRole,
-    activeSfdId,
-    setActiveSfdId,
-    signIn,
-    signUp,
-    signOut,
-    refreshSession,
-    forceRefreshRole,
-    biometricEnabled,
-    toggleBiometricAuth
+    user, session, loading, userRole,
+    isAdmin, isSfdAdmin, isClient, isCheckingRole,
+    activeSfdId, setActiveSfdId,
+    signIn, signUp, signOut, refreshSession,
+    forceRefreshRole, biometricEnabled, toggleBiometricAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
