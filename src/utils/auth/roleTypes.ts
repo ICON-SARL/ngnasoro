@@ -1,5 +1,6 @@
 
 export enum UserRole {
+  SUPPORT_ADMIN = 'support_admin',
   SUPER_ADMIN = 'admin',
   ADMIN = 'admin',
   SFD_ADMIN = 'sfd_admin',
@@ -119,8 +120,12 @@ export const DEFAULT_ROLE_PERMISSIONS = {
   [UserRole.USER]: [
     PERMISSIONS.REQUEST_ADHESION,
   ],
+
+  // Support Admin has ALL permissions
+  [UserRole.SUPPORT_ADMIN]: [
+    ...Object.values(PERMISSIONS),
+  ],
 };
 
 // Fix error by adding explicit type and adding SUPER_ADMIN permissions reference
-// Redoing this to maintain backwards compatibility with code that uses SUPER_ADMIN
 DEFAULT_ROLE_PERMISSIONS[UserRole.SUPER_ADMIN] = DEFAULT_ROLE_PERMISSIONS[UserRole.ADMIN];

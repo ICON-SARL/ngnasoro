@@ -22,6 +22,9 @@ const Index = () => {
       console.log('📍 User authenticated with role:', userRole);
       
       switch (userRole) {
+        case UserRole.SupportAdmin:
+          navigate('/support-admin-dashboard', { replace: true });
+          break;
         case UserRole.Admin:
           navigate('/super-admin-dashboard', { replace: true });
           break;

@@ -71,17 +71,23 @@ const RoleGuard: React.FC<RoleGuardProps> = ({
         clearTimeout(timeoutId);
       }
 
-      // Normalize roles for comparison
+      // Role hierarchy - support_admin can access everything
+      const ROLE_HIERARCHY: Record<string, number> = {
+        'support_admin': 5,
+        'admin': 4,
+        'sfd_admin': 3,
+        'client': 2,
+        'user': 1
+      };
+
       const requiredRoleStr = String(requiredRole).toLowerCase();
       const userRoleStr = String(userRole).toLowerCase();
       
-      console.log('🔍 RoleGuard - Checking role match:', { 
-        userRole: userRoleStr, 
-        requiredRole: requiredRoleStr,
-        match: userRoleStr === requiredRoleStr 
-      });
+      const userPriority = ROLE_HIERARCHY[userRoleStr] || 0;
+      const requiredPriority = ROLE_HIERARCHY[requiredRoleStr] || 0;
       
-      const hasRole = userRoleStr === requiredRoleStr;
+      // support_admin bypasses all checks; otherwise exact match or hierarchy
+      const hasRole = userRoleStr === 'support_admin' || userRoleStr === requiredRoleStr;
       
       if (!hasRole) {
         console.log('❌ RoleGuard - Access denied, logging audit event');

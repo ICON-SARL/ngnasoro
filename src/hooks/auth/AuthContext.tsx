@@ -11,6 +11,7 @@ import { logger } from '@/utils/logger';
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 
 const ROLE_HIERARCHY = {
+  [UserRole.SupportAdmin]: 5,
   [UserRole.Admin]: 4,
   [UserRole.SfdAdmin]: 3,
   [UserRole.Client]: 2,
@@ -40,8 +41,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [activeSfdId]);
 
-  const isAdmin = userRole === UserRole.Admin;
-  const isSfdAdmin = userRole === UserRole.SfdAdmin;
+  const isAdmin = userRole === UserRole.Admin || userRole === UserRole.SupportAdmin;
+  const isSfdAdmin = userRole === UserRole.SfdAdmin || userRole === UserRole.SupportAdmin;
   const isClient = userRole === UserRole.Client;
 
   const enhanceUser = (supabaseUser: SupabaseUser): User => ({

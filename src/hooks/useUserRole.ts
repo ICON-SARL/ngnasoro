@@ -55,8 +55,9 @@ export function useUserRole() {
     roles,
     isLoading,
     error,
-    isAdmin: () => roles.includes('admin'),
-    isSfdAdmin: () => roles.includes('sfd_admin'),
+    isAdmin: () => roles.includes('admin') || roles.includes('support_admin'),
+    isSfdAdmin: () => roles.includes('sfd_admin') || roles.includes('support_admin'),
     isClient: () => roles.includes('client'),
+    isSupportAdmin: () => roles.includes('support_admin'),
   };
 }
