@@ -92,6 +92,13 @@ const SfdSetupPage = lazy(() => import('./pages/SfdSetupPage'));
 const JoinSfdPage = lazy(() => import('./pages/mobile/JoinSfdPage'));
 const MEREFDashboard = lazy(() => import('./pages/dashboards/MEREFDashboard'));
 
+// Support Admin
+const SupportAdminLayout = lazy(() => import('./components/support/SupportAdminLayout'));
+const SupportAdminDashboard = lazy(() => import('./pages/SupportAdminDashboard'));
+const SupportUsersPage = lazy(() => import('./pages/support/SupportUsersPage'));
+const SupportSystemPage = lazy(() => import('./pages/support/SupportSystemPage'));
+const SupportLogsPage = lazy(() => import('./pages/support/SupportLogsPage'));
+
 // Lazy wrapper
 const L = ({ children }: { children: ReactNode }) => (
   <Suspense fallback={<LoadingScreen message="Chargement..." />}>
@@ -302,6 +309,18 @@ const router = createBrowserRouter([
       {
         path: '/sfd-setup',
         element: <RoleGuard requiredRole="client" fallbackPath="/access-denied"><L><SfdSetupPage /></L></RoleGuard>,
+      },
+      
+      // Support Admin routes
+      {
+        path: '/support-admin-dashboard',
+        element: <RoleGuard requiredRole="support_admin" fallbackPath="/access-denied"><L><SupportAdminLayout /></L></RoleGuard>,
+        children: [
+          { index: true, element: <SupportAdminDashboard /> },
+          { path: 'users', element: <SupportUsersPage /> },
+          { path: 'system', element: <SupportSystemPage /> },
+          { path: 'logs', element: <SupportLogsPage /> },
+        ],
       },
       
       // Error pages

@@ -9,6 +9,7 @@ export interface User extends SupabaseUser {
 }
 
 export enum UserRole {
+  SupportAdmin = 'support_admin',
   Admin = 'admin',
   SfdAdmin = 'sfd_admin',
   Client = 'client',

@@ -3155,6 +3155,7 @@ export type Database = {
         | "user"
         | "cashier"
         | "supervisor"
+        | "support_admin"
       document_type:
         | "identity"
         | "proof_of_address"
@@ -3314,6 +3315,7 @@ export const Constants = {
         "user",
         "cashier",
         "supervisor",
+        "support_admin",
       ],
       document_type: [
         "identity",
