@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { subsidyService } from '@/services/subsidyService';
+import { logger } from '@/utils/logger';
 
 interface MerefSubsidyRequest {
   id: string;
@@ -21,37 +22,25 @@ export function useMerefSubsidyRequests() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  // Fetch all subsidy requests
   const { data: requests, isLoading, isError, refetch } = useQuery({
     queryKey: ['meref-subsidy-requests'],
     queryFn: async () => {
       try {
-        console.log("Récupération des demandes de subvention...");
+        logger.debug("Récupération des demandes de subvention...");
         
-        // Utilisation d'une requête simplifiée pour éviter des jointures complexes
         const { data, error } = await supabase
           .from('subsidy_requests')
-          .select(`
-            id,
-            amount,
-            justification,
-            status,
-            created_at,
-            sfd_id
-          `)
+          .select('id, amount, justification, status, created_at, sfd_id')
           .order('created_at', { ascending: false });
 
         if (error) {
-          console.error("Erreur lors de la récupération des demandes de subvention:", error);
+          logger.error("Erreur lors de la récupération des demandes de subvention:", error);
           throw error;
         }
 
-        console.log("Données brutes récupérées:", data);
-
-        // Jointure manuelle avec les SFDs pour plus de robustesse
         const sfdIds = data.map(item => item.sfd_id);
         
-        let sfdsMap = {};
+        let sfdsMap: Record<string, string> = {};
         if (sfdIds.length > 0) {
           const { data: sfdsData, error: sfdsError } = await supabase
             .from('sfds')
@@ -59,16 +48,15 @@ export function useMerefSubsidyRequests() {
             .in('id', sfdIds);
             
           if (!sfdsError && sfdsData) {
-            sfdsMap = sfdsData.reduce((acc, sfd) => {
+            sfdsMap = sfdsData.reduce((acc: Record<string, string>, sfd) => {
               acc[sfd.id] = sfd.name;
               return acc;
             }, {});
           } else {
-            console.warn("Impossible de récupérer les détails des SFDs:", sfdsError);
+            logger.warn("Impossible de récupérer les détails des SFDs:", sfdsError);
           }
         }
         
-        // Formater les données
         const formattedData = data.map((item, index) => {
           const date = new Date(item.created_at);
           const year = date.getFullYear();
@@ -88,75 +76,45 @@ export function useMerefSubsidyRequests() {
           };
         });
 
-        console.log("Demandes de subvention formatées:", formattedData.length);
+        logger.debug(`${formattedData.length} demandes de subvention récupérées`);
         return formattedData;
       } catch (error) {
-        console.error('Erreur lors de la récupération des demandes de subvention:', error);
+        logger.error('Erreur lors de la récupération des demandes de subvention:', error);
         return [];
       }
     },
     refetchOnWindowFocus: false
   });
 
-  // Approuver une demande de subvention en utilisant le service
   const approveMutation = useMutation({
     mutationFn: async (requestId: string) => {
-      console.log("Tentative d'approbation de la requête:", requestId);
-      try {
-        const result = await subsidyService.approveSubsidyRequest(requestId);
-        console.log("Résultat de l'approbation:", result);
-        return result;
-      } catch (error) {
-        console.error("Erreur lors de l'approbation:", error);
-        throw error;
-      }
+      logger.debug("Tentative d'approbation de la requête:", requestId);
+      const result = await subsidyService.approveSubsidyRequest(requestId);
+      return result;
     },
     onSuccess: () => {
-      toast({
-        title: "Demande approuvée",
-        description: "La demande de subvention a été approuvée avec succès",
-      });
+      toast({ title: "Demande approuvée", description: "La demande de subvention a été approuvée avec succès" });
       queryClient.invalidateQueries({ queryKey: ['meref-subsidy-requests'] });
     },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Une erreur est survenue lors de l'approbation";
-      console.error("Erreur dans onError:", errorMessage);
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    onError: (error: Error) => {
+      logger.error("Erreur d'approbation:", error.message);
+      toast({ title: "Erreur", description: error.message || "Une erreur est survenue lors de l'approbation", variant: "destructive" });
     }
   });
 
-  // Rejeter une demande de subvention en utilisant le service
   const rejectMutation = useMutation({
     mutationFn: async (params: { requestId: string, comments?: string }) => {
-      console.log("Tentative de rejet de la requête:", params);
-      try {
-        const result = await subsidyService.rejectSubsidyRequest(params.requestId, params.comments);
-        console.log("Résultat du rejet:", result);
-        return result;
-      } catch (error) {
-        console.error("Erreur lors du rejet:", error);
-        throw error;
-      }
+      logger.debug("Tentative de rejet de la requête:", params.requestId);
+      const result = await subsidyService.rejectSubsidyRequest(params.requestId, params.comments);
+      return result;
     },
     onSuccess: () => {
-      toast({
-        title: "Demande rejetée",
-        description: "La demande de subvention a été rejetée",
-      });
+      toast({ title: "Demande rejetée", description: "La demande de subvention a été rejetée" });
       queryClient.invalidateQueries({ queryKey: ['meref-subsidy-requests'] });
     },
-    onError: (error: any) => {
-      const errorMessage = error.message || "Une erreur est survenue lors du rejet";
-      console.error("Erreur dans onError:", errorMessage);
-      toast({
-        title: "Erreur",
-        description: errorMessage,
-        variant: "destructive",
-      });
+    onError: (error: Error) => {
+      logger.error("Erreur de rejet:", error.message);
+      toast({ title: "Erreur", description: error.message || "Une erreur est survenue lors du rejet", variant: "destructive" });
     }
   });
 

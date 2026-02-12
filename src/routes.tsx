@@ -1,572 +1,317 @@
 
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { lazy, Suspense, ReactNode } from 'react';
 import RootLayout from './components/RootLayout';
 import Index from './pages/Index';
 import OnboardingPage from './pages/OnboardingPage';
 import LandingPage from './pages/LandingPage';
-import SfdListPage from './pages/SfdListPage';
-import FAQLandingPage from './pages/FAQLandingPage';
-import ContactPage from './pages/ContactPage';
-import CGUPage from './pages/legal/CGUPage';
-import PrivacyPage from './pages/legal/PrivacyPage';
-import LegalMentionsPage from './pages/legal/LegalMentionsPage';
-import MobileFlowPage from './pages/mobile/MobileFlowPage';
-import MobileDashboardPage from './pages/mobile/MobileDashboardPage';
-import WelcomePage from './pages/mobile/WelcomePage';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import MobileLoansPage from './pages/mobile/MobileLoansPage';
-import MobileProfilePage from './pages/mobile/MobileProfilePage';
-import FundsManagementPage from './pages/mobile/FundsManagementPage';
-import MobileDiagnosticsPage from './pages/mobile/MobileDiagnosticsPage';
-import MobileLoanApplicationPage from './pages/mobile/MobileLoanApplicationPage';
-import LoanDetailsPage from './pages/mobile/LoanDetailsPage';
-import MobileMyLoansPage from './pages/mobile/MobileMyLoansPage';
-import UnifiedLoansPage from './pages/mobile/UnifiedLoansPage';
-import MobileLoanDetailsPage from './pages/mobile/MobileLoanDetailsPage';
-import LoanRepaymentPage from './pages/mobile/LoanRepaymentPage';
-import MobileLoanPlansPage from './pages/mobile/MobileLoanPlansPage';
-import MobileLoanSimulatorPage from './pages/mobile/MobileLoanSimulatorPage';
-import SfdSelectorPage from './pages/SfdSelectorPage';
-import SfdSelectionPage from './pages/mobile/SfdSelectionPage';
-import SfdAdhesionPage from './pages/mobile/SfdAdhesionPage';
-import SupportPage from './pages/mobile/SupportPage';
-import FAQPage from './pages/mobile/FAQPage';
-import AccountsPage from './pages/mobile/AccountsPage';
-import VaultsPage from './pages/mobile/VaultsPage';
-import VaultsHubPage from './pages/mobile/VaultsHubPage';
-import CreateVaultPage from './pages/mobile/CreateVaultPage';
-import VaultDetailsPage from './pages/mobile/VaultDetailsPage';
-import CollaborativeVaultsPage from './pages/mobile/CollaborativeVaultsPage';
-import CreateCollaborativeVaultPage from './pages/mobile/CreateCollaborativeVaultPage';
-import CollaborativeVaultDetailsPage from './pages/mobile/CollaborativeVaultDetailsPage';
-import SfdLoginPage from './pages/SfdLoginPage';
-import UnauthorizedPage from './pages/UnauthorizedPage';
-import AccessDeniedPage from './pages/AccessDeniedPage';
-import PendingApprovalPage from './pages/PendingApprovalPage';
-import SfdClientsPage from './pages/SfdClientsPage';
-import LoansPage from './pages/LoansPage';
-import SuperAdminDashboard from './pages/SuperAdminDashboard';
 import LoginPage from './pages/LoginPage';
-import AdminLoginPage from './pages/AdminLoginPage';
-import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import ResetPasswordPage from './pages/ResetPasswordPage';
-import SystemSettingsPage from './pages/admin/SystemSettingsPage';
-import ClientAdhesionManagementPage from './pages/admin/ClientAdhesionManagementPage';
-import KycUpgradePage from './pages/KycUpgradePage';
-import MEREFDashboard from './pages/dashboards/MEREFDashboard';
-import SfdAdminDashboard from './pages/dashboards/SfdAdminDashboard';
-import CashierDashboard from './pages/dashboards/CashierDashboard';
-import SfdManagementPage from './pages/SfdManagementPage';
-import SfdApprovalManagementPage from './pages/SfdApprovalManagementPage';
-import { SfdHeader } from './components/sfd/SfdHeader';
+import { ErrorBoundary } from './components/ErrorBoundary';
+import NotFoundPage from './pages/NotFoundPage';
+import LoadingScreen from './components/ui/LoadingScreen';
+
+// Lazy-loaded pages - Public
+const SfdListPage = lazy(() => import('./pages/SfdListPage'));
+const FAQLandingPage = lazy(() => import('./pages/FAQLandingPage'));
+const ContactPage = lazy(() => import('./pages/ContactPage'));
+const CGUPage = lazy(() => import('./pages/legal/CGUPage'));
+const PrivacyPage = lazy(() => import('./pages/legal/PrivacyPage'));
+const LegalMentionsPage = lazy(() => import('./pages/legal/LegalMentionsPage'));
+
+// Lazy-loaded pages - Auth
+const AdminLoginPage = lazy(() => import('./pages/AdminLoginPage'));
+const SfdLoginPage = lazy(() => import('./pages/SfdLoginPage'));
+const ForgotPasswordPage = lazy(() => import('./pages/ForgotPasswordPage'));
+const ResetPasswordPage = lazy(() => import('./pages/ResetPasswordPage'));
+const PendingApprovalPage = lazy(() => import('./pages/PendingApprovalPage'));
+const SfdSelectionPage = lazy(() => import('./pages/mobile/SfdSelectionPage'));
+const AdhesionStatusPage = lazy(() => import('./pages/mobile/AdhesionStatusPage'));
+const UnauthorizedPage = lazy(() => import('./pages/UnauthorizedPage'));
+const AccessDeniedPage = lazy(() => import('./pages/AccessDeniedPage'));
+
+// Lazy-loaded pages - Super Admin / MEREF
+const SuperAdminDashboard = lazy(() => import('./pages/SuperAdminDashboard'));
+const SfdApprovalManagementPage = lazy(() => import('./pages/SfdApprovalManagementPage'));
+const SubsidyApprovalsPage = lazy(() => import('./pages/meref/SubsidyApprovalsPage'));
+const LoansMonitoringPage = lazy(() => import('./pages/meref/LoansMonitoringPage'));
+const ReportsGenerationPage = lazy(() => import('./pages/meref/ReportsGenerationPage'));
+const CreditsApprovalsPage = lazy(() => import('./pages/meref/CreditsApprovalsPage'));
+const ApprovalsHistoryPage = lazy(() => import('./pages/meref/ApprovalsHistoryPage'));
+const SfdsManagementPage = lazy(() => import('./pages/meref/SfdsManagementPage'));
+const AdminsManagementPage = lazy(() => import('./pages/meref/AdminsManagementPage'));
+const UsersManagementPage = lazy(() => import('./pages/meref/UsersManagementPage'));
+const TontinesMonitoringPage = lazy(() => import('./pages/meref/TontinesMonitoringPage'));
+const MobileMoneyMonitoringPage = lazy(() => import('./pages/meref/MobileMoneyMonitoringPage'));
+const ReportsHistoryPage = lazy(() => import('./pages/meref/ReportsHistoryPage'));
+const MerefSystemSettingsPage = lazy(() => import('./pages/meref/MerefSystemSettingsPage'));
+const AuditLogsPage = lazy(() => import('./pages/meref/AuditLogsPage'));
+const MerefSfdLoansPage = lazy(() => import('./pages/meref/MerefSfdLoansPage'));
+const SystemSettingsPage = lazy(() => import('./pages/admin/SystemSettingsPage'));
+const SfdManagementPage = lazy(() => import('./pages/SfdManagementPage'));
+
+// Lazy-loaded pages - SFD Admin
+const SfdAdminDashboard = lazy(() => import('./pages/dashboards/SfdAdminDashboard'));
+const CashierDashboard = lazy(() => import('./pages/dashboards/CashierDashboard'));
+const SfdClientsPage = lazy(() => import('./pages/SfdClientsPage'));
+const LoansPage = lazy(() => import('./pages/LoansPage'));
+const ClientAdhesionManagementPage = lazy(() => import('./pages/admin/ClientAdhesionManagementPage'));
+const SfdTransactionsPage = lazy(() => import('./pages/sfd/SfdTransactionsPage'));
+const SfdSubsidyRequestsPage = lazy(() => import('./pages/sfd/SfdSubsidyRequestsPage'));
+const SfdSettingsPage = lazy(() => import('./pages/sfd/SfdSettingsPage'));
+
+// Lazy-loaded pages - Mobile
+const MobileFlowPage = lazy(() => import('./pages/mobile/MobileFlowPage'));
+const MobileDashboardPage = lazy(() => import('./pages/mobile/MobileDashboardPage'));
+const MobileLoansPage = lazy(() => import('./pages/mobile/MobileLoansPage'));
+const MobileProfilePage = lazy(() => import('./pages/mobile/MobileProfilePage'));
+const FundsManagementPage = lazy(() => import('./pages/mobile/FundsManagementPage'));
+const MobileDiagnosticsPage = lazy(() => import('./pages/mobile/MobileDiagnosticsPage'));
+const MobileLoanApplicationPage = lazy(() => import('./pages/mobile/MobileLoanApplicationPage'));
+const LoanDetailsPage = lazy(() => import('./pages/mobile/LoanDetailsPage'));
+const MobileMyLoansPage = lazy(() => import('./pages/mobile/MobileMyLoansPage'));
+const UnifiedLoansPage = lazy(() => import('./pages/mobile/UnifiedLoansPage'));
+const MobileLoanDetailsPage = lazy(() => import('./pages/mobile/MobileLoanDetailsPage'));
+const LoanRepaymentPage = lazy(() => import('./pages/mobile/LoanRepaymentPage'));
+const MobileLoanPlansPage = lazy(() => import('./pages/mobile/MobileLoanPlansPage'));
+const MobileLoanSimulatorPage = lazy(() => import('./pages/mobile/MobileLoanSimulatorPage'));
+const SfdSelectorPage = lazy(() => import('./pages/SfdSelectorPage'));
+const SfdAdhesionPage = lazy(() => import('./pages/mobile/SfdAdhesionPage'));
+const SupportPage = lazy(() => import('./pages/mobile/SupportPage'));
+const FAQPage = lazy(() => import('./pages/mobile/FAQPage'));
+const AccountsPage = lazy(() => import('./pages/mobile/AccountsPage'));
+const VaultsPage = lazy(() => import('./pages/mobile/VaultsPage'));
+const VaultsHubPage = lazy(() => import('./pages/mobile/VaultsHubPage'));
+const CreateVaultPage = lazy(() => import('./pages/mobile/CreateVaultPage'));
+const VaultDetailsPage = lazy(() => import('./pages/mobile/VaultDetailsPage'));
+const CollaborativeVaultsPage = lazy(() => import('./pages/mobile/CollaborativeVaultsPage'));
+const CreateCollaborativeVaultPage = lazy(() => import('./pages/mobile/CreateCollaborativeVaultPage'));
+const CollaborativeVaultDetailsPage = lazy(() => import('./pages/mobile/CollaborativeVaultDetailsPage'));
+const KycUpgradePage = lazy(() => import('./pages/KycUpgradePage'));
+const MobileNotificationsPage = lazy(() => import('./pages/mobile/MobileNotificationsPage'));
+const SfdSetupPage = lazy(() => import('./pages/SfdSetupPage'));
+const JoinSfdPage = lazy(() => import('./pages/mobile/JoinSfdPage'));
+const MEREFDashboard = lazy(() => import('./pages/dashboards/MEREFDashboard'));
+
+// Lazy wrapper
+const L = ({ children }: { children: ReactNode }) => (
+  <Suspense fallback={<LoadingScreen message="Chargement..." />}>
+    {children}
+  </Suspense>
+);
+
+// Lazy-loaded RoleGuard
 import RoleGuard from './components/RoleGuard';
 import { MerefAdminLayout } from './components/admin/meref/layout/MerefAdminLayout';
-import SubsidyApprovalsPage from './pages/meref/SubsidyApprovalsPage';
-import LoansMonitoringPage from './pages/meref/LoansMonitoringPage';
-import ReportsGenerationPage from './pages/meref/ReportsGenerationPage';
-import CreditsApprovalsPage from './pages/meref/CreditsApprovalsPage';
-import ApprovalsHistoryPage from './pages/meref/ApprovalsHistoryPage';
-import SfdsManagementPage from './pages/meref/SfdsManagementPage';
-import AdminsManagementPage from './pages/meref/AdminsManagementPage';
-import UsersManagementPage from './pages/meref/UsersManagementPage';
-import TontinesMonitoringPage from './pages/meref/TontinesMonitoringPage';
-import MobileMoneyMonitoringPage from './pages/meref/MobileMoneyMonitoringPage';
-import ReportsHistoryPage from './pages/meref/ReportsHistoryPage';
-import MerefSystemSettingsPage from './pages/meref/MerefSystemSettingsPage';
-import AuditLogsPage from './pages/meref/AuditLogsPage';
-import MerefSfdLoansPage from './pages/meref/MerefSfdLoansPage';
-import MobileNotificationsPage from './pages/mobile/MobileNotificationsPage';
-import SfdSetupPage from './pages/SfdSetupPage';
-import JoinSfdPage from './pages/mobile/JoinSfdPage';
-import AdhesionStatusPage from './pages/mobile/AdhesionStatusPage';
-import SfdTransactionsPage from './pages/sfd/SfdTransactionsPage';
-import SfdSubsidyRequestsPage from './pages/sfd/SfdSubsidyRequestsPage';
-import SfdSettingsPage from './pages/sfd/SfdSettingsPage';
 
 const router = createBrowserRouter([
   {
     element: <RootLayout />,
     children: [
-      // Default entry point - redirect to landing
+      { path: '/', element: <Index /> },
+      { path: '/landing', element: <LandingPage /> },
+      { path: '/sfd-partners', element: <L><SfdListPage /></L> },
+      { path: '/faq', element: <L><FAQLandingPage /></L> },
+      { path: '/contact', element: <L><ContactPage /></L> },
+      { path: '/legal/cgu', element: <L><CGUPage /></L> },
+      { path: '/legal/privacy', element: <L><PrivacyPage /></L> },
+      { path: '/legal/mentions', element: <L><LegalMentionsPage /></L> },
+      { path: '/onboarding', element: <OnboardingPage /> },
+      
+      // Auth routes
+      { path: '/auth', element: <LoginPage /> },
+      { path: '/admin/auth', element: <L><AdminLoginPage /></L> },
+      { path: '/sfd/auth', element: <L><SfdLoginPage /></L> },
+      { path: '/forgot-password', element: <L><ForgotPasswordPage /></L> },
+      { path: '/reset-password', element: <L><ResetPasswordPage /></L> },
+      { path: '/pending-approval', element: <L><PendingApprovalPage /></L> },
+      { path: '/sfd-selection', element: <L><SfdSelectionPage /></L> },
+      { path: '/adhesion-status', element: <L><AdhesionStatusPage /></L> },
+      
+      // Super Admin routes
       {
-        path: '/',
-        element: <Index />,
+        path: '/super-admin-dashboard',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><SuperAdminDashboard /></L> }],
       },
       {
-        path: '/landing',
-        element: <LandingPage />,
+        path: '/meref/approvals/sfds',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><SfdApprovalManagementPage /></L> }],
       },
       {
-        path: '/sfd-partners',
-        element: <SfdListPage />,
+        path: '/meref/approvals/subsidies',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><SubsidyApprovalsPage /></L> }],
       },
       {
-        path: '/faq',
-        element: <FAQLandingPage />,
+        path: '/meref/monitoring/loans',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><LoansMonitoringPage /></L> }],
       },
       {
-        path: '/contact',
-        element: <ContactPage />,
+        path: '/meref/reports/generate',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><ReportsGenerationPage /></L> }],
       },
       {
-        path: '/legal/cgu',
-        element: <CGUPage />,
+        path: '/meref/approvals/credits',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><CreditsApprovalsPage /></L> }],
       },
       {
-        path: '/legal/privacy',
-        element: <PrivacyPage />,
+        path: '/meref/approvals/history',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><ApprovalsHistoryPage /></L> }],
       },
       {
-        path: '/legal/mentions',
-        element: <LegalMentionsPage />,
+        path: '/meref/management/sfds',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><SfdsManagementPage /></L> }],
+      },
+      {
+        path: '/meref/management/admins',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><AdminsManagementPage /></L> }],
+      },
+      {
+        path: '/meref/management/users',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><UsersManagementPage /></L> }],
+      },
+      {
+        path: '/meref/monitoring/tontines',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><TontinesMonitoringPage /></L> }],
+      },
+      {
+        path: '/meref/monitoring/mobile-money',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><MobileMoneyMonitoringPage /></L> }],
+      },
+      {
+        path: '/meref/reports/history',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><ReportsHistoryPage /></L> }],
+      },
+      {
+        path: '/meref/system/settings',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><MerefSystemSettingsPage /></L> }],
+      },
+      {
+        path: '/meref/system/logs',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><AuditLogsPage /></L> }],
+      },
+      {
+        path: '/meref/sfd-loans',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><MerefAdminLayout /></RoleGuard>,
+        children: [{ index: true, element: <L><MerefSfdLoansPage /></L> }],
+      },
+      {
+        path: '/admin/system-settings',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><L><SystemSettingsPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-management',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><L><SfdManagementPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-approval',
+        element: <RoleGuard requiredRole="admin" fallbackPath="/access-denied"><L><SfdApprovalManagementPage /></L></RoleGuard>,
       },
       
-      // Onboarding route (première visite)
+      // SFD Admin routes
       {
-        path: '/onboarding',
-        element: <OnboardingPage />,
+        path: '/agency-dashboard',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><SfdAdminDashboard /></L></RoleGuard>,
       },
-  
-  // Auth routes
-  {
-    path: '/auth',
-    element: <LoginPage />,
-  },
-  {
-    path: '/admin/auth',
-    element: <AdminLoginPage />,
-  },
-  {
-    path: '/sfd/auth',
-    element: <SfdLoginPage />,
-  },
-  {
-    path: '/forgot-password',
-    element: <ForgotPasswordPage />,
-  },
-  {
-    path: '/reset-password',
-    element: <ResetPasswordPage />,
-  },
-  {
-    path: '/pending-approval',
-    element: <PendingApprovalPage />,
-  },
-  {
-    path: '/sfd-selection',
-    element: <SfdSelectionPage />,
-  },
-  {
-    path: '/adhesion-status',
-    element: <AdhesionStatusPage />,
-  },
-  
-  // Super Admin routes
-  {
-    path: '/super-admin-dashboard',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [
-      { index: true, element: <SuperAdminDashboard /> },
+      {
+        path: '/cashier-dashboard',
+        element: <RoleGuard requiredRole="cashier" fallbackPath="/access-denied"><L><CashierDashboard /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-clients',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><SfdClientsPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-loans',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><LoansPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-transactions',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><SfdTransactionsPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-adhesion-requests',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><ClientAdhesionManagementPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-subsidy-requests',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><SfdSubsidyRequestsPage /></L></RoleGuard>,
+      },
+      {
+        path: '/sfd-settings',
+        element: <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied"><L><SfdSettingsPage /></L></RoleGuard>,
+      },
+      
+      // Mobile redirect
+      { path: '/mobile', element: <Navigate to="/mobile-flow/dashboard" replace /> },
+      
+      // Mobile client routes
+      {
+        path: '/mobile-flow',
+        element: <RoleGuard requiredRole="client" fallbackPath="/access-denied"><L><MobileFlowPage /></L></RoleGuard>,
+        errorElement: <ErrorBoundary />,
+        children: [
+          { index: true, element: <Navigate to="dashboard" replace /> },
+          { path: 'dashboard', element: <MobileDashboardPage /> },
+          { path: 'main', element: <Navigate to="/mobile-flow/dashboard" replace /> },
+          { path: 'profile', element: <MobileProfilePage /> },
+          { path: 'kyc-upgrade', element: <KycUpgradePage /> },
+          { path: 'loans', element: <MobileLoansPage /> },
+          { path: 'my-loans', element: <MobileMyLoansPage /> },
+          { path: 'funds-management', element: <FundsManagementPage /> },
+          { path: 'diagnostics', element: <MobileDiagnosticsPage /> },
+          { path: 'loans/:loanId', element: <MobileLoanDetailsPage /> },
+          { path: 'loan/:loanId/repayment', element: <LoanRepaymentPage /> },
+          { path: 'loan-plans', element: <MobileLoanPlansPage /> },
+          { path: 'loan-simulator', element: <MobileLoanSimulatorPage /> },
+          { path: 'loan-application', element: <MobileLoanApplicationPage /> },
+          { path: 'loan-application/:planId', element: <MobileLoanApplicationPage /> },
+          { path: 'loan-details/:loanId', element: <LoanDetailsPage /> },
+          { path: 'sfd-selector', element: <SfdSelectorPage /> },
+          { path: 'sfd-adhesion/:sfdId', element: <SfdAdhesionPage /> },
+          { path: 'join-sfd', element: <JoinSfdPage /> },
+          { path: 'adhesion-status', element: <AdhesionStatusPage /> },
+          { path: 'support', element: <SupportPage /> },
+          { path: 'faq', element: <FAQPage /> },
+          { path: 'notifications', element: <MobileNotificationsPage /> },
+          { path: 'accounts', element: <AccountsPage /> },
+          { path: 'vaults-hub', element: <VaultsHubPage /> },
+          { path: 'vaults', element: <VaultsPage /> },
+          { path: 'create-vault', element: <CreateVaultPage /> },
+          { path: 'vault/:vaultId', element: <VaultDetailsPage /> },
+          { path: 'collaborative-vaults', element: <CollaborativeVaultsPage /> },
+          { path: 'create-collaborative-vault', element: <CreateCollaborativeVaultPage /> },
+          { path: 'collaborative-vault/:vaultId', element: <CollaborativeVaultDetailsPage /> },
+        ],
+      },
+      
+      // SFD Setup
+      {
+        path: '/sfd-setup',
+        element: <RoleGuard requiredRole="client" fallbackPath="/access-denied"><L><SfdSetupPage /></L></RoleGuard>,
+      },
+      
+      // Error pages
+      { path: '/unauthorized', element: <L><UnauthorizedPage /></L> },
+      { path: '/access-denied', element: <L><AccessDeniedPage /></L> },
+      
+      // Catch-all 404
+      { path: '*', element: <NotFoundPage /> },
     ],
   },
-  {
-    path: '/meref/approvals/sfds',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <SfdApprovalManagementPage /> }],
-  },
-  {
-    path: '/meref/approvals/subsidies',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <SubsidyApprovalsPage /> }],
-  },
-  {
-    path: '/meref/monitoring/loans',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <LoansMonitoringPage /> }],
-  },
-  {
-    path: '/meref/reports/generate',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <ReportsGenerationPage /> }],
-  },
-  {
-    path: '/meref/approvals/credits',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <CreditsApprovalsPage /> }],
-  },
-  {
-    path: '/meref/approvals/history',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <ApprovalsHistoryPage /> }],
-  },
-  {
-    path: '/meref/management/sfds',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <SfdsManagementPage /> }],
-  },
-  {
-    path: '/meref/management/admins',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <AdminsManagementPage /> }],
-  },
-  {
-    path: '/meref/management/users',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <UsersManagementPage /> }],
-  },
-  {
-    path: '/meref/monitoring/tontines',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <TontinesMonitoringPage /> }],
-  },
-  {
-    path: '/meref/monitoring/mobile-money',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <MobileMoneyMonitoringPage /> }],
-  },
-  {
-    path: '/meref/reports/history',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <ReportsHistoryPage /> }],
-  },
-  {
-    path: '/meref/system/settings',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <MerefSystemSettingsPage /> }],
-  },
-  {
-    path: '/meref/system/logs',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <AuditLogsPage /> }],
-  },
-  {
-    path: '/meref/sfd-loans',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <MerefAdminLayout />
-      </RoleGuard>
-    ),
-    children: [{ index: true, element: <MerefSfdLoansPage /> }],
-  },
-  {
-    path: '/admin/system-settings',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <SystemSettingsPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-management',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <SfdManagementPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-approval',
-    element: (
-      <RoleGuard requiredRole="admin" fallbackPath="/access-denied">
-        <SfdApprovalManagementPage />
-      </RoleGuard>
-    ),
-  },
-  
-  // SFD Admin routes
-  {
-    path: '/agency-dashboard',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <SfdAdminDashboard />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/cashier-dashboard',
-    element: (
-      <RoleGuard requiredRole="cashier" fallbackPath="/access-denied">
-        <CashierDashboard />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-clients',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <SfdClientsPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-loans',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <LoansPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-transactions',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <SfdTransactionsPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-adhesion-requests',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <ClientAdhesionManagementPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-subsidy-requests',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <SfdSubsidyRequestsPage />
-      </RoleGuard>
-    ),
-  },
-  {
-    path: '/sfd-settings',
-    element: (
-      <RoleGuard requiredRole="sfd_admin" fallbackPath="/access-denied">
-        <SfdSettingsPage />
-      </RoleGuard>
-    ),
-  },
-  
-  // Redirection /mobile → /mobile-flow/dashboard
-  {
-    path: '/mobile',
-    element: <Navigate to="/mobile-flow/dashboard" replace />,
-  },
-  
-  // Mobile client routes
-  {
-    path: '/mobile-flow',
-    element: (
-      <RoleGuard requiredRole="client" fallbackPath="/access-denied">
-        <MobileFlowPage />
-      </RoleGuard>
-    ),
-    errorElement: <ErrorBoundary />,
-    children: [
-      {
-        index: true,
-        element: <Navigate to="dashboard" replace />,
-      },
-      // Onboarding désactivé - accès direct au dashboard
-      // {
-      //   path: 'welcome',
-      //   element: <WelcomePage />,
-      // },
-      {
-        path: 'dashboard',
-        element: <MobileDashboardPage />,
-      },
-      {
-        path: 'main',
-        element: <Navigate to="/mobile-flow/dashboard" replace />,
-      },
-      {
-        path: 'profile',
-        element: <MobileProfilePage />,
-      },
-      {
-        path: 'kyc-upgrade',
-        element: <KycUpgradePage />,
-      },
-      {
-        path: 'loans',
-        element: <MobileLoansPage />,
-      },
-      {
-        path: 'my-loans',
-        element: <MobileMyLoansPage />,
-      },
-      {
-        path: 'funds-management',
-        element: <FundsManagementPage />,
-      },
-      {
-        path: 'diagnostics',
-        element: <MobileDiagnosticsPage />,
-      },
-        {
-          path: 'loans/:loanId',
-          element: <MobileLoanDetailsPage />,
-        },
-        {
-          path: 'loan/:loanId/repayment',
-          element: <LoanRepaymentPage />,
-        },
-        {
-          path: 'loan-plans',
-          element: <MobileLoanPlansPage />,
-        },
-        {
-          path: 'loan-simulator',
-          element: <MobileLoanSimulatorPage />,
-        },
-        {
-          path: 'loan-application',
-          element: <MobileLoanApplicationPage />,
-        },
-      {
-        path: 'loan-application/:planId',
-        element: <MobileLoanApplicationPage />,
-      },
-      {
-        path: 'loan-details/:loanId',
-        element: <LoanDetailsPage />,
-      },
-      {
-        path: 'sfd-selector',
-        element: <SfdSelectorPage />,
-      },
-      {
-        path: 'sfd-adhesion/:sfdId',
-        element: <SfdAdhesionPage />,
-      },
-      {
-        path: 'join-sfd',
-        element: <JoinSfdPage />,
-      },
-      {
-        path: 'adhesion-status',
-        element: <AdhesionStatusPage />,
-      },
-      {
-        path: 'support',
-        element: <SupportPage />,
-      },
-      {
-        path: 'faq',
-        element: <FAQPage />,
-      },
-      {
-        path: 'notifications',
-        element: <MobileNotificationsPage />,
-      },
-      {
-        path: 'accounts',
-        element: <AccountsPage />,
-      },
-      {
-        path: 'vaults-hub',
-        element: <VaultsHubPage />,
-      },
-      {
-        path: 'vaults',
-        element: <VaultsPage />,
-      },
-      {
-        path: 'create-vault',
-        element: <CreateVaultPage />,
-      },
-        {
-          path: 'vault/:vaultId',
-          element: <VaultDetailsPage />,
-        },
-        {
-          path: 'collaborative-vaults',
-          element: <CollaborativeVaultsPage />,
-        },
-        {
-          path: 'create-collaborative-vault',
-          element: <CreateCollaborativeVaultPage />,
-        },
-        {
-          path: 'collaborative-vault/:vaultId',
-          element: <CollaborativeVaultDetailsPage />,
-        },
-    ],
-  },
-  
-  // SFD Management route for clients
-  {
-    path: '/sfd-setup',
-    element: (
-      <RoleGuard requiredRole="client" fallbackPath="/access-denied">
-        <SfdSetupPage />
-      </RoleGuard>
-    ),
-  },
-  
-  // Error pages
-  {
-    path: '/unauthorized',
-    element: <UnauthorizedPage />,
-  },
-  {
-    path: '/access-denied',
-    element: <AccessDeniedPage />,
-  },
-  ],
-}]);
+]);
 
 export default router;

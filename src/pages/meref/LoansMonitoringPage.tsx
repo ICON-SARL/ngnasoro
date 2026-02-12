@@ -7,11 +7,26 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { AlertCircle, Download, Search, TrendingUp } from 'lucide-react';
+import { AlertCircle, Download, Search } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useToast } from '@/hooks/use-toast';
+import * as XLSX from 'xlsx';
+import { logger } from '@/utils/logger';
+
+interface LoanClient {
+  full_name: string;
+  client_code: string;
+  sfd_id: string;
+}
+
+interface LoanSfd {
+  name: string;
+  code: string;
+}
 
 export default function LoansMonitoringPage() {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [sfdFilter, setSfdFilter] = useState<string>('all');
@@ -23,22 +38,14 @@ export default function LoansMonitoringPage() {
         .from('sfd_loans')
         .select(`
           *,
-          sfd_clients!client_id (
-            full_name,
-            client_code,
-            sfd_id
-          ),
-          sfds!sfd_id (
-            name,
-            code
-          )
+          sfd_clients!client_id (full_name, client_code, sfd_id),
+          sfds!sfd_id (name, code)
         `)
         .order('created_at', { ascending: false });
 
       if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter as any);
+        query = query.eq('status', statusFilter as "active" | "approved" | "completed" | "defaulted" | "pending" | "rejected");
       }
-
       if (sfdFilter !== 'all') {
         query = query.eq('sfd_id', sfdFilter);
       }
@@ -57,17 +64,15 @@ export default function LoansMonitoringPage() {
         .select('id, name, code')
         .eq('status', 'active')
         .order('name');
-      
       if (error) throw error;
       return data;
     }
   });
 
   const filteredLoans = loans?.filter(loan => {
-    const client = loan.sfd_clients as any;
-    const sfd = loan.sfds as any;
+    const client = loan.sfd_clients as unknown as LoanClient;
+    const sfd = loan.sfds as unknown as LoanSfd;
     const searchLower = searchTerm.toLowerCase();
-    
     return (
       client?.full_name?.toLowerCase().includes(searchLower) ||
       client?.client_code?.toLowerCase().includes(searchLower) ||
@@ -85,8 +90,7 @@ export default function LoansMonitoringPage() {
       defaulted: { variant: 'destructive', label: 'Défaillant' },
       rejected: { variant: 'destructive', label: 'Rejeté' }
     };
-
-    const config = variants[status] || { variant: 'outline', label: status };
+    const config = variants[status] || { variant: 'outline' as const, label: status };
     return <Badge variant={config.variant}>{config.label}</Badge>;
   };
 
@@ -99,17 +103,45 @@ export default function LoansMonitoringPage() {
   };
 
   const handleExport = () => {
-    // TODO: Implement Excel export
-    console.log('Export to Excel');
+    if (!filteredLoans?.length) {
+      toast({ title: "Export impossible", description: "Aucun prêt à exporter", variant: "destructive" });
+      return;
+    }
+
+    try {
+      const exportData = filteredLoans.map(loan => {
+        const client = loan.sfd_clients as unknown as LoanClient;
+        const sfd = loan.sfds as unknown as LoanSfd;
+        return {
+          'Client': client?.full_name || 'N/A',
+          'Code Client': client?.client_code || 'N/A',
+          'SFD': sfd?.name || 'N/A',
+          'Montant': loan.amount,
+          'Restant': loan.remaining_amount,
+          'Statut': loan.status,
+          'Durée (mois)': loan.duration_months,
+          'Taux (%)': loan.interest_rate,
+          'Date Création': new Date(loan.created_at).toLocaleDateString('fr-FR'),
+        };
+      });
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Prêts');
+      XLSX.writeFile(wb, `prets-monitoring-${new Date().toISOString().split('T')[0]}.xlsx`);
+      
+      toast({ title: "Export réussi", description: `${exportData.length} prêts exportés en Excel` });
+    } catch (err) {
+      logger.error('Export error:', err);
+      toast({ title: "Erreur d'export", description: "Impossible de générer le fichier Excel", variant: "destructive" });
+    }
   };
 
   if (error) {
     return (
       <Alert variant="destructive">
         <AlertCircle className="h-4 w-4" />
-        <AlertDescription>
-          Erreur lors du chargement des prêts: {error.message}
-        </AlertDescription>
+        <AlertDescription>Erreur lors du chargement des prêts: {(error as Error).message}</AlertDescription>
       </Alert>
     );
   }
@@ -119,9 +151,7 @@ export default function LoansMonitoringPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Supervision des Prêts</h1>
-          <p className="text-muted-foreground">
-            Vue consolidée de tous les prêts de l'écosystème
-          </p>
+          <p className="text-muted-foreground">Vue consolidée de tous les prêts de l'écosystème</p>
         </div>
         <Button onClick={handleExport}>
           <Download className="h-4 w-4 mr-2" />
@@ -138,18 +168,10 @@ export default function LoansMonitoringPage() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Rechercher par client, code..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Rechercher par client, code..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
-
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Tous les statuts" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Tous les statuts" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Tous les statuts</SelectItem>
                 <SelectItem value="pending">En attente</SelectItem>
@@ -159,18 +181,11 @@ export default function LoansMonitoringPage() {
                 <SelectItem value="defaulted">Défaillant</SelectItem>
               </SelectContent>
             </Select>
-
             <Select value={sfdFilter} onValueChange={setSfdFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="Toutes les SFDs" />
-              </SelectTrigger>
+              <SelectTrigger><SelectValue placeholder="Toutes les SFDs" /></SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Toutes les SFDs</SelectItem>
-                {sfds?.map(sfd => (
-                  <SelectItem key={sfd.id} value={sfd.id}>
-                    {sfd.name}
-                  </SelectItem>
-                ))}
+                {sfds?.map(sfd => (<SelectItem key={sfd.id} value={sfd.id}>{sfd.name}</SelectItem>))}
               </SelectContent>
             </Select>
           </div>
@@ -184,9 +199,7 @@ export default function LoansMonitoringPage() {
         <CardContent>
           {isLoading ? (
             <div className="space-y-2">
-              {[...Array(5)].map((_, i) => (
-                <Skeleton key={i} className="h-12 w-full" />
-              ))}
+              {[...Array(5)].map((_, i) => (<Skeleton key={i} className="h-12 w-full" />))}
             </div>
           ) : (
             <Table>
@@ -204,9 +217,8 @@ export default function LoansMonitoringPage() {
               </TableHeader>
               <TableBody>
                 {filteredLoans?.map((loan) => {
-                  const client = loan.sfd_clients as any;
-                  const sfd = loan.sfds as any;
-                  
+                  const client = loan.sfd_clients as unknown as LoanClient;
+                  const sfd = loan.sfds as unknown as LoanSfd;
                   return (
                     <TableRow key={loan.id}>
                       <TableCell>
@@ -221,9 +233,7 @@ export default function LoansMonitoringPage() {
                       <TableCell>{getStatusBadge(loan.status)}</TableCell>
                       <TableCell>{loan.duration_months} mois</TableCell>
                       <TableCell>{loan.interest_rate}%</TableCell>
-                      <TableCell>
-                        {new Date(loan.created_at).toLocaleDateString('fr-FR')}
-                      </TableCell>
+                      <TableCell>{new Date(loan.created_at).toLocaleDateString('fr-FR')}</TableCell>
                     </TableRow>
                   );
                 })}
