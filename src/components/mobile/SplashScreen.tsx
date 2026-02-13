@@ -22,7 +22,7 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       <motion.img
         src="/lovable-uploads/LOGO_transprant_1763143001713.png"
         alt="N'GNA SÔRÔ!"
-        className="w-[120px] h-[120px] object-contain"
+        className="w-[160px] h-[160px] object-contain"
         initial={{ opacity: 0, scale: 0.85 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
