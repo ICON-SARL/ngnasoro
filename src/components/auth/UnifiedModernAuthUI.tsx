@@ -250,30 +250,46 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
       </AnimatePresence>
 
       {/* ===== TOP ZONE: Brand header with subtle pattern ===== */}
-      <div className="relative flex-shrink-0 pt-12 pb-24 flex flex-col items-center justify-center">
-        {/* SVG geometric pattern overlay */}
-        <svg className="absolute inset-0 w-full h-full opacity-[0.06]" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <pattern id="grid-pattern" x="0" y="0" width="40" height="40" patternUnits="userSpaceOnUse">
-              <circle cx="20" cy="20" r="1.5" fill="white" />
-              <path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" strokeWidth="0.5" />
-            </pattern>
-          </defs>
-          <rect width="100%" height="100%" fill="url(#grid-pattern)" />
+      <div className="relative flex-shrink-0 pt-16 pb-28 flex flex-col items-center justify-center">
+        {/* SVG organic pattern overlay - concentric circles */}
+        <svg className="absolute inset-0 w-full h-full opacity-[0.045]" xmlns="http://www.w3.org/2000/svg">
+          {/* Top-right concentric circles */}
+          <circle cx="85%" cy="15%" r="60" fill="none" stroke="white" strokeWidth="0.8" />
+          <circle cx="85%" cy="15%" r="90" fill="none" stroke="white" strokeWidth="0.6" />
+          <circle cx="85%" cy="15%" r="120" fill="none" stroke="white" strokeWidth="0.4" />
+          <circle cx="85%" cy="15%" r="150" fill="none" stroke="white" strokeWidth="0.3" />
+          {/* Bottom-left concentric circles */}
+          <circle cx="10%" cy="85%" r="50" fill="none" stroke="white" strokeWidth="0.8" />
+          <circle cx="10%" cy="85%" r="80" fill="none" stroke="white" strokeWidth="0.6" />
+          <circle cx="10%" cy="85%" r="110" fill="none" stroke="white" strokeWidth="0.4" />
+          <circle cx="10%" cy="85%" r="140" fill="none" stroke="white" strokeWidth="0.3" />
+          {/* Center subtle dots */}
+          <circle cx="50%" cy="50%" r="1" fill="white" opacity="0.3" />
+          <circle cx="30%" cy="40%" r="0.8" fill="white" opacity="0.2" />
+          <circle cx="70%" cy="60%" r="0.8" fill="white" opacity="0.2" />
         </svg>
 
-        {/* Logo */}
-        <div className="relative z-10 flex flex-col items-center space-y-3">
-          <AnimatedLogo 
-            size={140} 
-            withGlow={false}
-            withPulse={false} 
-            className="mx-auto drop-shadow-2xl"
-          />
-          <h1 className="text-2xl font-bold text-white tracking-wide">
+        {/* Logo with medallion halo */}
+        <div className="relative z-10 flex flex-col items-center space-y-4">
+          {/* Medallion circle behind logo */}
+          <div className="relative flex items-center justify-center">
+            <div className="absolute w-[180px] h-[180px] rounded-full bg-white/10" />
+            <AnimatedLogo 
+              size={160} 
+              withGlow={false}
+              withPulse={false} 
+              className="mx-auto drop-shadow-2xl relative z-10"
+            />
+          </div>
+          <h1 
+            className="text-3xl font-bold text-white tracking-[0.08em]"
+            style={{ textShadow: '0 2px 8px rgba(0,0,0,0.15)' }}
+          >
             N'GNA SÔRÔ!
           </h1>
-          <p className="text-white/60 text-sm font-medium tracking-wider uppercase">
+          {/* Decorative divider */}
+          <div className="w-10 h-[1px] bg-white/40" />
+          <p className="text-white/80 text-xs font-semibold tracking-[0.2em] uppercase">
             Microfinance digitale
           </p>
         </div>

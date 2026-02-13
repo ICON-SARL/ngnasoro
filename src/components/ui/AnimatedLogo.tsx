@@ -20,7 +20,7 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
       className={`relative ${className}`}
       initial={{ opacity: 0, scale: 0.8 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
+      transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
     >
       {/* Glow effect */}
       {withGlow && (
@@ -46,7 +46,7 @@ export const AnimatedLogo: React.FC<AnimatedLogoProps> = ({
         src={logo}
         alt="N'GNA SÔRÔ Logo"
         style={{ width: size, height: size }}
-        className="relative z-10 drop-shadow-2xl"
+        className="relative z-10 drop-shadow-2xl object-contain"
         whileHover={{
           rotateY: 15,
           rotateX: 5,
