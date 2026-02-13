@@ -160,7 +160,7 @@ const SfdSelectionPage = () => {
 
       // Redirect to status page after delay
       setTimeout(() => {
-        navigate('/mobile-flow/adhesion-status');
+        navigate('/adhesion-status');
       }, 1500);
       
     } catch (error) {
@@ -438,7 +438,7 @@ const SfdSelectionPage = () => {
                 <Button
                   size="sm"
                   variant="outline"
-                  onClick={() => navigate('/mobile-flow/adhesion-status')}
+                  onClick={() => navigate('/adhesion-status')}
                 >
                   Voir le suivi
                 </Button>
