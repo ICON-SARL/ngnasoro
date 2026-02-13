@@ -303,15 +303,25 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
           transform: 'translateZ(0)' 
         }}
       >
-        {/* Progress bar */}
+        {/* Progress bar with step labels */}
         <div className="px-8 pt-6 pb-2">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            {/* Step 1 indicator */}
+            <div className={cn(
+              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
+              stepIndex === 0 ? "bg-[#0D6A51] text-white" : "bg-[#0D6A51]/20 text-[#0D6A51]"
+            )}>1</div>
             <div className="flex-1 h-[3px] rounded-full bg-gray-100 dark:bg-gray-800 overflow-hidden">
               <div 
                 className="h-full bg-[#0D6A51] rounded-full transition-all duration-500 ease-out"
-                style={{ width: stepIndex === 0 ? '50%' : '100%' }}
+                style={{ width: stepIndex === 0 ? '0%' : '100%' }}
               />
             </div>
+            {/* Step 2 indicator */}
+            <div className={cn(
+              "w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold transition-all duration-300",
+              stepIndex === 1 ? "bg-[#0D6A51] text-white" : "bg-gray-100 dark:bg-gray-800 text-gray-400"
+            )}>2</div>
           </div>
           <div className="flex justify-between mt-2">
             <span className={cn(
@@ -429,6 +439,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 className={cn(
                   "w-full h-14 rounded-2xl font-semibold text-base text-white flex items-center justify-center gap-2",
                   "bg-[#0D6A51] hover:bg-[#0B5A44] active:scale-[0.97]",
+                  "shadow-lg shadow-[#0D6A51]/20",
                   "transition-all duration-150 ease-out",
                   "disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100",
                   "will-change-transform"

@@ -1,5 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
+import logoNgnaSoro from '@/assets/ngna-soro-logo.png';
 
 interface LoadingScreenProps {
   message?: string;
@@ -7,78 +8,60 @@ interface LoadingScreenProps {
 }
 
 const LoadingScreen: React.FC<LoadingScreenProps> = ({ 
-  message = 'Chargement...', 
+  message = 'Chargement', 
   showLogo = true 
 }) => {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary via-primary/90 to-primary-dark">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#0D6A51] via-[#0B5A44] to-[#094A3A]">
       <motion.div 
-        className="flex flex-col items-center gap-6"
+        className="flex flex-col items-center gap-8"
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.3 }}
+        transition={{ duration: 0.4 }}
       >
         {showLogo && (
           <motion.div
-            className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm flex items-center justify-center"
+            className="w-20 h-20 rounded-2xl bg-white/10 flex items-center justify-center"
             animate={{ 
               boxShadow: [
-                '0 0 0 0 rgba(255,255,255,0.2)',
+                '0 0 0 0 rgba(255,255,255,0.15)',
                 '0 0 0 20px rgba(255,255,255,0)',
               ]
             }}
-            transition={{ 
-              duration: 1.5, 
-              repeat: Infinity,
-              ease: 'easeOut'
-            }}
+            transition={{ duration: 1.5, repeat: Infinity, ease: 'easeOut' }}
           >
-            <motion.img 
-              src="/logo.png" 
+            <img 
+              src={logoNgnaSoro} 
               alt="N'GNA SORO!" 
-              className="w-14 h-14 object-contain"
-              animate={{ scale: [1, 1.05, 1] }}
-              transition={{ 
-                duration: 2, 
-                repeat: Infinity,
-                ease: 'easeInOut'
-              }}
-              onError={(e) => {
-                // Fallback if logo doesn't exist
-                e.currentTarget.style.display = 'none';
-              }}
+              className="w-14 h-14 object-contain rounded-xl"
             />
           </motion.div>
         )}
         
-        <div className="flex flex-col items-center gap-3">
-          {/* Modern spinner */}
-          <div className="relative w-10 h-10">
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-white/20"
-            />
-            <motion.div
-              className="absolute inset-0 rounded-full border-2 border-transparent border-t-white"
-              animate={{ rotate: 360 }}
-              transition={{ 
-                duration: 1, 
-                repeat: Infinity, 
-                ease: 'linear' 
-              }}
-            />
+        <div className="flex flex-col items-center gap-4">
+          {/* 3-dot loading animation */}
+          <div className="flex items-center gap-1.5">
+            {[0, 1, 2].map((i) => (
+              <motion.div
+                key={i}
+                className="w-2 h-2 rounded-full bg-white/80"
+                animate={{ 
+                  scale: [1, 1.4, 1],
+                  opacity: [0.4, 1, 0.4]
+                }}
+                transition={{ 
+                  duration: 0.8, 
+                  repeat: Infinity, 
+                  delay: i * 0.15,
+                  ease: 'easeInOut'
+                }}
+              />
+            ))}
           </div>
           
-          <motion.p 
-            className="text-white/80 text-sm font-medium"
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ 
-              duration: 1.5, 
-              repeat: Infinity,
-              ease: 'easeInOut'
-            }}
-          >
+          <p className="text-white/70 text-xs font-medium tracking-[0.15em] uppercase">
             {message}
-          </motion.p>
+          </p>
         </div>
       </motion.div>
     </div>

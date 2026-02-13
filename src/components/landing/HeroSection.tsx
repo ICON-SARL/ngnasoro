@@ -13,11 +13,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-primary via-primary/95 to-accent pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0D6A51] via-[#0B5A44] to-[#094A3A] pt-20">
       {/* Simple background decoration */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-accent/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
@@ -29,8 +29,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
             transition={{ duration: 0.5 }}
             className="inline-block mb-8"
           >
-            <Badge className="bg-white/15 backdrop-blur-sm text-white border-white/20 px-5 py-2.5 text-sm font-medium">
-              🇲🇱 Ministère de l'Économie et des Finances
+            <Badge className="bg-white/10 text-white border border-white/20 px-5 py-2.5 text-sm font-medium rounded-xl">
+              <Building2 className="w-3.5 h-3.5 mr-2 opacity-70" />
+              Ministère de l'Économie et des Finances
             </Badge>
           </motion.div>
 
@@ -65,7 +66,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
             <Button
               onClick={() => navigate('/auth')}
               size="lg"
-              className="h-14 px-8 rounded-2xl bg-white text-primary hover:bg-white/90 font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
+              className="h-14 px-8 rounded-2xl bg-white text-[#0D6A51] hover:bg-white/90 font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
             >
               Commencer maintenant
               <ArrowRight className="w-5 h-5 ml-2" />
@@ -85,18 +86,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap gap-8 justify-center text-white/90 text-sm"
+            className="flex flex-wrap gap-4 justify-center"
           >
-            <div className="flex items-center gap-2">
-              <Shield className="w-5 h-5 text-accent" />
+            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
+              <Shield className="w-4 h-4" />
               <span>Sécurisé</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Star className="w-5 h-5 text-accent" />
+            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
+              <Star className="w-4 h-4" />
               <span>4.8/5 • 5K+ avis</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-accent" />
+            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
+              <Building2 className="w-4 h-4" />
               <span>Agréé MEREF</span>
             </div>
           </motion.div>

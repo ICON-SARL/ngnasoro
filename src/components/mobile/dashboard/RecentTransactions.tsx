@@ -30,9 +30,9 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   const getTransactionIcon = (type: string) => {
     switch (type) {
       case 'deposit':
-        return <ArrowDownToLine className="w-4 h-4 text-primary" />;
+        return <ArrowDownToLine className="w-4 h-4 text-[#0D6A51]" />;
       case 'withdrawal':
-        return <ArrowUpFromLine className="w-4 h-4 text-accent" />;
+        return <ArrowUpFromLine className="w-4 h-4 text-amber-600" />;
       case 'loan_disbursement':
         return <CreditCard className="w-4 h-4 text-purple-600" />;
       default:
@@ -40,28 +40,30 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
     }
   };
 
+  const getTransactionBg = (type: string) => {
+    switch (type) {
+      case 'deposit': return 'bg-[#0D6A51]/10';
+      case 'withdrawal': return 'bg-amber-500/10';
+      case 'loan_disbursement': return 'bg-purple-500/10';
+      default: return 'bg-muted/50';
+    }
+  };
+
   const getTransactionLabel = (type: string) => {
     switch (type) {
-      case 'deposit':
-        return 'Dépôt';
-      case 'withdrawal':
-        return 'Retrait';
-      case 'transfer':
-        return 'Transfert';
-      case 'loan_disbursement':
-        return 'Décaissement prêt';
-      case 'loan_payment':
-        return 'Remboursement';
-      default:
-        return type;
+      case 'deposit': return 'Dépôt';
+      case 'withdrawal': return 'Retrait';
+      case 'transfer': return 'Transfert';
+      case 'loan_disbursement': return 'Décaissement prêt';
+      case 'loan_payment': return 'Remboursement';
+      default: return type;
     }
   };
 
   const formatAmount = (amount: number, type: string) => {
     const absAmount = Math.abs(amount);
     const formatted = new Intl.NumberFormat('fr-FR').format(absAmount);
-    const isPositive = amount > 0;
-    const prefix = isPositive ? '+' : '-';
+    const prefix = amount > 0 ? '+' : '-';
     return `${prefix} ${formatted}`;
   };
 
@@ -79,12 +81,12 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   if (transactions.length === 0) {
     return (
       <div className="bg-card rounded-2xl p-6">
-        <div className="text-center py-6">
-          <div className="mx-auto w-12 h-12 bg-muted/40 rounded-full flex items-center justify-center mb-3">
-            <Receipt className="w-5 h-5 text-muted-foreground/50" />
+        <div className="text-center py-8">
+          <div className="mx-auto w-14 h-14 bg-muted/30 rounded-full flex items-center justify-center mb-4">
+            <Receipt className="w-6 h-6 text-muted-foreground/40" />
           </div>
-          <p className="font-medium text-sm text-foreground">Aucune transaction</p>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="font-semibold text-sm text-foreground">Aucune transaction</p>
+          <p className="text-xs text-muted-foreground mt-1.5 max-w-[200px] mx-auto">
             Vos prochaines transactions apparaîtront ici
           </p>
         </div>
@@ -95,7 +97,7 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
   return (
     <div className="bg-card rounded-2xl p-4">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="font-semibold text-sm text-foreground">Transactions récentes</h3>
+        <h3 className="font-semibold text-base text-foreground">Transactions récentes</h3>
         <button 
           onClick={() => navigate('/mobile-flow/transactions')}
           className="text-xs text-primary font-medium"
@@ -104,18 +106,18 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
         </button>
       </div>
 
-      <div className="space-y-1">
+      <div className="space-y-0.5">
         {transactions.slice(0, 5).map((transaction, index) => (
           <motion.div
             key={transaction.id}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.2, delay: index * 0.03 }}
-            className="flex items-center justify-between py-3 border-b border-border/50 last:border-0 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors"
+            className="flex items-center justify-between py-3 cursor-pointer hover:bg-muted/30 -mx-2 px-2 rounded-lg transition-colors"
             onClick={() => navigate(`/mobile-flow/transactions`)}
           >
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-muted/50 rounded-xl">
+              <div className={`p-2 rounded-xl ${getTransactionBg(transaction.type)}`}>
                 {getTransactionIcon(transaction.type)}
               </div>
               <div>
@@ -135,10 +137,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({
               </div>
             </div>
             <div className="text-right">
-              <p className={`font-semibold text-sm ${
+              <p className={`font-semibold text-sm tabular-nums ${
                 transaction.type === 'deposit' || transaction.type === 'loan_disbursement'
-                  ? 'text-primary'
-                  : 'text-accent'
+                  ? 'text-[#0D6A51]'
+                  : 'text-amber-600'
               }`}>
                 {formatAmount(transaction.amount, transaction.type)} <span className="text-xs font-normal">FCFA</span>
               </p>
