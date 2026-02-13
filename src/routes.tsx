@@ -290,7 +290,7 @@ const router = createBrowserRouter([
           { path: 'sfd-selector', element: <SfdSelectorPage /> },
           { path: 'sfd-adhesion/:sfdId', element: <SfdAdhesionPage /> },
           { path: 'join-sfd', element: <JoinSfdPage /> },
-          { path: 'adhesion-status', element: <AdhesionStatusPage /> },
+          
           { path: 'support', element: <SupportPage /> },
           { path: 'faq', element: <FAQPage /> },
           { path: 'notifications', element: <MobileNotificationsPage /> },
