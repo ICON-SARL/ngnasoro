@@ -1,63 +1,63 @@
 
-# Fix: Connexion Admin impossible + Accès comptes
 
-## Probleme identifie
+# Amelioration du Splash Screen - Design Moderne et Pro
 
-Le code de connexion (`useLoginForm.ts` ligne 86) verifie le role via `app_metadata.role` :
-```
-const userRole = result.data?.user?.app_metadata?.role;
-```
+## Probleme actuel
 
-Or, pour TOUS les comptes admin, `app_metadata.role` est **null** dans la base. Les roles sont stockes correctement dans la table `user_roles`, mais le code ne la consulte jamais. Resultat : le role est toujours `undefined`, et le message "Acces refuse" s'affiche systematiquement.
+- Le logo est petit (64px dans un cercle de 96px) et coupe par `rounded-full`
+- Le medaillon blanc avec ombre cache les details du logo
+- L'ensemble manque d'impact visuel pour un ecran d'accueil fintech
 
 ## Solution
 
-Modifier `useLoginForm.ts` pour consulter la table `user_roles` apres un login reussi, au lieu de se fier a `app_metadata.role`.
+Refonte du `SplashScreen.tsx` avec un design epure, moderne et professionnel :
 
-### Fichier : `src/components/auth/login/useLoginForm.ts`
+### Design propose
 
-**Remplacement lignes 85-113 :**
+- **Fond** : Blanc pur (conserve)
+- **Logo** : Utiliser le logo transparent (`LOGO_transprant_1763143001713.png`) en grande taille (120px), SANS medaillon, SANS rounded-full, SANS shadow -- le logo s'affiche directement sur fond blanc pour une lisibilite maximale
+- **Titre** : "N'GNA SORO!" en vert marque (#0D6A51), police plus grande (text-3xl), espacement elegant
+- **Sous-titre** : "Votre partenaire financier" avec apparition progressive
+- **Indicateur de chargement** : Barre de progression fine et animee en bas (plus pro que les 3 points)
+- **Animations** : 
+  - Logo : fade-in + leger scale-up avec easing premium
+  - Titre : slide-up fluide
+  - Barre : progression horizontale animee
 
-Au lieu de :
-```typescript
-const userRole = result.data?.user?.app_metadata?.role;
+### Structure visuelle
+
+```text
++---------------------------+
+|                           |
+|                           |
+|                           |
+|         [LOGO 120px]      |
+|      (sans fond, direct)  |
+|                           |
+|       N'GNA SORO!         |
+|  Votre partenaire financier|
+|                           |
+|                           |
+|                           |
+|    ====== barre ======    |
++---------------------------+
 ```
 
-Faire :
-```typescript
-const userId = result.data.user.id;
+## Detail technique
 
-// Chercher le role dans user_roles (source de verite)
-const { data: roleData } = await supabase
-  .from('user_roles')
-  .select('role')
-  .eq('user_id', userId)
-  .single();
+### Fichier : `src/components/mobile/SplashScreen.tsx`
 
-const userRole = roleData?.role || result.data?.user?.app_metadata?.role;
-```
+1. Remplacer l'import du logo par le fichier transparent :
+   - `import logo from '@/assets/ngna-soro-logo.png'` devient une reference a `/lovable-uploads/LOGO_transprant_1763143001713.png`
+2. Supprimer le conteneur medaillon (div avec `rounded-full bg-white shadow-md`)
+3. Afficher l'image directement : `w-[120px] h-[120px] object-contain` sans arrondi
+4. Augmenter la taille du titre a `text-3xl font-bold`
+5. Remplacer les 3 dots par une barre de progression fine animee (hauteur 2px, largeur ~60%, animation de gauche a droite)
+6. Ajuster le timing des animations pour un enchainement fluide
 
-Le reste de la logique de redirection reste identique (verification `userRole === 'admin'` pour MEREF, `userRole === 'sfd_admin'` pour SFD).
-
-## Comptes existants et identifiants
-
-Voici les comptes deja crees dans le systeme :
-
-| Role | Email | Mot de passe | SFD associe |
-|------|-------|-------------|-------------|
-| Admin MEREF | admin@meref.gov.ml | (defini lors du setup) | - |
-| SFD Admin | admin.nsm@sfd.ml | (defini lors du setup) | NGNA SORO Microfinance |
-| SFD Admin | admin.kj@sfd.ml | (defini lors du setup) | Kafo Jiginew |
-| SFD Admin | admin.ny@sfd.ml | (defini lors du setup) | Nyesigiso |
-
-Les mots de passe ont ete definis via la fonction `setup-admin-system`. Si vous ne vous en souvenez plus, on peut les reinitialiser via une edge function.
-
-## Fichier modifie
+### Fichier modifie
 
 | Fichier | Changement |
 |---------|-----------|
-| `src/components/auth/login/useLoginForm.ts` | Lecture du role depuis `user_roles` au lieu de `app_metadata` |
+| `src/components/mobile/SplashScreen.tsx` | Logo transparent grande taille, suppression medaillon, barre de progression, animations premium |
 
-## Option supplementaire
-
-Si vous souhaitez reinitialiser les mots de passe des comptes admin a une valeur connue (ex: `Admin@2024!`), je peux aussi creer une edge function de reset. Dites-le moi apres approbation.
