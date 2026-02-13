@@ -115,14 +115,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     }
   }, [formData, isLogin, getFullPhoneNumber, toast]);
 
-  const handleVerifyPin = useCallback(async () => {
-    if (formData.pin.length !== 4) { setPinError('Veuillez entrer 4 chiffres'); return; }
+  const handleVerifyPin = useCallback(async (pinValue?: string) => {
+    const pin = pinValue ?? formData.pin;
+    if (pin.length !== 4) { setPinError('Veuillez entrer 4 chiffres'); return; }
     setLoading(true);
     setPinError('');
     try {
       const fullPhone = getFullPhoneNumber();
       const { data: response, error: fetchError } = await supabase.functions.invoke('pin-auth-session', {
-        body: { phone: fullPhone, pin: formData.pin }
+        body: { phone: fullPhone, pin }
       });
       if (fetchError) throw new Error('Erreur de connexion au serveur. Veuillez réessayer.');
       if (!response) throw new Error('Réponse serveur invalide');
@@ -168,14 +169,16 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
     }
   }, [formData.pin, getFullPhoneNumber, navigate, toast]);
 
-  const handleSetupPin = useCallback(async () => {
-    if (formData.pin.length !== 4) { setPinError('Le PIN doit contenir 4 chiffres'); return; }
+  const handleSetupPin = useCallback(async (pinValue?: string) => {
+    const pin = pinValue ?? formData.pin;
+    if (pin.length !== 4) { setPinError('Le PIN doit contenir 4 chiffres'); return; }
     setStep('confirm_pin');
     setPinError('');
   }, [formData.pin]);
 
-  const handleConfirmPin = useCallback(async () => {
-    if (formData.confirmPin !== formData.pin) {
+  const handleConfirmPin = useCallback(async (confirmPinValue?: string) => {
+    const confirmPin = confirmPinValue ?? formData.confirmPin;
+    if (confirmPin !== formData.pin) {
       setPinError('Les codes PIN ne correspondent pas');
       setFormData(prev => ({ ...prev, confirmPin: '' }));
       return;
@@ -465,7 +468,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   setFormData(prev => ({ ...prev, pin: value }));
                   setPinError('');
                   if (value.length === 4) {
-                    setTimeout(() => handleVerifyPin(), 300);
+                    setTimeout(() => handleVerifyPin(value), 300);
                   }
                 }}
                 length={4}
@@ -522,7 +525,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   setFormData(prev => ({ ...prev, pin: value }));
                   setPinError('');
                   if (value.length === 4) {
-                    setTimeout(() => handleSetupPin(), 300);
+                    setTimeout(() => handleSetupPin(value), 300);
                   }
                 }}
                 length={4}
@@ -552,7 +555,7 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   setFormData(prev => ({ ...prev, confirmPin: value }));
                   setPinError('');
                   if (value.length === 4) {
-                    setTimeout(() => handleConfirmPin(), 300);
+                    setTimeout(() => handleConfirmPin(value), 300);
                   }
                 }}
                 length={4}
