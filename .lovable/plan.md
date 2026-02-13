@@ -1,90 +1,34 @@
 
-# Fix PIN Input - Stale Closure Bug
+# Fix: Page "Acces Refuse" apres creation de compte
 
 ## Probleme
 
-Le `handleSetupPin` utilise `useCallback` avec `formData.pin` en dependance. Quand le 4eme chiffre est saisi :
+Apres inscription, l'utilisateur a le role `user` (pas encore `client`). Le systeme le redirige vers `/mobile-flow/adhesion-status` pour suivre sa demande d'adhesion. Mais la route `/mobile-flow/*` est protegee par un `RoleGuard` qui exige le role `client` (ligne 271 de `routes.tsx`). Resultat : "Acces Refuse".
 
-1. `onChange` appelle `setFormData(prev => ({...prev, pin: value}))` -- mise a jour asynchrone
-2. 300ms plus tard, `handleSetupPin()` s'execute
-3. Mais `handleSetupPin` a capture l'ancien `formData.pin` (3 chiffres) via sa closure
-4. `formData.pin.length !== 4` est donc VRAI, ce qui affiche l'erreur "Le PIN doit contenir 4 chiffres"
-
-Le meme probleme affecte `handleVerifyPin` et `handleConfirmPin`.
+Il existe deja une route `/adhesion-status` (ligne 135) qui n'est PAS protegee par ce guard et qui est accessible aux utilisateurs avec le role `user`.
 
 ## Solution
 
-Passer la valeur du PIN directement en parametre aux handlers au lieu de lire `formData.pin` depuis la closure.
+Deux corrections simples :
 
-### Fichier : `src/components/auth/UnifiedModernAuthUI.tsx`
+### 1. `src/pages/mobile/SfdSelectionPage.tsx`
 
-**1. Modifier les 3 handlers pour accepter un parametre optionnel :**
+Remplacer les navigations vers `/mobile-flow/adhesion-status` par `/adhesion-status` :
 
-```typescript
-// handleSetupPin : accepter pinValue en parametre
-const handleSetupPin = useCallback(async (pinValue?: string) => {
-  const pin = pinValue ?? formData.pin;
-  if (pin.length !== 4) { setPinError('Le PIN doit contenir 4 chiffres'); return; }
-  setStep('confirm_pin');
-  setPinError('');
-}, [formData.pin]);
+- Ligne 163 : `navigate('/mobile-flow/adhesion-status')` devient `navigate('/adhesion-status')`
+- Ligne 441 : `navigate('/mobile-flow/adhesion-status')` devient `navigate('/adhesion-status')`
 
-// handleVerifyPin : accepter pinValue en parametre
-const handleVerifyPin = useCallback(async (pinValue?: string) => {
-  const pin = pinValue ?? formData.pin;
-  if (pin.length !== 4) { setPinError('Veuillez entrer 4 chiffres'); return; }
-  // ... reste du code utilise `pin` au lieu de `formData.pin`
-}, [formData.pin, getFullPhoneNumber, navigate, toast]);
+### 2. `src/routes.tsx`
 
-// handleConfirmPin : accepter pinValue en parametre
-const handleConfirmPin = useCallback(async (pinValue?: string) => {
-  const confirmPin = pinValue ?? formData.confirmPin;
-  if (confirmPin !== formData.pin) { ... }
-  // ... reste du code
-}, [formData.pin, formData.confirmPin, ...]);
-```
+Supprimer la route dupliquee `adhesion-status` a l'interieur du bloc `/mobile-flow` (ligne 293) car elle est inaccessible aux utilisateurs `user` et cree de la confusion. La route standalone `/adhesion-status` (ligne 135) suffit.
 
-**2. Modifier les 3 onChange pour passer la valeur directement :**
-
-```typescript
-// step === 'pin'
-onChange={(value) => {
-  setFormData(prev => ({ ...prev, pin: value }));
-  setPinError('');
-  if (value.length === 4) {
-    setTimeout(() => handleVerifyPin(value), 300);  // passe value
-  }
-}}
-
-// step === 'setup_pin'
-onChange={(value) => {
-  setFormData(prev => ({ ...prev, pin: value }));
-  setPinError('');
-  if (value.length === 4) {
-    setTimeout(() => handleSetupPin(value), 300);  // passe value
-  }
-}}
-
-// step === 'confirm_pin'
-onChange={(value) => {
-  setFormData(prev => ({ ...prev, confirmPin: value }));
-  setPinError('');
-  if (value.length === 4) {
-    setTimeout(() => handleConfirmPin(value), 300);  // passe value
-  }
-}}
-```
-
-**3. Mettre a jour handleVerifyPin pour utiliser le parametre `pin` dans l'appel edge function** (au lieu de `formData.pin`).
-
-**4. Mettre a jour handleConfirmPin pour utiliser le parametre `confirmPin` dans l'appel signup** (au lieu de `formData.confirmPin`).
-
-## Fichier modifie
+## Fichiers modifies
 
 | Fichier | Changement |
 |---------|-----------|
-| `src/components/auth/UnifiedModernAuthUI.tsx` | Passage de la valeur PIN en parametre direct aux handlers pour eviter le stale closure |
+| `SfdSelectionPage.tsx` | Rediriger vers `/adhesion-status` au lieu de `/mobile-flow/adhesion-status` |
+| `routes.tsx` | Supprimer la route dupliquee dans le bloc mobile-flow |
 
 ## Resultat attendu
 
-Les 4 chiffres sont bien transmis aux handlers, le PIN est valide, et l'etape suivante (confirmation ou connexion) s'enchaine correctement.
+Apres inscription et soumission d'une demande d'adhesion, l'utilisateur est redirige vers `/adhesion-status` (accessible avec le role `user`) au lieu de recevoir "Acces Refuse".
