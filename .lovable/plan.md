@@ -1,34 +1,63 @@
 
-# Fix: Page "Acces Refuse" apres creation de compte
+# Fix: Connexion Admin impossible + Accès comptes
 
-## Probleme
+## Probleme identifie
 
-Apres inscription, l'utilisateur a le role `user` (pas encore `client`). Le systeme le redirige vers `/mobile-flow/adhesion-status` pour suivre sa demande d'adhesion. Mais la route `/mobile-flow/*` est protegee par un `RoleGuard` qui exige le role `client` (ligne 271 de `routes.tsx`). Resultat : "Acces Refuse".
+Le code de connexion (`useLoginForm.ts` ligne 86) verifie le role via `app_metadata.role` :
+```
+const userRole = result.data?.user?.app_metadata?.role;
+```
 
-Il existe deja une route `/adhesion-status` (ligne 135) qui n'est PAS protegee par ce guard et qui est accessible aux utilisateurs avec le role `user`.
+Or, pour TOUS les comptes admin, `app_metadata.role` est **null** dans la base. Les roles sont stockes correctement dans la table `user_roles`, mais le code ne la consulte jamais. Resultat : le role est toujours `undefined`, et le message "Acces refuse" s'affiche systematiquement.
 
 ## Solution
 
-Deux corrections simples :
+Modifier `useLoginForm.ts` pour consulter la table `user_roles` apres un login reussi, au lieu de se fier a `app_metadata.role`.
 
-### 1. `src/pages/mobile/SfdSelectionPage.tsx`
+### Fichier : `src/components/auth/login/useLoginForm.ts`
 
-Remplacer les navigations vers `/mobile-flow/adhesion-status` par `/adhesion-status` :
+**Remplacement lignes 85-113 :**
 
-- Ligne 163 : `navigate('/mobile-flow/adhesion-status')` devient `navigate('/adhesion-status')`
-- Ligne 441 : `navigate('/mobile-flow/adhesion-status')` devient `navigate('/adhesion-status')`
+Au lieu de :
+```typescript
+const userRole = result.data?.user?.app_metadata?.role;
+```
 
-### 2. `src/routes.tsx`
+Faire :
+```typescript
+const userId = result.data.user.id;
 
-Supprimer la route dupliquee `adhesion-status` a l'interieur du bloc `/mobile-flow` (ligne 293) car elle est inaccessible aux utilisateurs `user` et cree de la confusion. La route standalone `/adhesion-status` (ligne 135) suffit.
+// Chercher le role dans user_roles (source de verite)
+const { data: roleData } = await supabase
+  .from('user_roles')
+  .select('role')
+  .eq('user_id', userId)
+  .single();
 
-## Fichiers modifies
+const userRole = roleData?.role || result.data?.user?.app_metadata?.role;
+```
+
+Le reste de la logique de redirection reste identique (verification `userRole === 'admin'` pour MEREF, `userRole === 'sfd_admin'` pour SFD).
+
+## Comptes existants et identifiants
+
+Voici les comptes deja crees dans le systeme :
+
+| Role | Email | Mot de passe | SFD associe |
+|------|-------|-------------|-------------|
+| Admin MEREF | admin@meref.gov.ml | (defini lors du setup) | - |
+| SFD Admin | admin.nsm@sfd.ml | (defini lors du setup) | NGNA SORO Microfinance |
+| SFD Admin | admin.kj@sfd.ml | (defini lors du setup) | Kafo Jiginew |
+| SFD Admin | admin.ny@sfd.ml | (defini lors du setup) | Nyesigiso |
+
+Les mots de passe ont ete definis via la fonction `setup-admin-system`. Si vous ne vous en souvenez plus, on peut les reinitialiser via une edge function.
+
+## Fichier modifie
 
 | Fichier | Changement |
 |---------|-----------|
-| `SfdSelectionPage.tsx` | Rediriger vers `/adhesion-status` au lieu de `/mobile-flow/adhesion-status` |
-| `routes.tsx` | Supprimer la route dupliquee dans le bloc mobile-flow |
+| `src/components/auth/login/useLoginForm.ts` | Lecture du role depuis `user_roles` au lieu de `app_metadata` |
 
-## Resultat attendu
+## Option supplementaire
 
-Apres inscription et soumission d'une demande d'adhesion, l'utilisateur est redirige vers `/adhesion-status` (accessible avec le role `user`) au lieu de recevoir "Acces Refuse".
+Si vous souhaitez reinitialiser les mots de passe des comptes admin a une valeur connue (ex: `Admin@2024!`), je peux aussi creer une edge function de reset. Dites-le moi apres approbation.
