@@ -60,11 +60,13 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = () => {
               onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
               className="flex items-center gap-2"
             >
-              <img 
-                src={logoNgnaSoro} 
-                alt="N'GNA SÔRÔ" 
-                className="w-9 h-9 rounded-xl object-cover shadow-sm"
-              />
+              <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center">
+                <img 
+                  src={logoNgnaSoro} 
+                  alt="N'GNA SÔRÔ" 
+                  className="w-6 h-6 rounded-full object-cover"
+                />
+              </div>
               <span className={`text-lg font-bold transition-colors ${
                 scrolled ? 'text-foreground' : 'text-white'
               }`}>
@@ -95,7 +97,7 @@ const NavigationHeader: React.FC<NavigationHeaderProps> = () => {
                 className={`rounded-xl font-medium ${
                   scrolled
                     ? 'bg-primary hover:bg-primary/90 text-primary-foreground'
-                    : 'bg-white text-primary hover:bg-white/90'
+                    : 'bg-white/15 border border-white/20 text-white hover:bg-white/25'
                 }`}
               >
                 <LogIn className="w-4 h-4 mr-1.5" />
