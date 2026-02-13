@@ -1,6 +1,5 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import logo from '@/assets/ngna-soro-logo.png';
 
 interface SplashScreenProps {
   onComplete: () => void;
@@ -19,63 +18,49 @@ const SplashScreen: React.FC<SplashScreenProps> = ({ onComplete }) => {
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}
     >
-      {/* Logo */}
-      <motion.div
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ type: 'spring', stiffness: 200, damping: 20, delay: 0.2 }}
-      >
-        <div className="w-24 h-24 rounded-full bg-white shadow-md flex items-center justify-center">
-          <img 
-            src={logo} 
-            alt="N'GNA SÔRÔ!" 
-            className="w-16 h-16 object-contain rounded-full"
-          />
-        </div>
-      </motion.div>
+      {/* Logo - direct, sans médaillon */}
+      <motion.img
+        src="/lovable-uploads/LOGO_transprant_1763143001713.png"
+        alt="N'GNA SÔRÔ!"
+        className="w-[120px] h-[120px] object-contain"
+        initial={{ opacity: 0, scale: 0.85 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+      />
 
-      {/* App name */}
-      <motion.div
-        className="mt-6 text-center"
-        initial={{ opacity: 0, y: 20 }}
+      {/* Titre */}
+      <motion.h1
+        className="mt-5 text-3xl font-bold text-[#0D6A51] tracking-tight"
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
+        transition={{ delay: 0.4, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
       >
-        <h1 className="text-2xl font-bold text-[#0D6A51] tracking-tight">
-          N'GNA SÔRÔ!
-        </h1>
-        <motion.p
-          className="mt-1.5 text-gray-500 text-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 1 }}
-        >
-          Votre partenaire financier
-        </motion.p>
-      </motion.div>
+        N'GNA SÔRÔ!
+      </motion.h1>
 
-      {/* Loading dots */}
-      <motion.div
-        className="absolute bottom-20 flex gap-2"
+      {/* Sous-titre */}
+      <motion.p
+        className="mt-1.5 text-gray-400 text-sm tracking-wide"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
+        transition={{ delay: 0.8, duration: 0.5 }}
       >
-        {[0, 1, 2].map((i) => (
-          <motion.div
-            key={i}
-            className="w-2 h-2 rounded-full bg-[#0D6A51]"
-            animate={{
-              scale: [1, 1.5, 1],
-              opacity: [0.3, 1, 0.3],
-            }}
-            transition={{
-              duration: 0.8,
-              repeat: Infinity,
-              delay: i * 0.2,
-            }}
-          />
-        ))}
+        Votre partenaire financier
+      </motion.p>
+
+      {/* Barre de progression */}
+      <motion.div
+        className="absolute bottom-16 w-[60%] h-[2px] bg-gray-100 rounded-full overflow-hidden"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 1 }}
+      >
+        <motion.div
+          className="h-full bg-[#0D6A51] rounded-full"
+          initial={{ width: '0%' }}
+          animate={{ width: '100%' }}
+          transition={{ delay: 1, duration: 1.4, ease: [0.25, 0.1, 0.25, 1] }}
+        />
       </motion.div>
     </motion.div>
   );
