@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useNavigate } from 'react-router-dom';
 import { useToast } from '@/hooks/use-toast';
 import { cleanupAuthState } from '@/utils/auth/authCleanup';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useLoginForm = (
   adminMode: boolean = false, 
@@ -82,8 +83,15 @@ export const useLoginForm = (
       } else if (result.data) {
         console.log('Login successful:', result.data);
         
-        // Get user role from metadata
-        const userRole = result.data?.user?.app_metadata?.role;
+        // Get user role from user_roles table (source of truth)
+        const userId = result.data.user.id;
+        const { data: roleData } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', userId)
+          .single();
+        
+        const userRole = roleData?.role || result.data?.user?.app_metadata?.role;
         console.log('User role from login:', userRole);
         
         toast({
