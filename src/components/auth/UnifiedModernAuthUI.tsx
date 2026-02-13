@@ -10,7 +10,7 @@ import { UltraButton } from '@/components/ui/ultra-modern/UltraButton';
 import { AnimatedLogo } from '@/components/ui/AnimatedLogo';
 import { SuccessConfetti } from '@/components/ui/SuccessConfetti';
 import { PhoneInput } from '@/components/ui/PhoneInput';
-import { PinInput } from '@/components/ui/PinInput';
+import { SecurePinPad } from '@/components/ui/SecurePinPad';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { MALI_COUNTRY_CODE } from '@/lib/constants';
@@ -625,16 +625,23 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 transition={{ duration: 0.3 }}
                 className="space-y-6"
               >
-                {/* PIN Input */}
-                <PinInput
+                {/* Secure PIN Pad */}
+                <SecurePinPad
                   value={formData.pin}
                   onChange={(value) => {
-                    setFormData({ ...formData, pin: value });
+                    setFormData(prev => ({ ...prev, pin: value }));
                     setPinError('');
+                    // Auto-submit when 4 digits entered
+                    if (value.length === 4) {
+                      setTimeout(() => {
+                        handleVerifyPin();
+                      }, 300);
+                    }
                   }}
                   length={4}
                   error={pinError}
-                  autoFocus
+                  title="Veuillez saisir votre code PIN"
+                  accentColor="#F5A623"
                 />
 
                 {/* Attempts warning */}
@@ -650,19 +657,15 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                   </motion.div>
                 )}
 
-                {/* Verify button */}
-                <UltraButton
-                  type="button"
-                  onClick={handleVerifyPin}
-                  loading={loading}
-                  fullWidth
-                  variant="gradient"
-                  size="lg"
-                  disabled={formData.pin.length !== 4}
-                  className="h-14 text-base font-semibold"
-                >
-                  Se connecter
-                </UltraButton>
+                {loading && (
+                  <div className="flex justify-center">
+                    <motion.div
+                      className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full"
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                    />
+                  </div>
+                )}
 
                 {/* Forgot PIN and Back links */}
                 <div className="flex flex-col items-center gap-3 pt-2">
@@ -698,36 +701,24 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 transition={{ duration: 0.3 }}
                 className="space-y-6"
               >
-                {/* PIN Setup Input */}
-                <PinInput
-                  label="Choisissez votre code PIN"
+                {/* Secure PIN Pad - Setup */}
+                <SecurePinPad
                   value={formData.pin}
                   onChange={(value) => {
-                    setFormData({ ...formData, pin: value });
+                    setFormData(prev => ({ ...prev, pin: value }));
                     setPinError('');
+                    if (value.length === 4) {
+                      setTimeout(() => {
+                        handleSetupPin();
+                      }, 300);
+                    }
                   }}
                   length={4}
                   error={pinError}
-                  autoFocus
+                  title="Choisissez votre code PIN"
+                  subtitle="Ce code vous permettra de vous connecter rapidement"
+                  accentColor="#10B981"
                 />
-
-                <p className="text-xs text-muted-foreground text-center">
-                  Ce code vous permettra de vous connecter rapidement
-                </p>
-
-                {/* Continue button */}
-                <UltraButton
-                  type="button"
-                  onClick={handleSetupPin}
-                  loading={loading}
-                  fullWidth
-                  variant="gradient"
-                  size="lg"
-                  disabled={formData.pin.length !== 4}
-                  className="h-14 text-base font-semibold"
-                >
-                  Continuer
-                </UltraButton>
 
                 {/* Back link */}
                 <div className="text-center pt-2">
@@ -750,32 +741,23 @@ const UnifiedModernAuthUI: React.FC<UnifiedModernAuthUIProps> = ({ mode = 'clien
                 transition={{ duration: 0.3 }}
                 className="space-y-6"
               >
-                {/* PIN Confirm Input */}
-                <PinInput
-                  label="Confirmez votre code PIN"
+                {/* Secure PIN Pad - Confirm */}
+                <SecurePinPad
                   value={formData.confirmPin}
                   onChange={(value) => {
-                    setFormData({ ...formData, confirmPin: value });
+                    setFormData(prev => ({ ...prev, confirmPin: value }));
                     setPinError('');
+                    if (value.length === 4) {
+                      setTimeout(() => {
+                        handleConfirmPin();
+                      }, 300);
+                    }
                   }}
                   length={4}
                   error={pinError}
-                  autoFocus
+                  title="Confirmez votre code PIN"
+                  accentColor="#10B981"
                 />
-
-                {/* Confirm button */}
-                <UltraButton
-                  type="button"
-                  onClick={handleConfirmPin}
-                  loading={loading}
-                  fullWidth
-                  variant="gradient"
-                  size="lg"
-                  disabled={formData.confirmPin.length !== 4}
-                  className="h-14 text-base font-semibold"
-                >
-                  {userId ? 'Enregistrer le PIN' : 'Créer mon compte'}
-                </UltraButton>
 
                 {/* Back link */}
                 <div className="text-center pt-2">
