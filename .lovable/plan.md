@@ -1,121 +1,81 @@
 
-# Audit Complet Point par Point - N'GNA SORO!
 
-## Resultats du Test
+# Redesign de l'ecran PIN - Style Orange Money
 
-### 1. Pages Publiques
+## Objectif
 
-| Point | Statut | Details |
-|-------|--------|---------|
-| Page d'accueil (/) | OK | Redirige vers onboarding si premiere visite, puis landing page |
-| Onboarding | OK | S'affiche correctement avec navigation swipe |
-| Page de login (/auth) | OK | Formulaire telephone avec code pays +223 |
-| Login Admin (/admin/auth) | OK | Formulaire email/mot de passe MEREF |
-| Login SFD (/sfd/auth) | OK | Route existe et chargement lazy |
-| Page 404 | OK | Catch-all route fonctionne, design coherent avec boutons retour |
-| Pages legales (CGU, Privacy) | OK | Routes configurees |
+Transformer l'etape de saisie du code PIN dans `UnifiedModernAuthUI` pour reproduire le design professionnel de l'ecran Orange Money montre dans la capture d'ecran : un bottom-sheet blanc avec des indicateurs ronds (dots), un clavier numerique personnalise avec touches rondes et disposition aleatoire, et un bouton "Fermer".
 
-### 2. Systeme d'Authentification
+## Design Reference (capture d'ecran)
 
-| Point | Statut | Details |
-|-------|--------|---------|
-| AuthProvider | OK | Wraps RouterProvider dans App.tsx |
-| Role hierarchy | OK | support_admin(5) > admin(4) > sfd_admin(3) > client(2) > user(1) |
-| Role caching | OK | Cache 30s avec `lastRoleFetch` |
-| Timeout role check | OK | 2 secondes (optimise precedemment) |
-| Nettoyage roles dupliques | OK | `cleanupDuplicateRoles` supprime role `user` si role superieur existe |
+- **Indicateurs PIN** : 4 cercles ronds - rempli en orange quand un chiffre est saisi, gris clair sinon
+- **Clavier numerique** : Grille 4x4 de boutons ronds gris clair avec chiffres melanges aleatoirement, plus backspace et delete (bouton orange)
+- **Message** : Texte centre au-dessus des dots ("Veuillez saisir votre code secret")
+- **Logo** : Logo de l'app centre en haut
+- **Bouton Fermer** : En bas, style outline
 
-### 3. Base de Donnees
+## Fichiers a Creer/Modifier
 
-| Point | Statut | Details |
-|-------|--------|---------|
-| Enum `app_role` | OK | Contient: admin, cashier, client, sfd_admin, supervisor, support_admin, user |
-| Fonction `has_role` | OK | Inclut bypass pour support_admin |
-| Utilisateurs en base | OK | 1 admin, 3 sfd_admin, 2 clients, 1 user |
-| SFDs | OK | 13 SFDs actives |
-| Prets | OK | 1 actif, 2 pending |
-| Audit logs | OK | 708 entrees |
+### 1. Nouveau composant : `src/components/ui/SecurePinPad.tsx`
 
-### 4. Roles et Routes Protegees
+Clavier numerique personnalise style Orange Money :
 
-| Role | Dashboard | RoleGuard | Statut |
-|------|-----------|-----------|--------|
-| admin (MEREF) | /super-admin-dashboard | OK | 16 routes protegees |
-| sfd_admin | /agency-dashboard | OK | 8 routes protegees |
-| client | /mobile-flow/dashboard | OK | 30+ routes enfants |
-| support_admin | /support-admin-dashboard | OK | 4 routes (dashboard, users, system, logs) |
-| user | /sfd-selection | OK | Redirection selection SFD |
+- Grille 4 colonnes x 4 lignes de boutons circulaires
+- Chiffres 0-9 melanges aleatoirement a chaque affichage (securite anti-keylogger)
+- Bouton backspace (icone) et bouton clear/delete (rond orange avec icone poubelle)
+- Indicateurs dots en haut : cercles remplis (couleur primaire/orange) ou vides (gris)
+- Animation de remplissage des dots avec scale bounce
+- Haptic feedback simulation via micro-animation sur press
+- Props : `value`, `onChange`, `length`, `error`, `title`, `subtitle`
 
-### 5. Support Admin
+```text
+Layout du clavier :
++-----+-----+-----+-----+
+|  9  |  7  |  6  |  3  |
++-----+-----+-----+-----+
+|  1  |  0  |  2  |  5  |
++-----+-----+-----+-----+
+|  4  |  8  |  <  |  X  |  (<= backspace, X = clear orange)
++-----+-----+-----+-----+
+```
 
-| Point | Statut | Details |
-|-------|--------|---------|
-| Dashboard | OK | Vue 360 avec KPIs, recherche, logs |
-| Sidebar | OK | Navigation + liens rapides MEREF/SFD |
-| Recherche utilisateurs | OK | Composant SupportUserSearch |
-| Sante systeme | OK | Composant SupportSystemHealth |
-| Logs temps reel | OK | Refresh toutes les 15s |
-| Acces routes admin | OK | RoleGuard bypass pour support_admin |
+Les chiffres sont melanges a chaque montage du composant pour la securite.
 
-### 6. Securite
+### 2. Modifier : `src/components/auth/UnifiedModernAuthUI.tsx`
 
-| Point | Statut | Severite |
-|-------|--------|----------|
-| RLS actif sur tables | OK | - |
-| Fonction has_role SECURITY DEFINER | OK | - |
-| search_path sur fonctions | OK | Toutes les fonctions ont `SET search_path = public` |
-| Protection mots de passe compromis | WARN | Desactivee - Action manuelle requise |
-| Roles dans table separee (user_roles) | OK | Conforme aux bonnes pratiques |
+Remplacer le composant `PinInput` par `SecurePinPad` dans les 3 etapes PIN :
 
-### 7. Performance
+- **Step `pin`** (connexion) : Titre "Veuillez saisir votre code PIN", dots orange
+- **Step `setup_pin`** (creation) : Titre "Choisissez votre code PIN", dots verts
+- **Step `confirm_pin`** (confirmation) : Titre "Confirmez votre code PIN", dots verts
 
-| Point | Statut | Details |
-|-------|--------|---------|
-| Lazy loading routes | OK | 80+ composants en React.lazy |
-| QueryClient optimise | OK | staleTime 5min, gcTime 10min, retry 2 |
-| refetchOnWindowFocus | OK | Desactive (bon pour mobile) |
-| Suspense fallback | OK | LoadingScreen avec message |
-| Page transitions | OK | CSS animation `page-transition` |
+Le bouton "Se connecter" / "Continuer" sera declenchee automatiquement quand les 4 chiffres sont saisis (auto-submit), comme Orange Money.
 
-### 8. Erreurs Console
+### 3. Style et Animations
 
-| Erreur | Severite | Action |
-|--------|----------|--------|
-| CORS manifest.json | INFO | Specifique a l'environnement preview, pas un bug |
-| postMessage warnings | INFO | Lies au sandbox Lovable, ignorable |
-| console.log restants | FAIBLE | ~1900 restants dans fichiers non critiques |
+- Dots : `w-5 h-5 rounded-full` avec transition de couleur et scale bounce
+- Touches : `w-16 h-16 rounded-full bg-gray-100 text-2xl font-bold` avec `active:scale-95`
+- Touche delete : fond orange (`bg-[#F5A623]`) avec icone poubelle blanche
+- Touche backspace : fond gris avec icone fleche retour
+- Animation d'erreur : shake horizontal des dots quand le PIN est incorrect
+- Auto-submit : quand `value.length === 4`, appel automatique du handler apres 300ms
 
-### 9. Code Mort
+## Details Techniques
 
-| Fichier | Probleme | Action Recommandee |
-|---------|----------|--------------------|
-| `src/pages/mobile/MobileApp.tsx` | Importe `RoleGuard` depuis `auth/RoleGuard` mais n'est jamais importe nulle part | Supprimer le fichier |
-| `src/components/auth/RoleGuard.tsx` | Composant RoleGuard alternatif (utilise `allowedRoles[]` au lieu de `requiredRole`) | Conserver ou supprimer selon besoin futur |
+| Aspect | Implementation |
+|--------|---------------|
+| Securite | Chiffres melanges via `Fisher-Yates shuffle` a chaque mount |
+| Auto-submit | `useEffect` detecte quand `pin.length === 4` et trigger le handler |
+| Erreur shake | Animation framer-motion `x: [-10, 10, -10, 10, 0]` sur les dots |
+| Accessibilite | `aria-label` sur chaque touche, role="button" |
+| Performance | `useMemo` pour le shuffle, pas de re-shuffle pendant la saisie |
 
----
+## Resume des Modifications
 
-## Problemes a Corriger
+| Fichier | Action |
+|---------|--------|
+| `src/components/ui/SecurePinPad.tsx` | **Nouveau** - Clavier numerique securise style Orange Money |
+| `src/components/auth/UnifiedModernAuthUI.tsx` | Remplacer `PinInput` par `SecurePinPad` + auto-submit |
 
-### Priorite HAUTE
-1. **Protection mots de passe compromis** - Toujours desactivee (action manuelle dans le backend)
+Le composant `PinInput` existant n'est pas supprime car il pourrait etre utilise ailleurs (verification SFD, etc.).
 
-### Priorite MOYENNE
-2. **Fichier mort `MobileApp.tsx`** - N'est importe nulle part, peut etre supprime pour nettoyer le code
-3. **Console.log restants** (~1900) - Deja partiellement nettoyes dans les fichiers critiques, les autres sont dans des fichiers secondaires
-
-### Priorite FAIBLE
-4. **Double composant RoleGuard** - `src/components/RoleGuard.tsx` (utilise) vs `src/components/auth/RoleGuard.tsx` (non utilise dans les routes principales). Potentielle confusion.
-
----
-
-## Resume Global
-
-| Categorie | Score |
-|-----------|-------|
-| Fonctionnalite | 9/10 - Tout fonctionne |
-| Securite | 8/10 - 1 warning (leaked passwords) |
-| Performance | 9/10 - Lazy loading + cache optimise |
-| Code Quality | 7/10 - Code mort et console.log restants |
-| UX/UI | 9/10 - Transitions, 404, loading screens |
-
-**Verdict** : Le projet est **fonctionnel et pret pour la production** avec un seul point de securite mineur a activer manuellement (protection mots de passe compromis). Les corrections recommandees sont du nettoyage de code (fichiers morts, console.log).
