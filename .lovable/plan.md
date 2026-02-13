@@ -1,51 +1,90 @@
 
+# Fix PIN Input - Stale Closure Bug
 
-# Amelioration SFD Partners Page + Splash Screen
+## Probleme
 
-## 1. `src/pages/SfdListPage.tsx` - Responsive et fonctionnel
+Le `handleSetupPin` utilise `useCallback` avec `formData.pin` en dependance. Quand le 4eme chiffre est saisi :
 
-D'apres la capture d'ecran, la page fonctionne mais presente des problemes de layout mobile :
-- Les cartes SFD debordent horizontalement (texte coupe)
-- La barre de recherche et les filtres region manquent d'espacement mobile
-- Le bouton "Choisir cette SFD" devrait passer l'ID du SFD selectionne (pas juste naviguer vers /sfd-selection)
+1. `onChange` appelle `setFormData(prev => ({...prev, pin: value}))` -- mise a jour asynchrone
+2. 300ms plus tard, `handleSetupPin()` s'execute
+3. Mais `handleSetupPin` a capture l'ancien `formData.pin` (3 chiffres) via sa closure
+4. `formData.pin.length !== 4` est donc VRAI, ce qui affiche l'erreur "Le PIN doit contenir 4 chiffres"
 
-**Corrections :**
-- Search bar : retirer `backdrop-blur-xl`, utiliser `bg-gray-50 rounded-2xl h-12` (coherent avec le design system)
-- Filtres region : ajouter `snap-x snap-mandatory` pour un scroll horizontal fluide, masquer la scrollbar, ajouter un gradient fade sur les bords
-- Cards SFD : `rounded-2xl bg-white shadow-sm border border-gray-100` au lieu de `bg-card/80 backdrop-blur-sm` - plus epure
-- Logo SFD : `rounded-xl` au lieu de `rounded-2xl`, fond `bg-gray-50`
-- Bouton CTA : `bg-[#0D6A51] text-white rounded-xl` plein au lieu de `variant="outline"`, passer `sfd.id` dans le state de navigation
-- Services badges : `bg-gray-100 text-gray-700 rounded-lg` plus sobre
-- Section "Votre SFD n'est pas listee" : reduire padding, style plus compact
-- Grid responsive : `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` pour une meilleure adaptation mobile
-- Retirer les animations motion excessives pour la performance mobile
+Le meme probleme affecte `handleVerifyPin` et `handleConfirmPin`.
 
-## 2. `src/components/mobile/SplashScreen.tsx` - Fond blanc moderne
+## Solution
 
-Le splash screen est actuellement sur fond vert avec des effets lourds (particles, rings, backdrop-blur). On le simplifie radicalement :
+Passer la valeur du PIN directement en parametre aux handlers au lieu de lire `formData.pin` depuis la closure.
 
-- Fond : `bg-white` pur au lieu du gradient vert
-- Logo : dans un cercle blanc avec ombre douce (`shadow-md`), taille reduite a `w-20 h-20`
-- Retirer completement les particles flottantes (6 divs animees inutiles)
-- Retirer les rings animes (3 cercles concentriques)
-- Retirer le `backdrop-blur-xl` du conteneur logo
-- Titre : `text-[#0D6A51]` au lieu de `text-white`
-- Sous-titre : `text-gray-500` au lieu de `text-white/70`
-- Dots de chargement : `bg-[#0D6A51]` au lieu de `bg-white/50`
-- Look minimaliste : logo + nom + dots, rien d'autre
+### Fichier : `src/components/auth/UnifiedModernAuthUI.tsx`
 
-## 3. `src/components/ui/LoadingScreen.tsx` - Coherence fond blanc
+**1. Modifier les 3 handlers pour accepter un parametre optionnel :**
 
-- Meme traitement que le splash : fond `bg-white` au lieu du gradient vert
-- Logo dans un cercle avec ombre douce
-- Dots en vert brand `bg-[#0D6A51]`
-- Texte en `text-gray-500`
+```typescript
+// handleSetupPin : accepter pinValue en parametre
+const handleSetupPin = useCallback(async (pinValue?: string) => {
+  const pin = pinValue ?? formData.pin;
+  if (pin.length !== 4) { setPinError('Le PIN doit contenir 4 chiffres'); return; }
+  setStep('confirm_pin');
+  setPinError('');
+}, [formData.pin]);
 
-## Fichiers modifies
+// handleVerifyPin : accepter pinValue en parametre
+const handleVerifyPin = useCallback(async (pinValue?: string) => {
+  const pin = pinValue ?? formData.pin;
+  if (pin.length !== 4) { setPinError('Veuillez entrer 4 chiffres'); return; }
+  // ... reste du code utilise `pin` au lieu de `formData.pin`
+}, [formData.pin, getFullPhoneNumber, navigate, toast]);
+
+// handleConfirmPin : accepter pinValue en parametre
+const handleConfirmPin = useCallback(async (pinValue?: string) => {
+  const confirmPin = pinValue ?? formData.confirmPin;
+  if (confirmPin !== formData.pin) { ... }
+  // ... reste du code
+}, [formData.pin, formData.confirmPin, ...]);
+```
+
+**2. Modifier les 3 onChange pour passer la valeur directement :**
+
+```typescript
+// step === 'pin'
+onChange={(value) => {
+  setFormData(prev => ({ ...prev, pin: value }));
+  setPinError('');
+  if (value.length === 4) {
+    setTimeout(() => handleVerifyPin(value), 300);  // passe value
+  }
+}}
+
+// step === 'setup_pin'
+onChange={(value) => {
+  setFormData(prev => ({ ...prev, pin: value }));
+  setPinError('');
+  if (value.length === 4) {
+    setTimeout(() => handleSetupPin(value), 300);  // passe value
+  }
+}}
+
+// step === 'confirm_pin'
+onChange={(value) => {
+  setFormData(prev => ({ ...prev, confirmPin: value }));
+  setPinError('');
+  if (value.length === 4) {
+    setTimeout(() => handleConfirmPin(value), 300);  // passe value
+  }
+}}
+```
+
+**3. Mettre a jour handleVerifyPin pour utiliser le parametre `pin` dans l'appel edge function** (au lieu de `formData.pin`).
+
+**4. Mettre a jour handleConfirmPin pour utiliser le parametre `confirmPin` dans l'appel signup** (au lieu de `formData.confirmPin`).
+
+## Fichier modifie
 
 | Fichier | Changement |
 |---------|-----------|
-| `SfdListPage.tsx` | Responsive cards, search epure, navigation fonctionnelle avec SFD ID, scroll region fluide |
-| `SplashScreen.tsx` | Fond blanc, logo sur fond blanc, retrait effets lourds |
-| `LoadingScreen.tsx` | Fond blanc coherent, dots verts |
+| `src/components/auth/UnifiedModernAuthUI.tsx` | Passage de la valeur PIN en parametre direct aux handlers pour eviter le stale closure |
 
+## Resultat attendu
+
+Les 4 chiffres sont bien transmis aux handlers, le PIN est valide, et l'etape suivante (confirmation ou connexion) s'enchaine correctement.
