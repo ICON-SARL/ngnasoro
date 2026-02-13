@@ -1,38 +1,62 @@
 
+# Amelioration Landing Page - Style Epure Fintech
 
-# Reduction de la Zone Header - Logo Compact sur Fond Blanc
+## Objectif
 
-## Constat
+Aligner la landing page sur le style epure et moderne de la page de connexion : fond vert brand avec elements blancs, typographie sobre, pas de surcharge visuelle.
 
-La zone verte du haut (header) occupe trop d'espace vertical : le logo fait 160px dans un medaillon de 180px, le titre est en 3xl, et le padding est genereux (pt-16 pb-28). Cela pousse le formulaire trop bas sur l'ecran.
+## Etat Actuel
+
+- **Hero** : Fond gradient vert correct mais trop de contenu (badge long, titre enorme 7xl, 2 gros boutons, 3 trust badges) - surcharge
+- **Features** : Section standard avec cards bordees - correcte mais peut etre plus epuree
+- **Footer** : Fond sombre `bg-foreground` - correct
+- **Navigation** : Fonctionnelle mais le bouton Connexion vert sur fond vert manque de contraste
 
 ## Modifications Prevues
 
-### `UnifiedModernAuthUI.tsx` - Zone Header Compactee
+### 1. `HeroSection.tsx` - Hero epure et compact
 
-**Logo reduit dans un cercle blanc :**
-- Taille logo : 160px vers 80px
-- Medaillon : passer de `bg-white/10` 180px a un cercle blanc opaque `bg-white` de 96px avec `shadow-md`
-- Le fond blanc fait ressortir le logo de maniere nette et professionnelle
+**Reduire la surcharge :**
+- Titre : de `text-7xl` a `text-4xl lg:text-5xl` - plus sobre et lisible
+- Retirer le badge "Ministere de l'Economie" - trop verbeux, remplacer par un petit logo blanc dans un cercle (comme la page auth)
+- Ajouter le logo dans un cercle blanc (meme style que la page auth : `w-20 h-20 rounded-full bg-white shadow-md`)
+- Sous-titre : raccourcir, `text-lg` au lieu de `text-xl`
+- Boutons CTA : un seul bouton principal blanc, un lien texte pour le secondaire au lieu de 2 gros boutons
+- Trust indicators : simplifier en une seule ligne de texte `text-white/60 text-sm` au lieu de 3 badges avec fond
 
-**Typographie reduite :**
-- Titre "N'GNA SORO!" : de `text-3xl` a `text-xl`
-- Sous-titre "MICROFINANCE DIGITALE" : conserver en `text-xs`
-- Retirer la ligne decorative (divider) pour epurer
+**Pattern de fond :** Reprendre le meme pattern SVG subtil (cercles concentriques) que la page auth pour coherence
 
-**Espacement reduit :**
-- Padding : de `pt-16 pb-28` a `pt-10 pb-20`
-- Espace entre logo et titre : de `space-y-4` a `space-y-2`
+**Reduire la hauteur :** De `min-h-screen` a `min-h-[80vh]` pour ne pas occuper tout l'ecran
 
-**Pattern SVG :** Conserver mais simplifier (moins de cercles)
+### 2. `NavigationHeader.tsx` - Nav plus discrete
 
-### Resultat attendu
+- Quand non-scrolle (sur fond vert) : bouton Connexion en `bg-white/15 border border-white/20` au lieu de `bg-white` - moins intrusif
+- Logo : ajouter le logo dans un cercle blanc `w-8 h-8 rounded-full bg-white` pour coherence
+- Retirer l'ombre du logo
 
-La zone verte passe d'environ 45% de l'ecran a environ 30%, laissant plus de place au formulaire. Le logo sur fond blanc est plus lisible et professionnel.
+### 3. `FeaturesSection.tsx` - Section features minimale
 
-## Fichier modifie
+- Reduire le padding de `py-20` a `py-16`
+- Titre section : `text-2xl` au lieu de `text-4xl` - plus sobre
+- Cards : retirer `border border-border/50` et `shadow-soft-sm`, utiliser seulement `bg-gray-50 rounded-2xl` pour un look plus flat et epure
+- Icones : cercle plus petit `w-10 h-10` avec fond `bg-[#0D6A51]/8`
+- Grid gap : de `gap-6` a `gap-4` pour un rendu plus compact
 
-| Fichier | Action |
-|---------|--------|
-| `src/components/auth/UnifiedModernAuthUI.tsx` | Reduction header : logo 80px dans cercle blanc, typo reduite, padding reduit |
+### 4. `FooterSection.tsx` - Footer simplifie
 
+- Fond : de `bg-foreground` (noir) a `bg-gray-900` pour un contraste plus doux
+- Reduire le padding de `py-12` a `py-10`
+- Le reste est deja epure
+
+## Fichiers Modifies
+
+| Fichier | Changement |
+|---------|-----------|
+| `HeroSection.tsx` | Logo cercle blanc, titre reduit, 1 seul CTA, trust en texte simple |
+| `NavigationHeader.tsx` | Bouton connexion plus discret sur fond vert, logo cercle blanc |
+| `FeaturesSection.tsx` | Cards flat bg-gray-50, tailles reduites, padding compact |
+| `FooterSection.tsx` | Fond bg-gray-900, padding reduit |
+
+## Resultat Attendu
+
+Une landing page qui respire le meme esprit que la page de connexion : vert professionnel, blanc propre, pas de fioritures, chaque element a sa place sans surcharge.
