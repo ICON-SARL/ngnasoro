@@ -1,62 +1,51 @@
 
-# Amelioration Landing Page - Style Epure Fintech
 
-## Objectif
+# Amelioration SFD Partners Page + Splash Screen
 
-Aligner la landing page sur le style epure et moderne de la page de connexion : fond vert brand avec elements blancs, typographie sobre, pas de surcharge visuelle.
+## 1. `src/pages/SfdListPage.tsx` - Responsive et fonctionnel
 
-## Etat Actuel
+D'apres la capture d'ecran, la page fonctionne mais presente des problemes de layout mobile :
+- Les cartes SFD debordent horizontalement (texte coupe)
+- La barre de recherche et les filtres region manquent d'espacement mobile
+- Le bouton "Choisir cette SFD" devrait passer l'ID du SFD selectionne (pas juste naviguer vers /sfd-selection)
 
-- **Hero** : Fond gradient vert correct mais trop de contenu (badge long, titre enorme 7xl, 2 gros boutons, 3 trust badges) - surcharge
-- **Features** : Section standard avec cards bordees - correcte mais peut etre plus epuree
-- **Footer** : Fond sombre `bg-foreground` - correct
-- **Navigation** : Fonctionnelle mais le bouton Connexion vert sur fond vert manque de contraste
+**Corrections :**
+- Search bar : retirer `backdrop-blur-xl`, utiliser `bg-gray-50 rounded-2xl h-12` (coherent avec le design system)
+- Filtres region : ajouter `snap-x snap-mandatory` pour un scroll horizontal fluide, masquer la scrollbar, ajouter un gradient fade sur les bords
+- Cards SFD : `rounded-2xl bg-white shadow-sm border border-gray-100` au lieu de `bg-card/80 backdrop-blur-sm` - plus epure
+- Logo SFD : `rounded-xl` au lieu de `rounded-2xl`, fond `bg-gray-50`
+- Bouton CTA : `bg-[#0D6A51] text-white rounded-xl` plein au lieu de `variant="outline"`, passer `sfd.id` dans le state de navigation
+- Services badges : `bg-gray-100 text-gray-700 rounded-lg` plus sobre
+- Section "Votre SFD n'est pas listee" : reduire padding, style plus compact
+- Grid responsive : `grid-cols-1 sm:grid-cols-2 lg:grid-cols-3` pour une meilleure adaptation mobile
+- Retirer les animations motion excessives pour la performance mobile
 
-## Modifications Prevues
+## 2. `src/components/mobile/SplashScreen.tsx` - Fond blanc moderne
 
-### 1. `HeroSection.tsx` - Hero epure et compact
+Le splash screen est actuellement sur fond vert avec des effets lourds (particles, rings, backdrop-blur). On le simplifie radicalement :
 
-**Reduire la surcharge :**
-- Titre : de `text-7xl` a `text-4xl lg:text-5xl` - plus sobre et lisible
-- Retirer le badge "Ministere de l'Economie" - trop verbeux, remplacer par un petit logo blanc dans un cercle (comme la page auth)
-- Ajouter le logo dans un cercle blanc (meme style que la page auth : `w-20 h-20 rounded-full bg-white shadow-md`)
-- Sous-titre : raccourcir, `text-lg` au lieu de `text-xl`
-- Boutons CTA : un seul bouton principal blanc, un lien texte pour le secondaire au lieu de 2 gros boutons
-- Trust indicators : simplifier en une seule ligne de texte `text-white/60 text-sm` au lieu de 3 badges avec fond
+- Fond : `bg-white` pur au lieu du gradient vert
+- Logo : dans un cercle blanc avec ombre douce (`shadow-md`), taille reduite a `w-20 h-20`
+- Retirer completement les particles flottantes (6 divs animees inutiles)
+- Retirer les rings animes (3 cercles concentriques)
+- Retirer le `backdrop-blur-xl` du conteneur logo
+- Titre : `text-[#0D6A51]` au lieu de `text-white`
+- Sous-titre : `text-gray-500` au lieu de `text-white/70`
+- Dots de chargement : `bg-[#0D6A51]` au lieu de `bg-white/50`
+- Look minimaliste : logo + nom + dots, rien d'autre
 
-**Pattern de fond :** Reprendre le meme pattern SVG subtil (cercles concentriques) que la page auth pour coherence
+## 3. `src/components/ui/LoadingScreen.tsx` - Coherence fond blanc
 
-**Reduire la hauteur :** De `min-h-screen` a `min-h-[80vh]` pour ne pas occuper tout l'ecran
+- Meme traitement que le splash : fond `bg-white` au lieu du gradient vert
+- Logo dans un cercle avec ombre douce
+- Dots en vert brand `bg-[#0D6A51]`
+- Texte en `text-gray-500`
 
-### 2. `NavigationHeader.tsx` - Nav plus discrete
-
-- Quand non-scrolle (sur fond vert) : bouton Connexion en `bg-white/15 border border-white/20` au lieu de `bg-white` - moins intrusif
-- Logo : ajouter le logo dans un cercle blanc `w-8 h-8 rounded-full bg-white` pour coherence
-- Retirer l'ombre du logo
-
-### 3. `FeaturesSection.tsx` - Section features minimale
-
-- Reduire le padding de `py-20` a `py-16`
-- Titre section : `text-2xl` au lieu de `text-4xl` - plus sobre
-- Cards : retirer `border border-border/50` et `shadow-soft-sm`, utiliser seulement `bg-gray-50 rounded-2xl` pour un look plus flat et epure
-- Icones : cercle plus petit `w-10 h-10` avec fond `bg-[#0D6A51]/8`
-- Grid gap : de `gap-6` a `gap-4` pour un rendu plus compact
-
-### 4. `FooterSection.tsx` - Footer simplifie
-
-- Fond : de `bg-foreground` (noir) a `bg-gray-900` pour un contraste plus doux
-- Reduire le padding de `py-12` a `py-10`
-- Le reste est deja epure
-
-## Fichiers Modifies
+## Fichiers modifies
 
 | Fichier | Changement |
 |---------|-----------|
-| `HeroSection.tsx` | Logo cercle blanc, titre reduit, 1 seul CTA, trust en texte simple |
-| `NavigationHeader.tsx` | Bouton connexion plus discret sur fond vert, logo cercle blanc |
-| `FeaturesSection.tsx` | Cards flat bg-gray-50, tailles reduites, padding compact |
-| `FooterSection.tsx` | Fond bg-gray-900, padding reduit |
+| `SfdListPage.tsx` | Responsive cards, search epure, navigation fonctionnelle avec SFD ID, scroll region fluide |
+| `SplashScreen.tsx` | Fond blanc, logo sur fond blanc, retrait effets lourds |
+| `LoadingScreen.tsx` | Fond blanc coherent, dots verts |
 
-## Resultat Attendu
-
-Une landing page qui respire le meme esprit que la page de connexion : vert professionnel, blanc propre, pas de fioritures, chaque element a sa place sans surcharge.
