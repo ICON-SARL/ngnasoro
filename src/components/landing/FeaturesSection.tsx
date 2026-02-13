@@ -37,42 +37,41 @@ const features = [
 
 const FeaturesSection: React.FC = () => {
   return (
-    <section className="py-20 bg-background">
+    <section className="py-16 bg-background">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
+          <h2 className="text-2xl font-bold text-foreground mb-3">
             Tout ce dont vous avez besoin
           </h2>
-          <p className="text-lg text-muted-foreground max-w-xl mx-auto">
-            Une plateforme complète pour gérer vos finances au quotidien
+          <p className="text-base text-muted-foreground max-w-md mx-auto">
+            Une plateforme complète pour vos finances
           </p>
         </motion.div>
 
         {/* Features Grid */}
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4 max-w-5xl mx-auto">
           {features.map((feature, index) => (
             <motion.div
               key={feature.title}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true }}
-              transition={{ delay: index * 0.1, duration: 0.4 }}
-              className="group"
+              transition={{ delay: index * 0.08, duration: 0.4 }}
             >
-              <div className="h-full bg-card rounded-2xl p-6 border border-border/50 shadow-soft-sm hover:shadow-soft-md transition-shadow duration-300">
+              <div className="h-full bg-gray-50 rounded-2xl p-5">
                 {/* Icon */}
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4 group-hover:bg-primary/15 transition-colors">
-                  <feature.icon className="w-6 h-6 text-primary" />
+                <div className="w-10 h-10 rounded-xl bg-[#0D6A51]/8 flex items-center justify-center mb-3">
+                  <feature.icon className="w-5 h-5 text-primary" />
                 </div>
                 
                 {/* Title */}
-                <h3 className="text-lg font-semibold text-foreground mb-2">
+                <h3 className="text-base font-semibold text-foreground mb-1.5">
                   {feature.title}
                 </h3>
                 

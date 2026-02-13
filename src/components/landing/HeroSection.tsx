@@ -1,9 +1,9 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Shield, Star, Building2 } from 'lucide-react';
-import { Badge } from '@/components/ui/badge';
+import { ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 interface HeroSectionProps {
   onDownloadClick: () => void;
@@ -13,26 +13,32 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
   const navigate = useNavigate();
 
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0D6A51] via-[#0B5A44] to-[#094A3A] pt-20">
-      {/* Simple background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/5 rounded-full blur-3xl" />
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-white/5 rounded-full blur-3xl" />
+    <section className="relative min-h-[80vh] flex items-center justify-center overflow-hidden bg-gradient-to-br from-[#0D6A51] via-[#0B5A44] to-[#094A3A] pt-20">
+      {/* Subtle SVG pattern - matching auth page */}
+      <div className="absolute inset-0 overflow-hidden opacity-[0.06]">
+        <svg className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px]" viewBox="0 0 800 800">
+          <circle cx="400" cy="400" r="300" fill="none" stroke="white" strokeWidth="1" />
+          <circle cx="400" cy="400" r="200" fill="none" stroke="white" strokeWidth="0.5" />
+          <circle cx="400" cy="400" r="100" fill="none" stroke="white" strokeWidth="0.5" />
+        </svg>
       </div>
 
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="max-w-4xl mx-auto text-center">
-          {/* Badge */}
+        <div className="max-w-3xl mx-auto text-center">
+          {/* Logo in white circle */}
           <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
-            className="inline-block mb-8"
+            className="flex justify-center mb-6"
           >
-            <Badge className="bg-white/10 text-white border border-white/20 px-5 py-2.5 text-sm font-medium rounded-xl">
-              <Building2 className="w-3.5 h-3.5 mr-2 opacity-70" />
-              Ministère de l'Économie et des Finances
-            </Badge>
+            <div className="w-20 h-20 rounded-full bg-white shadow-md flex items-center justify-center">
+              <img
+                src={logoNgnaSoro}
+                alt="N'GNA SÔRÔ"
+                className="w-14 h-14 rounded-full object-cover"
+              />
+            </div>
           </motion.div>
 
           {/* Title */}
@@ -40,7 +46,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="text-5xl sm:text-6xl lg:text-7xl font-bold text-white leading-tight mb-6"
+            className="text-4xl lg:text-5xl font-bold text-white leading-tight mb-4"
           >
             N'GNA SÔRÔ
           </motion.h1>
@@ -50,57 +56,44 @@ const HeroSection: React.FC<HeroSectionProps> = ({ onDownloadClick }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="text-xl text-white/80 mb-10 max-w-2xl mx-auto leading-relaxed"
+            className="text-lg text-white/80 mb-10 max-w-xl mx-auto leading-relaxed"
           >
-            Accédez à des services financiers inclusifs partout au Mali. 
-            Du centre-ville au village, gérez votre argent simplement.
+            Services financiers inclusifs partout au Mali.
+            Gérez votre argent simplement.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* Single CTA + text link */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
-            className="flex flex-col sm:flex-row gap-4 justify-center mb-12"
+            className="flex flex-col items-center gap-4 mb-10"
           >
             <Button
               onClick={() => navigate('/auth')}
               size="lg"
-              className="h-14 px-8 rounded-2xl bg-white text-[#0D6A51] hover:bg-white/90 font-semibold text-lg shadow-xl hover:shadow-2xl transition-all"
+              className="h-13 px-8 rounded-2xl bg-white text-[#0D6A51] hover:bg-white/90 font-semibold text-base shadow-lg transition-all"
             >
               Commencer maintenant
-              <ArrowRight className="w-5 h-5 ml-2" />
+              <ArrowRight className="w-4 h-4 ml-2" />
             </Button>
-            <Button
+            <button
               onClick={() => navigate('/sfd-partners')}
-              variant="outline"
-              size="lg"
-              className="h-14 px-8 rounded-2xl bg-transparent border-2 border-white/30 text-white hover:bg-white/10 font-semibold text-lg"
+              className="text-white/60 hover:text-white/90 text-sm font-medium transition-colors"
             >
-              Découvrir les SFD
-            </Button>
+              Découvrir les SFD partenaires →
+            </button>
           </motion.div>
 
-          {/* Trust indicators */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
+          {/* Trust - simple text line */}
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.4 }}
-            className="flex flex-wrap gap-4 justify-center"
+            className="text-white/50 text-sm"
           >
-            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
-              <Shield className="w-4 h-4" />
-              <span>Sécurisé</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
-              <Star className="w-4 h-4" />
-              <span>4.8/5 • 5K+ avis</span>
-            </div>
-            <div className="flex items-center gap-2 bg-white/10 rounded-xl px-4 py-2.5 text-white/90 text-sm">
-              <Building2 className="w-4 h-4" />
-              <span>Agréé MEREF</span>
-            </div>
-          </motion.div>
+            Sécurisé · Agréé MEREF · 5K+ utilisateurs
+          </motion.p>
         </div>
       </div>
 

@@ -5,7 +5,7 @@ import logoNgnaSoro from '@/assets/logo-ngna-soro.jpg';
 
 const FooterSection: React.FC = () => {
   return (
-    <footer className="bg-foreground text-background py-12">
+    <footer className="bg-gray-900 text-background py-10">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid md:grid-cols-3 gap-10 mb-10">
           {/* Brand */}
